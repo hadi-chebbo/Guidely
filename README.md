@@ -7,8 +7,6 @@
 **Helping students in Lebanon choose the right university major — based on real interests, skills, and local market demand.**
 
 ![Status](https://img.shields.io/badge/Status-Pre--Development-orange)
-![License](https://img.shields.io/badge/License-MIT-blue)
-![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen)
 
 </div>
 
@@ -24,10 +22,7 @@
 - [The Solution](#the-solution)
 - [Core Features](#core-features)
 - [Tech Stack](#tech-stack)
-- [Project Roadmap](#project-roadmap)
-- [Project Structure (Planned)](#project-structure-planned)
 - [Contributing](#contributing)
-- [License](#license)
 
 ---
 
@@ -110,74 +105,9 @@ Compare multiple majors side by side based on:
 
 ---
 
-## Project Roadmap
-
-### Phase 1 — MVP *(Planned)*
-- [ ] Project setup (Next.js + Laravel + MySQL)
-- [ ] Majors listing and search
-- [ ] Major details page
-- [ ] Basic comparison system
-- [ ] Universities listing with basic integration
-
-### Phase 2 — Core Platform *(Planned)*
-- [ ] User accounts and authentication
-- [ ] Save favorites and comparisons
-- [ ] Advanced filtering and search
-- [ ] Full universities integration with admission details
-
-### Phase 3 — Smart Features *(Planned)*
-- [ ] AI-powered major recommendations
-- [ ] AI assistant (chat-based guidance)
-- [ ] Premium tier and subscription model
-- [ ] Advanced market demand analytics
-
-### Phase 4 — Expansion *(Future)*
-- [ ] Skill-based quizzes to match students with majors
-- [ ] Integration with Lebanese job platforms
-- [ ] Salary insights based on local market data
-- [ ] Student reviews and experiences
-- [ ] Booking sessions with mentors and teachers
-
----
-
-## Project Structure (Planned)
-
-```
-majorpath/
-├── frontend/          # Next.js application
-│   ├── app/
-│   ├── components/
-│   └── public/
-├── backend/           # Laravel API
-│   ├── app/
-│   ├── routes/
-│   └── database/
-└── README.md
-```
-
-> Structure may evolve as development begins.
-
----
-
 ## Contributing
 
-This project is in its early stages. Contributions, ideas, and feedback are welcome.
-
-If you'd like to get involved:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-idea`)
-3. Commit your changes (`git commit -m 'Add your idea'`)
-4. Push to the branch (`git push origin feature/your-idea`)
-5. Open a Pull Request
-
-For major changes, please open an issue first to discuss what you'd like to change.
-
----
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
+This project is developed by a closed team. We are not accepting external contributions at this time.
 
 ---
 
