@@ -17,15 +17,6 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('role')->default('student');
-            $table->string('avatar_url')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('school')->nullable();
-            $table->string('grade')->nullable();
-            $table->enum('preferred_language', ['en', 'fr', 'ar'])->default('en');
-            $table->boolean('is_premium')->default(false);
-            $table->datetime('premium_expires_at')->nullable();
-            $table->json('onboarding_data')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
