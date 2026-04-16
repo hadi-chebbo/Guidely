@@ -100,7 +100,7 @@ Compare multiple majors side by side based on:
 |---|---|
 | Frontend | Next.js |
 | Backend | Laravel (PHP) |
-| Database | MySQL |
+| Database | PostgreSQL |
 | AI Integration | OpenAI API |
 
 ---
