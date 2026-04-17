@@ -49,10 +49,11 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
         ];
     }
+
     public function student(): static
     {
-        return $this->static([
-            'role' => 'student'
+        return $this->state([
+            'role' => 'student',
         ]);
     }
 
@@ -67,7 +68,7 @@ class UserFactory extends Factory
     public function mentor(): static
     {
         return $this->state([
-            'role' => 'mentor'
+            'role' => 'mentor',
         ]);
     }
 
