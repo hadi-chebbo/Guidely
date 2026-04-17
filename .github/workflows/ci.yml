@@ -17,7 +17,7 @@ jobs:
         with:
           php-version: 8.3
 
-      - run: composer install
+      - run: composer install --no-interaction --prefer-dist --optimize-autoloader
       - run: cp .env.example .env
       - run: php artisan key:generate
       - run: php artisan test
@@ -34,7 +34,7 @@ jobs:
           node-version: 18
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build Next.js app
         run: npm run build
