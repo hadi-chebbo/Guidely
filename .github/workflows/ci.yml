@@ -1,4 +1,4 @@
-name: Full CI
+name: Laravel CI
 
 on:
   push:
@@ -9,6 +9,10 @@ jobs:
   laravel-test:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: backend
+
     steps:
       - uses: actions/checkout@v3
 
@@ -17,24 +21,13 @@ jobs:
         with:
           php-version: 8.3
 
-      - run: composer install --no-interaction --prefer-dist --optimize-autoloader
-      - run: cp .env.example .env
-      - run: php artisan key:generate
-      - run: php artisan test
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-  frontend-build:
-    runs-on: ubuntu-latest
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
 
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install frontend dependencies
-        run: npm install --legacy-peer-deps
-
-      - name: Build Next.js app
-        run: npm run build
+      - name: Run tests
+        run: php artisan test
