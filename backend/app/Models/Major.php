@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Major extends Model
 {
     use HasFactory;
-     protected $fillable = [
+    #[Fillable([
         'name_en',
         'name_ar',
         'category_id',
@@ -24,7 +25,7 @@ class Major extends Model
         'international_demand',
         'is_featured',
         'cover_image',
-    ];
+    ])]
 
     public function points()
     {
