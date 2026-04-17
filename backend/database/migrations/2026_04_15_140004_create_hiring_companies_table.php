@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('website_url', 500)->nullable();
             $table->boolean('is_local')->default(true);
             $table->timestamps();
-            $table->index('major_id');
             $table->index('is_local');
         });
     }

@@ -2,13 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\MarketTrend;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class MarketTrendFactory extends Factory
 {
-    protected $model = MarketTrend::class;
-
     public function definition(): array
     {
         $sectors = collect([

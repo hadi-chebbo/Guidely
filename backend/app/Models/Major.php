@@ -4,26 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Major extends Model
 {
     use HasFactory;
-
-    public function universities(): BelongsToMany
-    {
-        return $this->belongsToMany(University::class, 'university_majors')
-            ->withPivot([
-                'credit_price_usd',
-                'total_credits',
-                'admission_requirements',
-                'language_of_instruction',
-                'has_scholarship',
-                'campus',
-            ])
-            ->withTimestamps();
-    }
 
     public function universityMajors(): HasMany
     {

@@ -18,7 +18,6 @@ return new class extends Migration
             $table->enum('scope', ['local', 'international', 'both']);
             $table->enum('demand_level', ['low', 'medium', 'high']);
             $table->timestamps();
-            $table->index('major_id');
             $table->index('scope');
             $table->index('demand_level');
         });

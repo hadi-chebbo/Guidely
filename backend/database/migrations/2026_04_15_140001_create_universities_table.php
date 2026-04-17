@@ -22,7 +22,6 @@ return new class extends Migration
             $table->integer('founded_year')->nullable();
             $table->string('accreditation')->nullable();
             $table->timestamps();
-            $table->index('type');
             $table->index('location');
         });
     }

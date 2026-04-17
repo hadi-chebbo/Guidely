@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('campus')->nullable();
             $table->timestamps();
             $table->unique(['university_id', 'major_id']);
-            $table->index(['major_id', 'university_id']);
             $table->index('has_scholarship');
         });
     }

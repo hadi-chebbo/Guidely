@@ -2,13 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\JobOpportunity;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class JobOpportunityFactory extends Factory
 {
-    protected $model = JobOpportunity::class;
-
     public function definition(): array
     {
         return [

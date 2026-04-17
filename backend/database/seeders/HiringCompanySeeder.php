@@ -10,10 +10,6 @@ class HiringCompanySeeder extends Seeder
 {
     public function run(): void
     {
-        if (!DB::getSchemaBuilder()->hasTable('majors')) {
-            return;
-        }
-
         $majorIds = DB::table('majors')->pluck('id');
 
         if ($majorIds->isEmpty()) {

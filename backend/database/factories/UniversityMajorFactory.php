@@ -3,13 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\University;
-use App\Models\UniversityMajor;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class UniversityMajorFactory extends Factory
 {
-    protected $model = UniversityMajor::class;
-
     public function definition(): array
     {
         return [

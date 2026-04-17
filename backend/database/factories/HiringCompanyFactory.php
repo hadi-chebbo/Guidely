@@ -2,14 +2,11 @@
 
 namespace Database\Factories;
 
-use App\Models\HiringCompany;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 class HiringCompanyFactory extends Factory
 {
-    protected $model = HiringCompany::class;
-
     public function definition(): array
     {
         $companyName = fake()->randomElement([

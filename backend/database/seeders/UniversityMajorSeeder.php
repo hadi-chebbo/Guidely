@@ -10,10 +10,6 @@ class UniversityMajorSeeder extends Seeder
 {
     public function run(): void
     {
-        if (!DB::getSchemaBuilder()->hasTable('majors')) {
-            return;
-        }
-
         $universityIds = University::query()->pluck('id');
         $majorIds = DB::table('majors')->pluck('id');
 
