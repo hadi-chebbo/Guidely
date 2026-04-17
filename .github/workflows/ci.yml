@@ -1,0 +1,40 @@
+name: Full CI
+
+on:
+  push:
+    branches: [ "ci-setup", "main" ]
+  pull_request:
+
+jobs:
+  laravel-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+
+      - run: composer install
+      - run: cp .env.example .env
+      - run: php artisan key:generate
+      - run: php artisan test
+
+  frontend-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Build Next.js app
+        run: npm run build
