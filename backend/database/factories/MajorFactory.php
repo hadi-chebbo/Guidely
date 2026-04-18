@@ -16,7 +16,6 @@ class MajorFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    protected $model = Major::class;
 
     public function definition(): array
     {

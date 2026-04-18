@@ -7,10 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Major extends Model
-{
-    use HasFactory;
-    #[Fillable([
+#[Fillable([
         'name_en',
         'name_ar',
         'category_id',
@@ -25,8 +22,10 @@ class Major extends Model
         'international_demand',
         'is_featured',
         'cover_image',
-    ])]
-
+    ])] 
+class Major extends Model
+{
+    use HasFactory;
     public function points()
     {
         return $this->hasMany(MajorPoint::class);
@@ -58,5 +57,8 @@ class Major extends Model
     {
         return $this->hasMany(MarketTrend::class);
 
+    }
+    public function skills(){
+        return $this->hasMany(Skill::class);
     }
 }

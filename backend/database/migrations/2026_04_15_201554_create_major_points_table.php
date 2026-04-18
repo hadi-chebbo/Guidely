@@ -17,7 +17,7 @@ return new class extends Migration
                 ->constrained()
                 ->onDelete('cascade');
             $table->enum('type', ['pro', 'con']);
-            $table->text('content')->nullable();
+            $table->text('content');
             $table->timestamps();
         });
     }
