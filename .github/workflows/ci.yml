@@ -2,7 +2,7 @@ name: Laravel CI
 
 on:
   push:
-    branches: [ "ci-setup", "main" ]
+    branches: [ "ci-setup", "dev" ]
   pull_request:
 
 jobs:
