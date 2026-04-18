@@ -2,9 +2,10 @@ name: Laravel CI
 
 on:
   push:
-    branches: [ "ci-setup", "dev" ]
+    branches: [ "main", "dev" ]
   pull_request:
-
+    branches: [ "main", "dev" ]
+    
 jobs:
   laravel-test:
     runs-on: ubuntu-latest
