@@ -1,6 +1,6 @@
-# Daleel — Features
+# Guidely — Features
 
-> Complete feature specification for the platform. Includes core features, recommended additions, premium tier, and the smart recommendations engine.
+> Complete feature specification. Core features, admin panel, recommended additions, premium tier, and smart recommendations engine.
 
 ---
 
@@ -15,6 +15,7 @@
   - [Skills & Personality Test](#6-skills--personality-test)
   - [Mentorship System](#7-mentorship-system)
   - [Market Research & Career Insights](#8-market-research--career-insights)
+- [Admin Panel](#admin-panel)
 - [Recommended Additional Features](#recommended-additional-features)
 - [Premium Features](#premium-features)
 - [Smart Recommendations Engine](#smart-recommendations-engine)
@@ -42,7 +43,7 @@ The central hub where students browse and discover majors available in Lebanese 
 
 ### 2. Major Detail Page
 
-Each major has a comprehensive detail page — the core content that differentiates Daleel from a directory.
+Each major has a comprehensive detail page — the core content that differentiates Guidely from a directory.
 
 | Section | Description |
 |---|---|
@@ -188,9 +189,135 @@ The scoring engine uses a two-level approach designed for accuracy and scalabili
 
 ---
 
+## Admin Panel
+
+The admin panel is a **dedicated route group** (`/admin/*`) within the same Next.js app. It has its own layout, navigation, and UI components — completely separate from the student-facing experience.
+
+### Admin vs Student: Majors Page Comparison
+
+| Aspect | Student Majors Page (`/majors`) | Admin Majors Page (`/admin/majors`) |
+|---|---|---|
+| **Purpose** | Browse, discover, explore | Create, edit, delete, manage |
+| **Layout** | Visual card grid with images | Dense data table with columns |
+| **Interaction** | Click to view detail page | Inline edit, modal forms, bulk actions |
+| **Search** | Type-ahead with category filters | Full-text search + column sorting + advanced filters |
+| **Data shown** | Name, category, difficulty, demand | All fields including IDs, dates, featured flag, data completeness |
+| **Actions** | View, save to favorites, compare | Create, Edit, Delete, Duplicate, Toggle Featured, Bulk Delete |
+| **Access** | Public (anyone) | Admin role only (middleware protected) |
+| **Design** | Colorful, engaging, card-based | Clean, utilitarian, data-focused |
+
+### Admin Route Structure
+
+```
+/admin                    → Redirects to /admin/majors
+/admin/majors             → Majors data table with CRUD
+/admin/majors/create      → Create new major form (all fields)
+/admin/majors/[id]/edit   → Edit major form (all fields + pros/cons/skills/jobs)
+/admin/universities       → Universities data table with CRUD
+/admin/universities/[id]  → Edit university + manage offered majors
+/admin/faqs               → FAQ management per major
+/admin/test-bank          → Test questions & options with score weights
+/admin/users              → User list, search, role management
+/admin/mentors            → Mentor verification & management
+/admin/analytics          → Platform stats (signups, popular majors, test completion rates)
+```
+
+### Admin Majors CRUD Page — Detailed Specification
+
+The admin majors page (`/admin/majors`) is the primary content management interface. It is where the Data Researcher and admins spend most of their time.
+
+**Data Table Features:**
+- Sortable columns: Name, Category, Difficulty, Local Demand, International Demand, Duration, Featured, Updated At
+- Column filters: category dropdown, difficulty dropdown, demand dropdown, featured toggle
+- Full-text search across name and overview
+- Pagination (25, 50, 100 per page)
+- Row selection with checkboxes for bulk actions
+- Quick toggle for `is_featured` directly in the table row
+- Color-coded demand badges (green = high, yellow = medium, red = low)
+- "Data completeness" indicator — shows which fields are still empty (helps researcher track progress)
+
+**CRUD Operations:**
+
+| Operation | How it works |
+|---|---|
+| **Create** | Click "Add Major" button → opens full-page form at `/admin/majors/create`. All fields: basic info, overview, pros/cons (dynamic add/remove), skills (tag selector), job opportunities (nested form), hiring companies, FAQ, day-in-life, challenges. Category selected from dropdown. Save creates the major and redirects back to table. |
+| **Read** | Table row shows summary. Click row or "View" button → opens detail view showing all data exactly as students will see it (preview mode). |
+| **Update** | Click "Edit" button on row → opens full-page form at `/admin/majors/[id]/edit` pre-filled with all current data. All related data (pros, cons, skills, jobs, FAQs, companies) editable on the same page in accordion sections. Auto-save draft every 30 seconds. |
+| **Delete** | Click "Delete" button → confirmation modal with major name. Soft delete (can be restored). Bulk delete available via checkboxes. |
+| **Duplicate** | Click "Duplicate" → creates a copy with "(Copy)" appended to name. Useful for similar majors. |
+
+**Related Data Management (within major edit page):**
+- **Pros & Cons**: Dynamic list — add/remove items, drag to reorder
+- **Skills**: Tag-style selector from existing skills pool + create new skill inline
+- **Job Opportunities**: Nested form — add/remove job entries with title, salary, scope, demand
+- **Hiring Companies**: Search/add existing or create new with logo upload
+- **FAQs**: Question/answer pairs — add/remove, reorder
+- **Market Trends**: Year-by-year data entry form
+
+### Admin Layout & Navigation
+
+```
+┌─────────────────────────────────────────────────┐
+│  Guidely Admin            [Admin Name] [Logout] │
+├──────────┬──────────────────────────────────────┤
+│          │                                      │
+│ Sidebar  │   Main Content Area                  │
+│          │                                      │
+│ 📊 Majors│   [Data Table / Form / Analytics]    │
+│ 🏫 Unis  │                                      │
+│ ❓ FAQs  │                                      │
+│ 📝 Test  │                                      │
+│ 👥 Users │                                      │
+│ 🧑‍🏫 Mentors│                                      │
+│ 📈 Stats │                                      │
+│          │                                      │
+│──────────│                                      │
+│ [Back to │                                      │
+│  Site →] │                                      │
+└──────────┴──────────────────────────────────────┘
+```
+
+- Sidebar is always visible (collapsible on mobile)
+- "Back to Site" link at bottom opens student-facing site in new tab
+- Admin layout uses a neutral, professional color scheme (gray/blue) distinct from the student-facing design
+- No student-facing navigation (navbar, footer) visible in admin routes
+
+### Admin Access Control
+
+**Backend (Laravel):**
+```
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::apiResource('majors', AdminMajorController::class);
+    Route::apiResource('universities', AdminUniversityController::class);
+    Route::apiResource('faqs', AdminFaqController::class);
+    Route::apiResource('test-questions', AdminTestQuestionController::class);
+    Route::get('users', [AdminUserController::class, 'index']);
+    Route::put('users/{id}/role', [AdminUserController::class, 'updateRole']);
+    Route::get('analytics', [AdminAnalyticsController::class, 'index']);
+});
+```
+
+**Frontend (Next.js middleware):**
+```
+// middleware.ts — protects /admin/* routes
+if (pathname.startsWith('/admin')) {
+  const user = await getSession();
+  if (!user || user.role !== 'admin') {
+    return redirect('/');  // non-admins see nothing
+  }
+}
+```
+
+**Admin creation:**
+- No public registration for admins
+- Initial admin created via database seeder (`php artisan db:seed --class=AdminSeeder`)
+- Additional admins created by existing admins through `/admin/users` → change role to admin
+
+---
+
 ## Recommended Additional Features
 
-These are strategic additions that elevate Daleel beyond a simple information platform. Based on analysis of what Lebanese students actually need and what no existing platform provides.
+These are strategic additions that elevate Guidely beyond a simple information platform. Based on analysis of what Lebanese students actually need and what no existing platform provides.
 
 ### Quick Onboarding Quiz (3 Questions)
 
@@ -227,7 +354,7 @@ Generate polished PDF reports of test results, major comparisons, and personaliz
 
 ### University Application Tracker
 
-After deciding on a major, help with the next step: track application deadlines, required documents, submission status, and important dates per university. Extends Daleel's value beyond the decision phase into the action phase.
+After deciding on a major, help with the next step: track application deadlines, required documents, submission status, and important dates per university. Extends Guidely's value beyond the decision phase into the action phase.
 
 ---
 
@@ -249,7 +376,7 @@ Launch with **3 polished premium features**, not 7 half-built ones.
 
 ## Smart Recommendations Engine
 
-The intelligent backbone of Daleel — goes beyond simple filtering.
+The intelligent backbone of Guidely — goes beyond simple filtering.
 
 ### AI-Based Major Suggestions
 

@@ -15,6 +15,10 @@ frontend/.env.local
 frontend/.env.*.local
 frontend/out/
 frontend/.turbo
+frontend/tsconfig.tsbuildinfo
+
+# ── Claude Code (personal settings — per-developer) ───────────────
+.claude/
 
 # ── Backend (Laravel) ─────────────────────────────────────────────
 backend/vendor/

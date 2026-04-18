@@ -1,4 +1,4 @@
-# Daleel — Database Schema & API Reference
+# Guidely — Database Schema & API Reference
 
 > 22 tables. Full relational schema. All Laravel conventions. utf8mb4 for Arabic.
 
@@ -11,6 +11,8 @@
 - [Table Definitions](#table-definitions)
 - [Key Indexes](#key-indexes)
 - [API Endpoints Reference](#api-endpoints-reference)
+  - [Public & Auth Endpoints](#public--auth-endpoints)
+  - [Admin Endpoints](#admin-endpoints-apiv1admin)
 
 ---
 
@@ -158,8 +160,6 @@ test_questions 1 ──► N test_options
 
 ### `major_pros`
 
-*Advantages of each major*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
@@ -172,7 +172,7 @@ test_questions 1 ──► N test_options
 
 ### `major_cons`
 
-*Disadvantages of each major (identical structure to `major_pros`)*
+*Identical structure to `major_pros`*
 
 | Column | Type | Description |
 |---|---|---|
@@ -185,8 +185,6 @@ test_questions 1 ──► N test_options
 ---
 
 ### `skills`
-
-*Skills linked to majors (many-to-many)*
 
 | Column | Type | Description |
 |---|---|---|
@@ -212,8 +210,6 @@ test_questions 1 ──► N test_options
 
 ### `universities`
 
-*All Lebanese universities (public and private)*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
@@ -221,7 +217,7 @@ test_questions 1 ──► N test_options
 | `name_ar` | VARCHAR(255) NULL | Arabic name |
 | `slug` | VARCHAR(255) UNIQUE | URL slug |
 | `type` | ENUM(`public`, `private`) | Institution type |
-| `location` | VARCHAR(255) | City/region in Lebanon |
+| `location` | VARCHAR(255) | City/region |
 | `website` | VARCHAR(500) NULL | Official website |
 | `logo_url` | VARCHAR(500) NULL | Logo image |
 | `description_en` | TEXT NULL | About (EN) |
@@ -234,26 +230,22 @@ test_questions 1 ──► N test_options
 
 ### `university_majors` *(pivot with extra data)*
 
-*Which universities offer which majors, with program-specific details*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | Own PK for extra data |
 | `university_id` | FK → `universities` | ON DELETE CASCADE |
 | `major_id` | FK → `majors` | ON DELETE CASCADE |
-| `credit_price_usd` | DECIMAL(10,2) NULL | Price per credit (USD) |
+| `credit_price_usd` | DECIMAL(10,2) NULL | Price per credit |
 | `total_credits` | INT NULL | Credits required |
 | `admission_requirements` | TEXT NULL | Entry requirements |
 | `language_of_instruction` | VARCHAR(50) DEFAULT 'English' | Teaching language |
 | `has_scholarship` | BOOLEAN DEFAULT false | Scholarship available |
 | `campus` | VARCHAR(255) NULL | Which campus |
-| | UNIQUE (`university_id`, `major_id`) | One entry per pair |
+| | UNIQUE (`university_id`, `major_id`) | One per pair |
 
 ---
 
 ### `job_opportunities`
-
-*Career paths linked to each major*
 
 | Column | Type | Description |
 |---|---|---|
@@ -271,8 +263,6 @@ test_questions 1 ──► N test_options
 
 ### `hiring_companies`
 
-*Companies hiring graduates from specific majors*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
@@ -289,8 +279,6 @@ test_questions 1 ──► N test_options
 
 ### `faqs`
 
-*Per-major frequently asked questions*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
@@ -306,8 +294,6 @@ test_questions 1 ──► N test_options
 
 ### `user_favorites`
 
-*Bookmarked majors*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
@@ -320,8 +306,6 @@ test_questions 1 ──► N test_options
 
 ### `comparison_history`
 
-*Log of comparisons*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
@@ -332,8 +316,6 @@ test_questions 1 ──► N test_options
 ---
 
 ### `test_questions`
-
-*Personality/skills assessment questions*
 
 | Column | Type | Description |
 |---|---|---|
@@ -350,23 +332,19 @@ test_questions 1 ──► N test_options
 
 ### `test_options`
 
-*Answer options with scoring weights*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
 | `question_id` | FK → `test_questions` | ON DELETE CASCADE |
 | `option_text_en` | VARCHAR(500) | Label (EN) |
 | `option_text_ar` | VARCHAR(500) NULL | Label (AR) |
-| `category_scores` | JSON | Level 1: `{"tech": 3, "business": -1, "health": 2}` |
+| `category_scores` | JSON | Level 1: `{"tech": 3, "business": -1}` |
 | `major_scores` | JSON NULL | Level 2: `{"cs": 2, "se": 3}` |
 | `sort_order` | INT DEFAULT 0 | Display order |
 
 ---
 
 ### `test_results`
-
-*Stored results from each test attempt*
 
 | Column | Type | Description |
 |---|---|---|
@@ -380,8 +358,6 @@ test_questions 1 ──► N test_options
 ---
 
 ### `mentors`
-
-*Extended profile for mentor users*
 
 | Column | Type | Description |
 |---|---|---|
@@ -401,8 +377,6 @@ test_questions 1 ──► N test_options
 
 ### `mentor_sessions`
 
-*Booked mentorship sessions*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
@@ -421,8 +395,6 @@ test_questions 1 ──► N test_options
 
 ### `ai_conversations`
 
-*AI chatbot history (Premium)*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
@@ -436,16 +408,14 @@ test_questions 1 ──► N test_options
 
 ### `market_trends`
 
-*Market research data over time*
-
 | Column | Type | Description |
 |---|---|---|
 | `id` | BIGINT UNSIGNED PK AI | |
 | `major_id` | FK → `majors` | ON DELETE CASCADE |
-| `year` | INT | Data year (2024, 2025) |
+| `year` | INT | Data year |
 | `demand_score` | INT | 1–100 |
 | `avg_starting_salary_usd` | INT NULL | Starting salary |
-| `employment_rate` | DECIMAL(5,2) NULL | % employed within 1 year |
+| `employment_rate` | DECIMAL(5,2) NULL | % employed in 1 year |
 | `top_sectors` | JSON NULL | Sector names |
 | `source` | VARCHAR(255) NULL | Data source |
 | `created_at` / `updated_at` | TIMESTAMPS | |
@@ -453,8 +423,6 @@ test_questions 1 ──► N test_options
 ---
 
 ### `subscriptions`
-
-*Premium subscription records*
 
 | Column | Type | Description |
 |---|---|---|
@@ -481,11 +449,11 @@ CREATE INDEX idx_majors_difficulty ON majors(difficulty_level);
 CREATE INDEX idx_majors_featured ON majors(is_featured);
 CREATE FULLTEXT INDEX idx_majors_search ON majors(name_en, overview_en);
 
--- University-Major lookups (both directions)
+-- University-Major lookups
 CREATE INDEX idx_unimajors_uni ON university_majors(university_id);
 CREATE INDEX idx_unimajors_major ON university_majors(major_id);
 
--- User features (fast per-user queries)
+-- User features
 CREATE INDEX idx_favorites_user ON user_favorites(user_id);
 CREATE INDEX idx_comparisons_user ON comparison_history(user_id);
 CREATE INDEX idx_test_results_user ON test_results(user_id, created_at);
@@ -501,20 +469,22 @@ CREATE INDEX idx_sessions_student ON mentor_sessions(student_id, status);
 
 All endpoints prefixed with `/api/v1/`. Auth via Laravel Sanctum bearer tokens.
 
-### Authentication
+### Public & Auth Endpoints
+
+#### Authentication
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | `POST` | `/auth/register` | Public | Register with optional onboarding data |
-| `POST` | `/auth/login` | Public | Login, returns Sanctum token |
+| `POST` | `/auth/login` | Public | Login, returns Sanctum token + user role |
 | `POST` | `/auth/logout` | Auth | Revoke current token |
 | `POST` | `/auth/forgot-password` | Public | Send reset email |
 | `POST` | `/auth/reset-password` | Public | Reset password with token |
 | `GET` | `/auth/verify-email/{id}/{hash}` | Public | Verify email |
-| `GET` | `/auth/user` | Auth | Get current user profile |
+| `GET` | `/auth/user` | Auth | Get current user profile (includes role) |
 | `PUT` | `/auth/user` | Auth | Update profile |
 
-### Majors
+#### Majors (Public Read-Only)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -522,25 +492,25 @@ All endpoints prefixed with `/api/v1/`. Auth via Laravel Sanctum bearer tokens.
 | `GET` | `/majors/featured` | Public | Featured majors for homepage |
 | `GET` | `/majors/{slug}` | Public | Full detail with all relations |
 | `GET` | `/majors/compare?ids=1,2,3` | Public | Compare up to 3 side by side |
-| `GET` | `/majors/{id}/suggest-third` | Auth | Suggest third major from two similar ones |
-| `GET` | `/majors/{id}/compatibility` | Auth | User's compatibility score (needs test results) |
+| `GET` | `/majors/{id}/suggest-third` | Auth | Suggest third major |
+| `GET` | `/majors/{id}/compatibility` | Auth | User's compatibility score |
 | `GET` | `/majors/{id}/universities` | Public | Universities offering this major |
 
-### Categories
+#### Categories
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | `GET` | `/categories` | Public | All categories with major count |
 | `GET` | `/categories/{slug}` | Public | Category detail with majors |
 
-### Universities
+#### Universities (Public Read-Only)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/universities` | Public | List with filters (type, location, major) |
+| `GET` | `/universities` | Public | List with filters |
 | `GET` | `/universities/{slug}` | Public | Detail with all programs |
 
-### User Features
+#### User Features
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -549,44 +519,108 @@ All endpoints prefixed with `/api/v1/`. Auth via Laravel Sanctum bearer tokens.
 | `DELETE` | `/favorites/{major_id}` | Auth | Remove from favorites |
 | `GET` | `/comparisons/history` | Auth | Past comparisons |
 
-### Personality Test
+#### Personality Test
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | `GET` | `/test/questions` | Public | All active questions + options |
-| `POST` | `/test/submit` | Auth | Submit answers → scoring → ranked results |
+| `POST` | `/test/submit` | Auth | Submit → scoring → ranked results |
 | `GET` | `/test/results` | Auth | Test result history |
-| `GET` | `/test/results/{id}` | Auth | Specific result with details |
+| `GET` | `/test/results/{id}` | Auth | Specific result |
 
-### Mentorship
+#### Mentorship
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/mentors` | Auth | List with filters (type, expertise, rating) |
+| `GET` | `/mentors` | Auth | List with filters |
 | `GET` | `/mentors/{id}` | Auth | Mentor profile |
 | `POST` | `/sessions` | Auth | Book a session |
 | `PUT` | `/sessions/{id}` | Auth | Update (confirm, cancel) |
-| `POST` | `/sessions/{id}/rate` | Auth | Rate + review completed session |
-| `GET` | `/sessions` | Auth | List user's sessions (mentor or student) |
+| `POST` | `/sessions/{id}/rate` | Auth | Rate + review |
+| `GET` | `/sessions` | Auth | List user's sessions |
 
-### AI Chatbot (Premium)
+#### AI Chatbot (Premium)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `POST` | `/ai/conversations` | Premium | Start new conversation |
+| `POST` | `/ai/conversations` | Premium | Start conversation |
 | `POST` | `/ai/conversations/{id}/messages` | Premium | Send message (3/day free) |
-| `GET` | `/ai/conversations` | Premium | Conversation history |
+| `GET` | `/ai/conversations` | Premium | History |
 
-### Admin
+---
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `POST/PUT/DELETE` | `/admin/majors` | Admin | CRUD majors + related data |
-| `POST/PUT/DELETE` | `/admin/universities` | Admin | CRUD universities |
-| `POST/PUT/DELETE` | `/admin/test-questions` | Admin | Manage test bank |
-| `GET` | `/admin/users` | Admin | List and search users |
-| `PUT` | `/admin/users/{id}/role` | Admin | Change user role |
-| `GET` | `/admin/analytics` | Admin | Platform stats (signups, popular majors, test completion) |
+### Admin Endpoints (`/api/v1/admin/*`)
+
+All admin endpoints require `auth:sanctum` + `role:admin` middleware. Non-admin users receive `403 Forbidden`.
+
+#### Admin — Majors CRUD
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/majors` | List all majors with sorting, filtering, pagination. Includes data completeness indicator. |
+| `POST` | `/admin/majors` | Create major with all fields + nested pros, cons, skills, jobs, FAQs, companies |
+| `GET` | `/admin/majors/{id}` | Get major with all nested data for edit form |
+| `PUT` | `/admin/majors/{id}` | Update major + all nested data |
+| `DELETE` | `/admin/majors/{id}` | Soft delete major |
+| `POST` | `/admin/majors/{id}/duplicate` | Duplicate major with "(Copy)" suffix |
+| `PUT` | `/admin/majors/{id}/featured` | Toggle featured status |
+| `POST` | `/admin/majors/bulk-delete` | Delete multiple majors by IDs |
+
+#### Admin — Universities CRUD
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/universities` | List with sorting, filtering, pagination |
+| `POST` | `/admin/universities` | Create university |
+| `GET` | `/admin/universities/{id}` | Get with all offered majors |
+| `PUT` | `/admin/universities/{id}` | Update university |
+| `DELETE` | `/admin/universities/{id}` | Soft delete |
+| `POST` | `/admin/universities/{id}/majors` | Add a major offering (with credit price, requirements) |
+| `PUT` | `/admin/universities/{id}/majors/{majorId}` | Update offering details |
+| `DELETE` | `/admin/universities/{id}/majors/{majorId}` | Remove offering |
+
+#### Admin — FAQs
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/faqs?major_id=X` | List FAQs for a major |
+| `POST` | `/admin/faqs` | Create FAQ (requires major_id) |
+| `PUT` | `/admin/faqs/{id}` | Update FAQ |
+| `DELETE` | `/admin/faqs/{id}` | Delete FAQ |
+| `PUT` | `/admin/faqs/reorder` | Bulk reorder FAQs |
+
+#### Admin — Test Bank
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/test-questions` | List all questions with options |
+| `POST` | `/admin/test-questions` | Create question with options + score weights |
+| `PUT` | `/admin/test-questions/{id}` | Update question + options |
+| `DELETE` | `/admin/test-questions/{id}` | Delete question |
+| `PUT` | `/admin/test-questions/{id}/toggle` | Activate/deactivate |
+| `POST` | `/admin/test-questions/reorder` | Reorder questions |
+| `POST` | `/admin/test-questions/preview-scoring` | Submit sample answers → see results (for testing) |
+
+#### Admin — Users
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/users` | List with search, filter by role, pagination |
+| `GET` | `/admin/users/{id}` | User detail with activity |
+| `PUT` | `/admin/users/{id}/role` | Change role (student/mentor/admin) |
+
+#### Admin — Mentors
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/mentors` | List mentors (pending verification, verified, all) |
+| `PUT` | `/admin/mentors/{id}/verify` | Verify/reject mentor |
+
+#### Admin — Analytics
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/admin/analytics` | Platform stats: total users, signups/day, popular majors, test completions, most compared, most favorited |
 
 ---
 
