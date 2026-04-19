@@ -18,8 +18,7 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
-     *
+     * Define the model's default state.                                        *
      * @return array<string, mixed>
      */
     public function definition(): array
@@ -48,6 +47,7 @@ class UserFactory extends Factory
                 ],
             'remember_token' => Str::random(10),
         ];
+        
     }
 
     public function student(): static
