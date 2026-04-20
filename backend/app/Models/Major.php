@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[Fillable([
         'name_en',
@@ -59,6 +60,6 @@ class Major extends Model
 
     }
     public function skills(){
-        return $this->hasMany(Skill::class);
+        return $this->belongsToMany(Skill::class);
     }
 }

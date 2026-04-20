@@ -16,6 +16,7 @@ class MajorSeeder extends Seeder
     {
         $majors = [
             [
+                'category_id' => 1,
                 'name_en' => 'Computer Science',
                 'name_ar' => 'علوم الحاسوب',
                 'overview' => 'Study of computers, algorithms, and software development.',
@@ -29,6 +30,7 @@ class MajorSeeder extends Seeder
                 'is_featured' => true,
             ],
             [
+                'category_id' => 2,
                 'name_en' => 'Business Administration',
                 'name_ar' => 'إدارة الأعمال',
                 'overview' => 'Management of business operations and organizations.',
@@ -42,6 +44,7 @@ class MajorSeeder extends Seeder
                 'is_featured' => false,
             ],
             [
+                'category_id' => 1,
                 'name_en' => 'Cyber Security',
                 'name_ar' => 'الأمن السيبراني',
                 'overview' => 'Protection of systems and networks from cyber attacks.',
@@ -58,6 +61,7 @@ class MajorSeeder extends Seeder
 
         foreach ($majors as $major) {
             Major::create([
+                'category_id' => $major['category_id'],
                 'name_en' => $major['name_en'],
                 'name_ar' => $major['name_ar'],
                 'slug' => Str::slug($major['name_en']),
