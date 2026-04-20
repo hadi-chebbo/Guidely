@@ -2,13 +2,14 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
 it('returns sanctum token and user data including role for valid credentials', function () {
     $user = User::factory()->create([
         'email' => 'student@example.com',
-        'password' => 'password123',
+        'password' => Hash::make('password123'),
         'role' => 'student',
     ]);
 
@@ -36,7 +37,7 @@ it('returns sanctum token and user data including role for valid credentials', f
 it('returns unauthorized for invalid credentials', function () {
     User::factory()->create([
         'email' => 'student@example.com',
-        'password' => 'password123',
+        'password' => Hash::make('password123'),
     ]);
 
     $this->postJson('/api/v1/auth/login', [
