@@ -1,5 +1,7 @@
 # Guidely — Database Schema & API Reference
 
+> **This is the target schema (aspirational).** Current backend migrations are English-first — Arabic and French fields will be added incrementally. If a field here doesn't exist in the actual migration, it hasn't been implemented yet.
+
 > 22 tables. Full relational schema. All Laravel conventions. utf8mb4 for Arabic.
 
 ---

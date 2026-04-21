@@ -8,6 +8,10 @@ Thumbs.db
 *.suo
 *.user
 
+# ── Node (root-level) ─────────────────────────────────────────────
+node_modules/
+package-lock.json
+
 # ── Frontend (Next.js) ────────────────────────────────────────────
 frontend/node_modules/
 frontend/.next/
