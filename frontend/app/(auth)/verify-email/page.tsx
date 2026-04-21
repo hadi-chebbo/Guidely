@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { cn }       from "@/lib/utils";
+import { useAuth }  from "@/app/contexts/AuthContext";
 import Button       from "@/components/ui/Button";
 import FormMessage  from "@/components/ui/FormMessage";
 
@@ -42,7 +43,7 @@ function VerifiedPanel() {
         </p>
       </div>
 
-      {/* What's next */}
+      {/* What''s next */}
       <div className="rounded-2xl bg-brand-50 border border-brand-100 p-4 sm:p-5 text-left space-y-3">
         <p className="text-xs font-semibold text-brand-700 uppercase tracking-wide">
           What&apos;s next
@@ -109,26 +110,92 @@ function ExpiredPanel({ onResend, isResending }: { onResend: () => void; isResen
   );
 }
 
+/* ── Pending panel ───────────────────────────────────────────── */
+function PendingPanel({ onVerify, isVerifying, userEmail }: { onVerify: () => void; isVerifying: boolean; userEmail: string }) {
+  return (
+    <div className="text-center space-y-6 animate-fade-in py-4">
+      <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-brand-50 ring-8 ring-brand-50/60">
+        <Inbox className="w-10 h-10 text-brand-600" />
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-gray-900 font-heading">
+          Verify your email
+        </h2>
+        <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
+          We''ve sent a verification link to{" "}
+          <strong className="text-gray-800 break-all">{userEmail}</strong>
+        </p>
+      </div>
+
+      <div className="rounded-2xl bg-brand-50 border border-brand-100 p-5 text-left space-y-3">
+        <p className="text-xs font-semibold text-brand-700 uppercase tracking-wide">
+          What to do next
+        </p>
+        {[
+          "Check your email inbox",
+          "Click the verification link",
+          "Return here to continue",
+        ].map((step, i) => (
+          <div key={step} className="flex items-center gap-3">
+            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
+              {i + 1}
+            </span>
+            <span className="text-sm text-gray-700">{step}</span>
+          </div>
+        ))}
+      </div>
+
+      <Button
+        type="button"
+        isLoading={isVerifying}
+        onClick={onVerify}
+        rightIcon={<ArrowRight className="w-4 h-4" />}
+      >
+        {isVerifying ? "Verifying…" : "I''ve verified my email"}
+      </Button>
+
+      <Link
+        href="/login"
+        className="flex items-center justify-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Back to sign in
+      </Link>
+    </div>
+  );
+}
+
 /* ── Main page ───────────────────────────────────────────────── */
 export default function VerifyEmailPage() {
-  /* In production, the page would read ?token=xxx from the URL and
-     call the API. Here we simulate the three states for demo. */
   const [pageState,   setPageState]   = useState<PageState>("pending");
   const [isResending, setIsResending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [resendMsg,   setResendMsg]   = useState<string | null>(null);
   const [resendType,  setResendType]  = useState<"success" | "error">("success");
+  const { verifyEmail, resendVerificationEmail } = useAuth();
 
   /* Demo email — in production comes from the URL / session */
   const userEmail = "jana@example.com";
+  const demoToken = "demo-verification-token";
+
+  const handleVerify = async () => {
+    setIsVerifying(true);
+    try {
+      await verifyEmail(demoToken);
+      setPageState("verified");
+    } catch (error) {
+      setPageState("expired");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleResend = async () => {
     setIsResending(true);
     setResendMsg(null);
     try {
-      /* TODO: replace with real API call
-         await api.post("/auth/resend-verification", { email: userEmail })
-      */
-      await new Promise((r) => setTimeout(r, 1500));
+      await resendVerificationEmail(userEmail);
       setResendType("success");
       setResendMsg("A new verification email has been sent!");
     } catch {
@@ -148,118 +215,51 @@ export default function VerifyEmailPage() {
           type="button"
           onClick={() => { setPageState(s); setResendMsg(null); }}
           className={cn(
-            "flex-1 rounded-lg py-1.5 text-xs font-medium transition-all cursor-pointer",
+            "flex-1 rounded-lg py-1.5 px-2 text-xs font-medium transition-all",
             pageState === s
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
+              ? "bg-white text-brand-600 shadow-sm"
+              : "bg-transparent text-gray-600 hover:text-gray-900"
           )}
         >
-          {s}
+          {s.charAt(0).toUpperCase() + s.slice(1)}
         </button>
       ))}
     </div>
   );
 
-  /* ── Verified ── */
-  if (pageState === "verified") return <VerifiedPanel />;
-
-  /* ── Expired ── */
-  if (pageState === "expired") {
-    return (
-      <>
-        <DemoSwitcher />
-        {resendMsg && (
-          <FormMessage type={resendType} message={resendMsg} className="mb-4" />
-        )}
-        <ExpiredPanel onResend={handleResend} isResending={isResending} />
-      </>
-    );
-  }
-
-  /* ── Pending (default) ── */
   return (
-    <>
+    <div className="space-y-8">
       <DemoSwitcher />
 
-      {/* Icon */}
-      <div className="mb-4 sm:mb-6 text-center">
-        <div className="relative inline-flex">
-          <div className="h-20 w-20 rounded-full bg-brand-100 ring-8 ring-brand-50 flex items-center justify-center animate-pulse-soft">
-            <Inbox className="w-9 h-9 text-brand-600" />
-          </div>
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-400 ring-2 ring-white">
-            <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
-          </span>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="mb-5 sm:mb-7 text-center space-y-2">
-        <h1 className="text-2xl font-bold text-gray-900 font-heading">
-          Verify your email
-        </h1>
-        <p className="text-sm text-gray-500 leading-relaxed">
-          We sent a verification link to{" "}
-          <strong className="text-gray-800">{userEmail}</strong>
-        </p>
-      </div>
-
-      {/* Resend message */}
-      {resendMsg && (
-        <FormMessage type={resendType} message={resendMsg} className="mb-5" />
+      {pageState === "pending" && (
+        <>
+          {resendMsg && (
+            <FormMessage
+              type={resendType}
+              message={resendMsg}
+              className="mb-6"
+            />
+          )}
+          <PendingPanel
+            onVerify={handleVerify}
+            isVerifying={isVerifying}
+            userEmail={userEmail}
+          />
+          <button
+            onClick={handleResend}
+            disabled={isResending}
+            className="text-sm text-brand-600 hover:text-brand-700 disabled:opacity-50"
+          >
+            {isResending ? "Resending…" : "Didn''t receive an email? Resend"}
+          </button>
+        </>
       )}
 
-      {/* Info card */}
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5 space-y-3 mb-4 sm:mb-6">
-        <div className="flex items-start gap-3">
-          <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-gray-600 leading-relaxed">
-            Click the link in the email to activate your account. If you
-            don&apos;t see it, check your <strong>spam or junk folder</strong>.
-          </div>
-        </div>
+      {pageState === "verified" && <VerifiedPanel />}
 
-        <div className="h-px bg-gray-200" />
-
-        {/* Steps */}
-        {[
-          { step: "1", text: "Open the email from Guidely" },
-          { step: "2", text: 'Click "Verify my email"' },
-          { step: "3", text: "Start exploring majors!" },
-        ].map(({ step, text }) => (
-          <div key={step} className="flex items-center gap-3">
-            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
-              {step}
-            </span>
-            <span className="text-sm text-gray-600">{text}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Resend button */}
-      <Button
-        type="button"
-        variant="ghost"
-        isLoading={isResending}
-        onClick={handleResend}
-        leftIcon={<RefreshCw className={`w-4 h-4 ${isResending ? "animate-spin" : ""}`} />}
-        className="mb-3"
-      >
-        {isResending ? "Sending…" : "Resend verification email"}
-      </Button>
-
-      <p className="text-center text-xs text-gray-400">
-        The link expires in{" "}
-        <strong className="text-gray-600">24 hours</strong>
-      </p>
-
-      <Link
-        href="/login"
-        className="mt-5 flex items-center justify-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        Back to sign in
-      </Link>
-    </>
+      {pageState === "expired" && (
+        <ExpiredPanel onResend={handleResend} isResending={isResending} />
+      )}
+    </div>
   );
 }

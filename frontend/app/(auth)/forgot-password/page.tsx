@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -17,6 +17,7 @@ import {
   forgotPasswordSchema,
   type ForgotPasswordFormData,
 } from "@/lib/validations/auth";
+import { useAuth } from "@/app/contexts/AuthContext";
 import Input       from "@/components/ui/Input";
 import Button      from "@/components/ui/Button";
 import FormMessage from "@/components/ui/FormMessage";
@@ -104,32 +105,24 @@ export default function ForgotPasswordPage() {
   const [isResending, setIsResending] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [resendMsg,   setResendMsg]   = useState<string | null>(null);
+  const { forgotPassword } = useAuth();
 
   const {
     register,
     handleSubmit,
-    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
   });
 
-  const sendResetEmail = async (email: string) => {
-    /* TODO: replace with real API call
-       await api.post("/auth/forgot-password", { email })
-    */
-    await new Promise((r) => setTimeout(r, 1400));
-    return email;
-  };
-
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setServerError(null);
     try {
-      await sendResetEmail(data.email);
+      await forgotPassword(data.email);
       setSentTo(data.email);
       setEmailSent(true);
     } catch {
-      setServerError("We couldn't find an account with that email address.");
+      setServerError("We couldn''t find an account with that email address.");
     }
   };
 
@@ -137,7 +130,7 @@ export default function ForgotPasswordPage() {
     setIsResending(true);
     setResendMsg(null);
     try {
-      await sendResetEmail(sentTo);
+      await forgotPassword(sentTo);
       setResendMsg("A new email has been sent!");
     } catch {
       setResendMsg("Failed to resend. Please try again.");
@@ -180,7 +173,7 @@ export default function ForgotPasswordPage() {
           Forgot password?
         </h1>
         <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-          No worries — enter your email and we&apos;ll send you a reset link
+          No worries — enter your email and well send you a reset link
           within seconds.
         </p>
       </div>
