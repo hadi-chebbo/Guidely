@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login'])->name('api.v1.auth.login');
     Route::post('/register', [AuthController::class, 'register'])->name('api.v1.auth.register');
-    Route::get('/user', function (Request $request) {
-        return new UserResource($request->user());
-    })->middleware('auth:sanctum');
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/user', function (Request $request) {
+            return new UserResource($request->user());
+        });
+    });
 });
