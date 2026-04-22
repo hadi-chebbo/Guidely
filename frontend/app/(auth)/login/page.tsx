@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Mail, Lock, ArrowRight } from "lucide-react";
-import type { Metadata } from "next";
 
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import { useAuth } from "@/app/contexts/AuthContext";
 import Input        from "@/components/ui/Input";
 import Button       from "@/components/ui/Button";
 import FormMessage  from "@/components/ui/FormMessage";
@@ -15,6 +16,8 @@ import FormMessage  from "@/components/ui/FormMessage";
 export default function LoginPage() {
   const [serverError,   setServerError]   = useState<string | null>(null);
   const [serverSuccess, setServerSuccess] = useState<string | null>(null);
+  const { login } = useAuth();
+  const router = useRouter();
 
   const {
     register,
@@ -30,13 +33,12 @@ export default function LoginPage() {
     setServerSuccess(null);
 
     try {
-      /* TODO: replace with real API call
-         await api.post("/auth/login", data)
-         router.push("/dashboard")
-      */
-      await new Promise((r) => setTimeout(r, 1500)); // simulate
-      console.log("Login payload:", data);
+      await login(data.email, data.password, data.rememberMe);
       setServerSuccess("Logged in successfully! Redirecting…");
+      // Redirect based on role or to intended page
+      const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+      const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+      router.push(safeRedirect);
     } catch {
       setServerError("Invalid email or password. Please try again.");
     }

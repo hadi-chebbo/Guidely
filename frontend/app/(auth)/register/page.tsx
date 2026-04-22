@@ -10,7 +10,6 @@ import {
   Lock,
   School,
   GraduationCap,
-  Globe,
   Check,
   ArrowRight,
   ArrowLeft,
@@ -20,13 +19,12 @@ import {
 import {
   registerStep1Schema,
   registerStep2Schema,
-  registerStep3Schema,
   type RegisterStep1Data,
   type RegisterStep2Data,
-  type RegisterStep3Data,
   INTEREST_CATEGORIES,
   GRADE_OPTIONS,
 } from "@/lib/validations/auth";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { cn }        from "@/lib/utils";
 import Input         from "@/components/ui/Input";
 import Button        from "@/components/ui/Button";
@@ -155,13 +153,23 @@ function Step1({
   return (
     <form onSubmit={handleSubmit(onNext)} noValidate className="space-y-5">
       <Input
-        label="Full name"
+        label="First name"
         type="text"
-        placeholder="Jana Khalil"
-        autoComplete="name"
+        placeholder="Jana"
+        autoComplete="given-name"
         leftIcon={<User className="w-4 h-4" />}
-        error={errors.name?.message}
-        {...register("name")}
+        error={errors.firstName?.message}
+        {...register("firstName")}
+      />
+
+      <Input
+        label="Last name"
+        type="text"
+        placeholder="Khalil"
+        autoComplete="family-name"
+        leftIcon={<User className="w-4 h-4" />}
+        error={errors.lastName?.message}
+        {...register("lastName")}
       />
 
       <Input
@@ -444,6 +452,7 @@ export default function RegisterPage() {
   const [isSubmitting,setIsSubmitting]= useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success,     setSuccess]     = useState(false);
+  const { register } = useAuth();
 
   const headings = [
     { title: "Create your account",     subtitle: "Start your guided academic journey today" },
@@ -467,14 +476,20 @@ export default function RegisterPage() {
     setServerError(null);
 
     try {
-      /* TODO: replace with real API call
-         await api.post("/auth/register", finalData)
-      */
-      await new Promise((r) => setTimeout(r, 1800));
-      console.log("Register payload:", finalData);
+      await register({
+        firstName: finalData.firstName,
+        lastName: finalData.lastName,
+        email: finalData.email,
+        password: finalData.password,
+        school: finalData.school,
+        grade: finalData.grade,
+        preferredLanguage: finalData.preferredLanguage,
+      });
       setSuccess(true);
+      // Optionally redirect to verify email or login
+      // router.push('/verify-email');
     } catch {
-      setServerError("Something went wrong. Please try again.");
+      setServerError("Registration failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

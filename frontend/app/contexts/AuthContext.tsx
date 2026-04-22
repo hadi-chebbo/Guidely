@@ -1,0 +1,152 @@
+﻿"use client";
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: 'student' | 'mentor' | 'admin';
+}
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+}
+
+interface AuthContextType extends AuthState {
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  logout: () => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
+  checkAuth: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<void>;
+}
+
+interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  school?: string;
+  grade?: string;
+  preferredLanguage?: string;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    loading: true,
+  });
+
+  const login = async (email: string, password: string, rememberMe = false) => {
+    // TI-123: replace with real Sanctum login API call
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+
+    // Mock validation: accept any email/password for demo
+    if (!email || !password) {
+      throw new Error('Invalid credentials');
+    }
+
+    const mockUser = {
+      id: 1,
+      name: 'Demo User',
+      email: email,
+      role: 'student' as const,
+    };
+    const mockToken = 'mock-jwt-token-' + Date.now();
+
+    // With Sanctum: store only in cookies, no localStorage
+    document.cookie = `auth_token=${mockToken}; path=/; max-age=${rememberMe ? 60*60*24*30 : ''}`;
+    document.cookie = `user_role=${mockUser.role}; path=/; max-age=${rememberMe ? 60*60*24*30 : ''}`;
+    setState({ user: mockUser, isAuthenticated: true, loading: false });
+  };
+
+  const logout = async () => {
+    // TI-124: replace with real Sanctum logout API call
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    setState({ user: null, isAuthenticated: false, loading: false });
+  };
+
+  const register = async (data: RegisterData) => {
+    // TI-125: replace with real Sanctum register API call
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
+
+    // Mock validation: accept any data
+    if (!data.firstName || !data.lastName || !data.email || !data.password) {
+      throw new Error('Registration failed: Missing required fields');
+    }
+
+    const fullName = `${data.firstName} ${data.lastName}`.trim();
+    console.log('Mock registration successful:', { ...data, name: fullName });
+    // In real API, this might return user data or require email verification
+  };
+
+  const checkAuth = async () => {
+    // TI-126: replace with real Sanctum /api/user call to get authenticated user
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+
+    // For mock, assume not authenticated on load
+    setState({ user: null, isAuthenticated: false, loading: false });
+  };
+
+  const forgotPassword = async (email: string) => {
+    // TI-127: replace with real password reset API call
+    await new Promise(resolve => setTimeout(resolve, 1400)); // Simulate API delay
+
+    if (!email) {
+      throw new Error('Email is required');
+    }
+
+    // Mock: send reset email
+    console.log('Mock password reset email sent to:', email);
+  };
+
+  const verifyEmail = async (token: string) => {
+    // TI-128: replace with real email verification API call
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+
+    if (!token) {
+      throw new Error('Invalid verification token');
+    }
+
+    // Mock: verify email
+    console.log('Mock email verified with token:', token);
+  };
+
+  const resendVerificationEmail = async (email: string) => {
+    // TI-129: replace with real resend verification API call
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
+
+    if (!email) {
+      throw new Error('Email is required');
+    }
+
+    // Mock: resend verification email
+    console.log('Mock verification email resent to:', email);
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ ...state, login, logout, register, checkAuth, forgotPassword, verifyEmail, resendVerificationEmail }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
