@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -6,32 +6,19 @@ const api = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  withCredentials: false,
+  withCredentials: true,
 });
 
-/* ── Request: attach Bearer token ──────────────────────────────── */
-api.interceptors.request.use((config) => {
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("guidely_token")
-      : null;
+/* -- Request: no need for Bearer token with Sanctum cookies -- */
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
-
-/* ── Response: normalise errors ────────────────────────────────── */
+/* -- Response: normalise errors ---------------------------------- */
 api.interceptors.response.use(
-  (response) => response,
+  (response: AxiosResponse) => response,
   (error: AxiosError<{ message?: string }>) => {
     const status = error.response?.status;
 
     if (status === 401) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("guidely_token");
         window.location.href = "/login";
       }
     }

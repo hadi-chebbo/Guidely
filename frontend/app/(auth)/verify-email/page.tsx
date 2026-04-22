@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Mail,
   CheckCircle2,
   ArrowRight,
   RefreshCw,
@@ -123,7 +122,7 @@ function PendingPanel({ onVerify, isVerifying, userEmail }: { onVerify: () => vo
           Verify your email
         </h2>
         <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-          We''ve sent a verification link to{" "}
+          We&apos;ve sent a verification link to{" "}
           <strong className="text-gray-800 break-all">{userEmail}</strong>
         </p>
       </div>
@@ -184,7 +183,7 @@ export default function VerifyEmailPage() {
     try {
       await verifyEmail(demoToken);
       setPageState("verified");
-    } catch (error) {
+    } catch {
       setPageState("expired");
     } finally {
       setIsVerifying(false);

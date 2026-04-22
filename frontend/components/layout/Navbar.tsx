@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { GraduationCap, Menu, X, LogOut, User, Shield } from "lucide-react";
+import { GraduationCap, Menu, X, LogOut, Shield } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/app/contexts/AuthContext";

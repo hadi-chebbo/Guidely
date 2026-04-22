@@ -76,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Mock logout - in future, replace with real API call
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
 
-    localStorage.removeItem('auth_token');
     document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     setState({ user: null, isAuthenticated: false, loading: false });
@@ -96,23 +95,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      setState({ user: null, isAuthenticated: false, loading: false });
-      return;
-    }
-
-    // Mock auth check - in future, replace with real API call
+    // Mock auth check - in future, replace with real API call to /api/user
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
 
-    // Mock: if token exists, assume valid and return mock user
-    const mockUser = {
-      id: 1,
-      name: 'Demo User',
-      email: 'demo@example.com',
-      role: 'student' as const,
-    };
-    setState({ user: mockUser, isAuthenticated: true, loading: false });
+    // For mock, assume not authenticated on load
+    setState({ user: null, isAuthenticated: false, loading: false });
   };
 
   const forgotPassword = async (email: string) => {
