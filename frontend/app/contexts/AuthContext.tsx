@@ -26,7 +26,8 @@ interface AuthContextType extends AuthState {
 }
 
 interface RegisterData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   school?: string;
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const login = async (email: string, password: string, rememberMe = false) => {
-    // Mock login - in future, replace with real API call
+    // TI-123: replace with real Sanctum login API call
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
 
     // Mock validation: accept any email/password for demo
@@ -66,14 +67,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     const mockToken = 'mock-jwt-token-' + Date.now();
 
-    localStorage.setItem('auth_token', mockToken);
+    // With Sanctum: store only in cookies, no localStorage
     document.cookie = `auth_token=${mockToken}; path=/; max-age=${rememberMe ? 60*60*24*30 : ''}`;
     document.cookie = `user_role=${mockUser.role}; path=/; max-age=${rememberMe ? 60*60*24*30 : ''}`;
     setState({ user: mockUser, isAuthenticated: true, loading: false });
   };
 
   const logout = async () => {
-    // Mock logout - in future, replace with real API call
+    // TI-124: replace with real Sanctum logout API call
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
 
     document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
@@ -82,20 +83,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (data: RegisterData) => {
-    // Mock register - in future, replace with real API call
+    // TI-125: replace with real Sanctum register API call
     await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
 
     // Mock validation: accept any data
-    if (!data.name || !data.email || !data.password) {
-      throw new Error('Registration failed');
+    if (!data.firstName || !data.lastName || !data.email || !data.password) {
+      throw new Error('Registration failed: Missing required fields');
     }
 
-    console.log('Mock registration successful:', data);
+    const fullName = `${data.firstName} ${data.lastName}`.trim();
+    console.log('Mock registration successful:', { ...data, name: fullName });
     // In real API, this might return user data or require email verification
   };
 
   const checkAuth = async () => {
-    // Mock auth check - in future, replace with real API call to /api/user
+    // TI-126: replace with real Sanctum /api/user call to get authenticated user
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
 
     // For mock, assume not authenticated on load
@@ -103,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const forgotPassword = async (email: string) => {
-    // Mock forgot password - in future, replace with real API call
+    // TI-127: replace with real password reset API call
     await new Promise(resolve => setTimeout(resolve, 1400)); // Simulate API delay
 
     if (!email) {
@@ -115,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const verifyEmail = async (token: string) => {
-    // Mock email verification - in future, replace with real API call
+    // TI-128: replace with real email verification API call
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
 
     if (!token) {
@@ -127,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resendVerificationEmail = async (email: string) => {
-    // Mock resend verification - in future, replace with real API call
+    // TI-129: replace with real resend verification API call
     await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
 
     if (!email) {

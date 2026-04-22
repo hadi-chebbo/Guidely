@@ -36,8 +36,9 @@ export default function LoginPage() {
       await login(data.email, data.password, data.rememberMe);
       setServerSuccess("Logged in successfully! Redirecting…");
       // Redirect based on role or to intended page
-      const redirect = new URLSearchParams(window.location.search).get('redirect') || '/';
-      router.push(redirect);
+      const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+      const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+      router.push(safeRedirect);
     } catch {
       setServerError("Invalid email or password. Please try again.");
     }

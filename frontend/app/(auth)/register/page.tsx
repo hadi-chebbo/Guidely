@@ -153,13 +153,23 @@ function Step1({
   return (
     <form onSubmit={handleSubmit(onNext)} noValidate className="space-y-5">
       <Input
-        label="Full name"
+        label="First name"
         type="text"
-        placeholder="Jana Khalil"
-        autoComplete="name"
+        placeholder="Jana"
+        autoComplete="given-name"
         leftIcon={<User className="w-4 h-4" />}
-        error={errors.name?.message}
-        {...register("name")}
+        error={errors.firstName?.message}
+        {...register("firstName")}
+      />
+
+      <Input
+        label="Last name"
+        type="text"
+        placeholder="Khalil"
+        autoComplete="family-name"
+        leftIcon={<User className="w-4 h-4" />}
+        error={errors.lastName?.message}
+        {...register("lastName")}
       />
 
       <Input
@@ -467,7 +477,8 @@ export default function RegisterPage() {
 
     try {
       await register({
-        name: finalData.name,
+        firstName: finalData.firstName,
+        lastName: finalData.lastName,
         email: finalData.email,
         password: finalData.password,
         school: finalData.school,
