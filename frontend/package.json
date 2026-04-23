@@ -11,14 +11,15 @@
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@tanstack/react-query": "^5.99.0",
+    "axios": "^1.15.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.447.0",
     "next": "14.2.15",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.53.0",
     "tailwind-merge": "^2.5.3",
-    "axios": "^1.15.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
