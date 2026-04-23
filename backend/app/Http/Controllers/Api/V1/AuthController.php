@@ -7,12 +7,14 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Traits\ApiResponseTrait;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-
+    use ApiResponseTrait;
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
@@ -20,24 +22,26 @@ class AuthController extends Controller
         $user = User::query()->where('email', $credentials['email'])->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-            return response()->json([
-                'message' => 'Invalid credentials.',
-            ], 401);
+            return $this->error('Invalid credentials.', 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'token' => $token,
-            'token_type' => 'Bearer',
-            'user' => new UserResource($user),
-        ]);
+        return response()->json(
+            'Logged in successfully',
+            [
+                'token' => $token,
+                'token_type' => 'Bearer',
+                'user' => new UserResource($user),
+            ],
+        );
     }
 
-     public function register(RegisterRequest $request): JsonResponse
-    {
-        $data = $request->validated();
+public function register(RegisterRequest $request): JsonResponse
+{
+    $data = $request->validated();
 
+    try {
         $user = User::create([
             'name'               => $data['name'],
             'email'              => $data['email'],
@@ -51,13 +55,21 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User registered successfully',
-            'data'    => [
+        return $this->success(
+            'User registered successfully',
+            [
                 'user'  => new UserResource($user),
                 'token' => $token,
             ],
-        ], 201);
+            201
+        );
+
+    } catch (\Exception $e) {
+        return $this->error(
+            'Registration failed. Please try again.',
+            500
+        );
     }
+}
+    
 }
