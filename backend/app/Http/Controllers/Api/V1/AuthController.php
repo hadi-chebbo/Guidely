@@ -10,9 +10,11 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use \Illuminate\Http\Request;
+use App\Traits\ApiResponseTrait;
+
 class AuthController extends Controller
 {
-
+    use ApiResponseTrait;
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
@@ -64,12 +66,12 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
+        if (!$user || !$user->currentAccessToken()) {
+            return $this->error('No authenticated user or token found', 401);
+        }
 
         $user->currentAccessToken()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully',
-        ]);
+        return $this->success('Logged out successfully.');
     }
 }
