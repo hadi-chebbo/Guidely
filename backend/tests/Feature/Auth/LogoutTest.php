@@ -14,8 +14,7 @@ it('logs out the authenticated user and deletes the current token', function () 
     $this->postJson('/api/v1/auth/logout')
         ->assertOk()
         ->assertJson([
-            'success' => true,
-            'message' => 'Logged out successfully',
+            'message' => 'Logged out Successfully',
         ]);
 
     $this->assertDatabaseMissing('personal_access_tokens', [

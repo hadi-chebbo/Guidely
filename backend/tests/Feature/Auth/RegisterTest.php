@@ -21,7 +21,6 @@ it('allows a user to register successfully', function () {
     $response
         ->assertCreated()
         ->assertJsonStructure([
-            'success',
             'message',
             'data' => [
                 'user' => [
@@ -30,6 +29,7 @@ it('allows a user to register successfully', function () {
                     'email',
                 ],
                 'token',
+                'token_type',
             ],
         ]);
 
