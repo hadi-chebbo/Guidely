@@ -47,6 +47,7 @@ const buildMockUser = (email: string, role: UserRole): User => ({
   role,
 });
 
+// MOCK ONLY: role inferred from email substring — remove before real API integration
 const getRoleFromEmail = (email: string): UserRole => {
   if (email.toLowerCase().includes('admin')) return 'admin';
   if (email.toLowerCase().includes('mentor')) return 'mentor';
@@ -102,12 +103,7 @@ export const checkAuth = async (): Promise<User | null> => {
     return null;
   }
 
-  return {
-    id: 1,
-    name: role === 'admin' ? 'Admin User' : role === 'mentor' ? 'Mentor User' : 'Student User',
-    email: 'demo@mock.local',
-    role,
-  };
+  return buildMockUser('demo@mock.local', role);
 };
 
 export const forgotPassword = async (email: string): Promise<void> => {
