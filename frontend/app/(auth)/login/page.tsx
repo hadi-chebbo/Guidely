@@ -33,14 +33,20 @@ export default function LoginPage() {
     setServerSuccess(null);
 
     try {
-      await login(data.email, data.password, data.rememberMe);
+      const user = await login(data.email, data.password, data.rememberMe);
       setServerSuccess("Logged in successfully! Redirecting…");
-      // Redirect based on role or to intended page
+
       const redirectParam = new URLSearchParams(window.location.search).get('redirect');
-      const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+      const defaultRedirect =
+        user.role === 'admin' ? '/admin' : user.role === 'mentor' ? '/mentor' : '/';
+      const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : defaultRedirect;
+
       router.push(safeRedirect);
-    } catch {
-      setServerError("Invalid email or password. Please try again.");
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Invalid email or password. Please try again.';
+      setServerError(message);
     }
   };
 
