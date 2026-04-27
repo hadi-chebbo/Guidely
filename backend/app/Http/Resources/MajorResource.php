@@ -21,7 +21,7 @@ class MajorResource extends JsonResource
             'slug' => $this->slug,
             'overview' => $this->overview,
             'description' => $this->description,
-            'duration_year' => $this->duration_year,
+            'duration_year' => $this->duration_years,
             'difficulty_level' => $this->difficulty_level,
             'salary_min' => $this->salary_min,
             'salary_max' => $this->salary_max,
