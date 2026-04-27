@@ -5,12 +5,17 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminUniversityTableResource;
 use App\Models\University;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class UniversityController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
+        if ($request->user()?->role !== 'admin') {
+            abort(403, 'Forbidden.');
+        }
+
         $universities = University::query()
             ->select([
                 'id',
