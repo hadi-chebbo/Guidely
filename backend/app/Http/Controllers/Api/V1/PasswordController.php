@@ -20,7 +20,7 @@ class PasswordController extends Controller
 
         if (!$user) {
             return $this->success(
-                'A reset link has been sent',
+                'If the email exists, a reset link has been sent.',
             );
         }
 
@@ -32,7 +32,7 @@ class PasswordController extends Controller
             );
 
             return $this->success(
-                'Reset email sent successfully'
+                'If the email exists, a reset email has been sent.'
             );
 
         } catch (\Exception $e) {
