@@ -19,6 +19,7 @@ it('forbids non admin users from viewing admin universities index', function () 
         ->assertForbidden()
         ->assertJson([
             'message' => 'Forbidden.',
+            'data' => null,
         ]);
 });
 
@@ -67,8 +68,10 @@ it('returns paginated universities for admin users with default sorting and tabl
                 ],
             ],
             'links',
+            'message',
             'meta',
         ])
+        ->assertJsonPath('message', 'Universities retrieved successfully')
         ->assertJsonMissingPath('data.0.name_ar')
         ->assertJsonPath('data.0.id', $latest->id)
         ->assertJsonPath('data.1.id', $middle->id)
