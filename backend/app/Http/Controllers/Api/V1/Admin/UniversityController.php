@@ -20,14 +20,6 @@ class UniversityController extends Controller
         }
 
         $universities = University::query()
-            ->select([
-                'id',
-                'name_en',
-                'slug',
-                'type',
-                'location',
-                'created_at',
-            ])
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -35,6 +27,7 @@ class UniversityController extends Controller
         return $this->success(
             AdminUniversityTableResource::collection($universities),
             'Universities retrieved successfully',
+            200,
         );
     }
 }

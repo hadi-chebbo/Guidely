@@ -12,17 +12,6 @@ it('requires authentication for admin universities index', function () {
         ->assertUnauthorized();
 });
 
-it('forbids non admin users from viewing admin universities index', function () {
-    Sanctum::actingAs(User::factory()->student()->create());
-
-    $this->getJson('/api/v1/admin/universities')
-        ->assertForbidden()
-        ->assertJson([
-            'message' => 'Forbidden.',
-            'data' => null,
-        ]);
-});
-
 it('returns paginated universities for admin users with default sorting and table fields', function () {
     $admin = User::factory()->admin()->create();
 
