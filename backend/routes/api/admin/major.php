@@ -8,4 +8,5 @@ Route::prefix('admin/majors')
     ->middleware('auth:sanctum')
     ->group(function (): void {
         Route::get('/', 'index');
+        Route::post('/', 'store');
 });
