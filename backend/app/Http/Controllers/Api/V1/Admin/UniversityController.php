@@ -7,18 +7,13 @@ use App\Http\Resources\AdminUniversityTableResource;
 use App\Models\University;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class UniversityController extends Controller
 {
     use ApiResponseTrait;
 
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
-        if ($request->user()?->role !== 'admin') {
-            return $this->error('Forbidden.', 403);
-        }
-
         $universities = University::query()
             ->latest()
             ->paginate(15)
