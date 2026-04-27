@@ -8,6 +8,7 @@ use App\Models\Major;
 use App\Http\Resources\MajorResource;
 use App\Traits\ApiResponseTrait;
 use App\Http\Requests\Admin\Major\StoreMajorRequest;
+use Illuminate\Support\Facades\DB;
 
 class MajorController extends Controller
 {
@@ -28,11 +29,15 @@ class MajorController extends Controller
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
-        $major = Major::create($validated);
+        $major = DB::transaction(function () use ($validated, $skills) {
+            $major = Major::create($validated);
 
-        if (!empty($skills)) {
-            $major->skills()->sync($skills);
-        }
+            if (! empty($skills)) {
+                $major->skills()->sync($skills);
+            }
+
+            return $major;
+        });
 
         return $this->success(
             new MajorResource($major->load(['category', 'skills'])),
