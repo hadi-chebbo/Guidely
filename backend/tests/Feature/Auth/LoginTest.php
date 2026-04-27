@@ -20,13 +20,14 @@ it('returns sanctum token and user data including role for valid credentials', f
 
     $response
         ->assertOk()
-        ->assertJsonPath('token_type', 'Bearer')
-        ->assertJsonPath('user.id', $user->id)
-        ->assertJsonPath('user.name', $user->name)
-        ->assertJsonPath('user.email', $user->email)
-        ->assertJsonPath('user.role', 'student');
+        ->assertJsonPath('message', 'Logged in Successfully')
+        ->assertJsonPath('data.token_type', 'Bearer')
+        ->assertJsonPath('data.user.id', $user->id)
+        ->assertJsonPath('data.user.name', $user->name)
+        ->assertJsonPath('data.user.email', $user->email)
+        ->assertJsonPath('data.user.role', 'student');
 
-    expect($response->json('token'))->not->toBeEmpty();
+    expect($response->json('data.token'))->not->toBeEmpty();
 
     $this->assertDatabaseHas('personal_access_tokens', [
         'tokenable_id' => $user->id,
