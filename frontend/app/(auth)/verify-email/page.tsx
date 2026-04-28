@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -10,10 +11,10 @@ import {
   AlertCircle,
   Inbox,
 } from "lucide-react";
-import { cn }       from "@/lib/utils";
-import { useAuth }  from "@/app/contexts/AuthContext";
-import Button       from "@/components/ui/Button";
-import FormMessage  from "@/components/ui/FormMessage";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/app/contexts/AuthContext";
+import Button from "@/components/ui/Button";
+import FormMessage from "@/components/ui/FormMessage";
 
 /* ── States ──────────────────────────────────────────────────── */
 type PageState = "pending" | "verified" | "expired";
@@ -22,12 +23,10 @@ type PageState = "pending" | "verified" | "expired";
 function VerifiedPanel() {
   return (
     <div className="text-center space-y-6 animate-fade-in py-4">
-      {/* Animated success ring */}
       <div className="relative inline-flex">
         <div className="h-24 w-24 rounded-full bg-brand-100 ring-8 ring-brand-50 flex items-center justify-center">
           <CheckCircle2 className="w-12 h-12 text-brand-600" />
         </div>
-        {/* Orbit particles */}
         <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-brand-300 animate-float opacity-80" />
         <span className="absolute bottom-1 -left-1 h-3 w-3 rounded-full bg-brand-400 animate-float-delayed opacity-60" />
       </div>
@@ -42,7 +41,6 @@ function VerifiedPanel() {
         </p>
       </div>
 
-      {/* What''s next */}
       <div className="rounded-2xl bg-brand-50 border border-brand-100 p-4 sm:p-5 text-left space-y-3">
         <p className="text-xs font-semibold text-brand-700 uppercase tracking-wide">
           What&apos;s next
@@ -73,7 +71,13 @@ function VerifiedPanel() {
 }
 
 /* ── Expired link panel ──────────────────────────────────────── */
-function ExpiredPanel({ onResend, isResending }: { onResend: () => void; isResending: boolean }) {
+function ExpiredPanel({
+  onResend,
+  isResending,
+}: {
+  onResend: () => void;
+  isResending: boolean;
+}) {
   return (
     <div className="text-center space-y-5 animate-fade-in py-2">
       <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-red-50 ring-8 ring-red-50/60">
@@ -84,8 +88,8 @@ function ExpiredPanel({ onResend, isResending }: { onResend: () => void; isResen
           Link expired
         </h2>
         <p className="mt-2 text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-          Your verification link has expired. Request a new one and check
-          your inbox.
+          Your verification link has expired. Request a new one and check your
+          inbox.
         </p>
       </div>
 
@@ -110,7 +114,13 @@ function ExpiredPanel({ onResend, isResending }: { onResend: () => void; isResen
 }
 
 /* ── Pending panel ───────────────────────────────────────────── */
-function PendingPanel({ onVerify, isVerifying, userEmail }: { onVerify: () => void; isVerifying: boolean; userEmail: string }) {
+function PendingPanel({
+  onResend,
+  isResending,
+}: {
+  onResend: () => void;
+  isResending: boolean;
+}) {
   return (
     <div className="text-center space-y-6 animate-fade-in py-4">
       <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-brand-50 ring-8 ring-brand-50/60">
@@ -119,39 +129,21 @@ function PendingPanel({ onVerify, isVerifying, userEmail }: { onVerify: () => vo
 
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-gray-900 font-heading">
-          Verify your email
+          No token found
         </h2>
         <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-          We&apos;ve sent a verification link to{" "}
-          <strong className="text-gray-800 break-all">{userEmail}</strong>
+          The verification link appears to be invalid or missing. Please check
+          your email and try again.
         </p>
-      </div>
-
-      <div className="rounded-2xl bg-brand-50 border border-brand-100 p-5 text-left space-y-3">
-        <p className="text-xs font-semibold text-brand-700 uppercase tracking-wide">
-          What to do next
-        </p>
-        {[
-          "Check your email inbox",
-          "Click the verification link",
-          "Return here to continue",
-        ].map((step, i) => (
-          <div key={step} className="flex items-center gap-3">
-            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
-              {i + 1}
-            </span>
-            <span className="text-sm text-gray-700">{step}</span>
-          </div>
-        ))}
       </div>
 
       <Button
         type="button"
-        isLoading={isVerifying}
-        onClick={onVerify}
-        rightIcon={<ArrowRight className="w-4 h-4" />}
+        isLoading={isResending}
+        onClick={onResend}
+        leftIcon={<RefreshCw className="w-4 h-4" />}
       >
-        {isVerifying ? "Verifying…" : "I''ve verified my email"}
+        {isResending ? "Sending…" : "Resend verification email"}
       </Button>
 
       <Link
@@ -167,34 +159,38 @@ function PendingPanel({ onVerify, isVerifying, userEmail }: { onVerify: () => vo
 
 /* ── Main page ───────────────────────────────────────────────── */
 export default function VerifyEmailPage() {
-  const [pageState,   setPageState]   = useState<PageState>("pending");
+  const [pageState, setPageState] = useState<PageState>("pending");
   const [isResending, setIsResending] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [resendMsg,   setResendMsg]   = useState<string | null>(null);
-  const [resendType,  setResendType]  = useState<"success" | "error">("success");
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  const [resendType, setResendType] = useState<"success" | "error">("success");
   const { verifyEmail, resendVerificationEmail } = useAuth();
+  const searchParams = useSearchParams();
 
-  /* Demo email — in production comes from the URL / session */
-  const userEmail = "jana@example.com";
-  const demoToken = "demo-verification-token";
+  useEffect(() => {
+    const token = searchParams.get("token");
 
-  const handleVerify = async () => {
-    setIsVerifying(true);
-    try {
-      await verifyEmail(demoToken);
-      setPageState("verified");
-    } catch {
-      setPageState("expired");
-    } finally {
-      setIsVerifying(false);
+    if (!token) {
+      setPageState("pending");
+      return;
     }
-  };
+
+    const verify = async () => {
+      try {
+        await verifyEmail(token);
+        setPageState("verified");
+      } catch {
+        setPageState("expired");
+      }
+    };
+
+    verify();
+  }, [searchParams, verifyEmail]);
 
   const handleResend = async () => {
     setIsResending(true);
     setResendMsg(null);
     try {
-      await resendVerificationEmail(userEmail);
+      await resendVerificationEmail("");
       setResendType("success");
       setResendMsg("A new verification email has been sent!");
     } catch {
@@ -205,53 +201,14 @@ export default function VerifyEmailPage() {
     }
   };
 
-  /* ── Demo state switcher ── (remove in production) */
-  const DemoSwitcher = () => (
-    <div className="mb-6 flex gap-2 rounded-xl bg-gray-100 p-1">
-      {(["pending", "verified", "expired"] as PageState[]).map((s) => (
-        <button
-          key={s}
-          type="button"
-          onClick={() => { setPageState(s); setResendMsg(null); }}
-          className={cn(
-            "flex-1 rounded-lg py-1.5 px-2 text-xs font-medium transition-all",
-            pageState === s
-              ? "bg-white text-brand-600 shadow-sm"
-              : "bg-transparent text-gray-600 hover:text-gray-900"
-          )}
-        >
-          {s.charAt(0).toUpperCase() + s.slice(1)}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="space-y-8">
-      <DemoSwitcher />
+      {resendMsg && (
+        <FormMessage type={resendType} message={resendMsg} className="mb-6" />
+      )}
 
       {pageState === "pending" && (
-        <>
-          {resendMsg && (
-            <FormMessage
-              type={resendType}
-              message={resendMsg}
-              className="mb-6"
-            />
-          )}
-          <PendingPanel
-            onVerify={handleVerify}
-            isVerifying={isVerifying}
-            userEmail={userEmail}
-          />
-          <button
-            onClick={handleResend}
-            disabled={isResending}
-            className="text-sm text-brand-600 hover:text-brand-700 disabled:opacity-50"
-          >
-            {isResending ? "Resending…" : "Didn''t receive an email? Resend"}
-          </button>
-        </>
+        <PendingPanel onResend={handleResend} isResending={isResending} />
       )}
 
       {pageState === "verified" && <VerifiedPanel />}
