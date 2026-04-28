@@ -2,6 +2,10 @@
 
 namespace Database\Seeders;
 
+<<<<<<< HEAD
+=======
+use App\Models\User;
+>>>>>>> 24d49ea (first commit)
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -14,6 +18,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+<<<<<<< HEAD
         $this->call([
             UserSeeder::class,
             UniversitySeeder::class,
@@ -32,5 +37,13 @@ class DatabaseSeeder extends Seeder
             FaqSeeder::class,
         ]);
     
+=======
+        // User::factory(10)->create();
+
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+>>>>>>> 24d49ea (first commit)
     }
 }

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+<<<<<<< HEAD
             $table->string('role')->default('student');
             $table->string('avatar_url')->nullable();
             $table->string('phone')->nullable();
@@ -26,6 +27,8 @@ return new class extends Migration
             $table->boolean('is_premium')->default(false);
             $table->datetime('premium_expires_at')->nullable();
             $table->json('onboarding_data')->nullable();
+=======
+>>>>>>> 24d49ea (first commit)
             $table->rememberToken();
             $table->timestamps();
         });

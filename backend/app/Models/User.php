@@ -11,7 +11,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+<<<<<<< HEAD
 #[Fillable(['name', 'email', 'password', 'avatar_url', 'phone', 'school', 'grade', 'preferred_language'])]
+=======
+#[Fillable(['name', 'email', 'password'])]
+>>>>>>> 24d49ea (first commit)
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,7 +32,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+<<<<<<< HEAD
             'onboarding_data' => 'array',
+=======
+>>>>>>> 24d49ea (first commit)
         ];
     }
 }

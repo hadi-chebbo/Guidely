@@ -18,7 +18,12 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
+<<<<<<< HEAD
      * Define the model's default state.                                        *
+=======
+     * Define the model's default state.
+     *
+>>>>>>> 24d49ea (first commit)
      * @return array<string, mixed>
      */
     public function definition(): array
@@ -28,6 +33,7 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+<<<<<<< HEAD
             'avatar_url' => $this->faker->imageUrl(200, 200, 'people', true),
             'phone' => $this->faker->phoneNumber(),
             'school' => $this->faker->company(),
@@ -70,6 +76,10 @@ class UserFactory extends Factory
         return $this->state([
             'role' => 'mentor',
         ]);
+=======
+            'remember_token' => Str::random(10),
+        ];
+>>>>>>> 24d49ea (first commit)
     }
 
     /**
