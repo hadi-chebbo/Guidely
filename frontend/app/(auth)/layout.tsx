@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BookOpen, Star } from "lucide-react";
+import { Star } from "lucide-react";
+import Logo from "@/components/ui/Logo";
 
 /* ── Branded left panel ──────────────────────────────────────── */
 function BrandPanel() {
@@ -14,11 +15,9 @@ function BrandPanel() {
 
       {/* ── TOP: Logo ── */}
       <div className="relative z-10">
-        <Link href="/" className="inline-flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20 backdrop-blur-sm group-hover:bg-white/20 transition-colors">
-            <BookOpen className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold text-white font-heading tracking-tight">
+        <Link href="/" className="inline-flex items-center gap-3 group" aria-label="Guidely home">
+          <Logo color="white" size="lg" />
+          <span className="text-2xl font-bold text-white font-heading tracking-tight">
             Guidely
           </span>
         </Link>
@@ -55,11 +54,9 @@ function FormPanel({ children }: { children: React.ReactNode }) {
     <div className="flex flex-1 flex-col items-center justify-center bg-white px-5 py-8 sm:px-8 sm:py-10 lg:px-16 xl:px-20 overflow-y-auto">
 
       {/* Mobile-only logo */}
-      <div className="mb-5 sm:mb-8 flex lg:hidden items-center gap-2.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600">
-          <BookOpen className="h-4.5 w-4.5 text-white" />
-        </div>
-        <span className="text-xl font-bold text-gray-900 font-heading">Guidely</span>
+      <div className="mb-6 sm:mb-8 flex lg:hidden items-center gap-2.5">
+        <Logo color="brand" size="md" />
+        <span className="text-xl font-bold text-gray-900 font-heading tracking-tight">Guidely</span>
       </div>
 
       <div className="w-full max-w-md animate-slide-up">

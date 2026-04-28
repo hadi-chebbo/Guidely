@@ -6,18 +6,25 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { majorFormSchema, type MajorFormData } from "@/lib/validations/major";
 import BasicInfoSection from "./sections/BasicInfoSection";
 import OverviewSection from "./sections/OverviewSection";
+import ProsConsSection from "./sections/ProsConsSection";
+import SkillsSection from "./sections/SkillsSection";
+import JobsSection from "./sections/JobsSection";
+import CompaniesSection from "./sections/CompaniesSection";
+import FaqsSection from "./sections/FaqsSection";
+import DayInLifeSection from "./sections/DayInLifeSection";
+import ChallengesSection from "./sections/ChallengesSection";
 import Button from "@/components/ui/Button";
 
 const TABS: { id: string; label: string; disabled?: boolean }[] = [
   { id: "basic", label: "Basic Info" },
   { id: "overview", label: "Overview" },
-  { id: "pros-cons", label: "Pros & Cons", disabled: true },
-  { id: "skills", label: "Skills", disabled: true },
-  { id: "jobs", label: "Jobs", disabled: true },
-  { id: "companies", label: "Companies", disabled: true },
-  { id: "faqs", label: "FAQs", disabled: true },
-  { id: "day-in-life", label: "Day in Life", disabled: true },
-  { id: "challenges", label: "Challenges", disabled: true },
+  { id: "pros-cons", label: "Pros & Cons" },
+  { id: "skills", label: "Skills" },
+  { id: "jobs", label: "Jobs" },
+  { id: "companies", label: "Companies" },
+  { id: "faqs", label: "FAQs" },
+  { id: "day-in-life", label: "Day in Life" },
+  { id: "challenges", label: "Challenges" },
 ];
 
 type TabId = string;
@@ -38,6 +45,8 @@ const DEFAULT_VALUES: Partial<MajorFormData> = {
   jobs: [],
   companies: [],
   faqs: [],
+  day_in_life: "",
+  challenges: [],
 };
 
 interface MajorFormProps {
@@ -93,9 +102,6 @@ export default function MajorForm({ initialData, mode }: MajorFormProps) {
                 ].join(" ")}
               >
                 {tab.label}
-                {tab.disabled && (
-                  <span className="ml-1.5 text-xs text-gray-300">TI-42</span>
-                )}
               </button>
             ))}
           </nav>
@@ -105,6 +111,13 @@ export default function MajorForm({ initialData, mode }: MajorFormProps) {
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           {activeTab === "basic" && <BasicInfoSection />}
           {activeTab === "overview" && <OverviewSection />}
+          {activeTab === "pros-cons" && <ProsConsSection />}
+          {activeTab === "skills" && <SkillsSection />}
+          {activeTab === "jobs" && <JobsSection />}
+          {activeTab === "companies" && <CompaniesSection />}
+          {activeTab === "faqs" && <FaqsSection />}
+          {activeTab === "day-in-life" && <DayInLifeSection />}
+          {activeTab === "challenges" && <ChallengesSection />}
         </div>
 
         {/* Actions */}
