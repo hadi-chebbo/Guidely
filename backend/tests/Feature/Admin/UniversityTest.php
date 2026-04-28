@@ -67,3 +67,125 @@ it('returns paginated universities for admin users with default sorting and tabl
         ->assertJsonPath('data.2.id', $oldest->id)
         ->assertJsonPath('meta.per_page', 15);
 });
+
+it('supports searching universities by english name', function () {
+    $admin = User::factory()->admin()->create();
+
+    University::factory()->create([
+        'name_en' => 'American University of Beirut',
+        'slug' => 'american-university-of-beirut',
+    ]);
+
+    University::factory()->create([
+        'name_en' => 'Lebanese University',
+        'slug' => 'lebanese-university',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson('/api/v1/admin/universities?search=American');
+
+    $response
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.name_en', 'American University of Beirut');
+});
+
+it('supports filtering universities by type', function () {
+    $admin = User::factory()->admin()->create();
+
+    University::factory()->create([
+        'name_en' => 'Public University',
+        'slug' => 'public-university',
+        'type' => 'public',
+    ]);
+
+    University::factory()->create([
+        'name_en' => 'Private University',
+        'slug' => 'private-university',
+        'type' => 'private',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson('/api/v1/admin/universities?type=public');
+
+    $response
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.type', 'public')
+        ->assertJsonPath('data.0.name_en', 'Public University');
+});
+
+it('supports filtering universities by location', function () {
+    $admin = User::factory()->admin()->create();
+
+    University::factory()->create([
+        'name_en' => 'Beirut University',
+        'slug' => 'beirut-university',
+        'location' => 'Beirut',
+    ]);
+
+    University::factory()->create([
+        'name_en' => 'Tripoli University',
+        'slug' => 'tripoli-university',
+        'location' => 'Tripoli',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson('/api/v1/admin/universities?location=Beirut');
+
+    $response
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.location', 'Beirut')
+        ->assertJsonPath('data.0.name_en', 'Beirut University');
+});
+
+it('keeps filters working with pagination', function () {
+    $admin = User::factory()->admin()->create();
+
+    $target = University::factory()->create([
+        'name_en' => 'Filtered Page Two University',
+        'slug' => 'filtered-page-two-university',
+        'type' => 'private',
+        'location' => 'Beirut',
+        'created_at' => now()->subDay(),
+    ]);
+
+    University::factory()->count(15)->create([
+        'type' => 'private',
+        'location' => 'Beirut',
+        'created_at' => now(),
+    ]);
+
+    University::factory()->count(3)->create([
+        'type' => 'public',
+        'location' => 'Tripoli',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson('/api/v1/admin/universities?type=private&location=Beirut&page=2');
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('meta.current_page', 2)
+        ->assertJsonPath('meta.per_page', 15)
+        ->assertJsonPath('meta.total', 16)
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $target->id);
+});
+
+it('handles invalid university filters properly', function () {
+    $admin = User::factory()->admin()->create();
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson('/api/v1/admin/universities?type=invalid-type');
+
+    $response
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['type']);
+});
