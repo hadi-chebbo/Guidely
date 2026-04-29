@@ -57,4 +57,13 @@ class UniversityController extends Controller
             201,
         );
     }
+
+    public function show(University $university): JsonResponse
+    {
+        return $this->success(
+            new UniversityResource($university),
+            'University Fetched Successfully',
+            200,
+        );
+    }
 }
