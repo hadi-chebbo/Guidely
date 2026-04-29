@@ -108,3 +108,47 @@ test('cannot create major without required fields', function () {
         'skills',
     ]);
 });
+
+test('can show single major' , function() {
+    $category = Category::factory()->create();
+
+    $major = Major::factory()->create([
+                'category_id'=> $category->id,
+                'name_en' => 'Computer Science',
+                'slug' => 'computer-science',
+            ]);
+
+    $response = $this->getJson("api/v1/admin/majors/{$major->id}");
+
+    $response->assertStatus(200);
+
+    $response->assertJson([
+        'message' => 'Major Fetched Successfully',
+        'data' => [
+            'id' => $major->id,
+            'name_en' => 'Computer Science',
+            'slug' => 'computer-science',
+        ]
+    ]);
+
+    $response->assertJsonStructure([
+        'message',
+        'data' => [
+            'id',
+            'name_en',
+            'name_ar',
+            'slug',
+            'overview',
+            'description',
+            'duration_year',
+            'difficulty_level',
+            'salary_min',
+            'salary_max',
+            'local_demand',
+            'international_demand',
+            'is_featured',
+            'cover_image',
+        ],
+    ]);
+
+});

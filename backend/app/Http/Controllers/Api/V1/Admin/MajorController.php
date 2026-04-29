@@ -45,4 +45,9 @@ class MajorController extends Controller
             201
         );
     }
+
+    public function show(Major $major)
+    {
+        return $this->success(new MajorResource($major),"Major Fetched Successfully",200);
+    }
 }
