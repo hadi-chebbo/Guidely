@@ -12,6 +12,11 @@ it('requires authentication for admin universities index', function () {
         ->assertUnauthorized();
 });
 
+it('requires authentication for admin universities store', function () {
+    $this->postJson('/api/v1/admin/universities', [])
+        ->assertUnauthorized();
+});
+
 it('returns paginated universities for admin users with default sorting and table fields', function () {
     $admin = User::factory()->admin()->create();
 
@@ -213,4 +218,58 @@ it('handles invalid university filters properly', function () {
     $response
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['type']);
+});
+
+it('can create university', function () {
+    $admin = User::factory()->admin()->create();
+
+    Sanctum::actingAs($admin);
+
+    $payload = [
+        'name_en' => 'American University of Beirut',
+        'name_ar' => 'الجامعة الأميركية في بيروت',
+        'slug' => 'american-university-of-beirut',
+        'type' => 'private',
+        'location' => 'Beirut',
+        'website' => 'https://www.aub.edu.lb',
+        'logo_url' => 'https://cdn.example.com/aub-logo.png',
+        'description_en' => 'A private research university in Beirut.',
+        'description_ar' => 'جامعة بحثية خاصة في بيروت.',
+        'founded_year' => 1866,
+        'accreditation' => 'NECHE',
+    ];
+
+    $response = $this->postJson('/api/v1/admin/universities', $payload);
+
+    $response->assertStatus(201);
+
+    $response->assertJsonStructure([
+        'data' => [
+            'id',
+            'name_en',
+        ]
+    ]);
+
+    $this->assertDatabaseHas('universities', [
+        'name_en' => 'American University of Beirut',
+        'slug' => 'american-university-of-beirut',
+        'type' => 'private',
+        'location' => 'Beirut',
+    ]);
+});
+
+it('cannot create university without required fields', function () {
+    $admin = User::factory()->admin()->create();
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->postJson('/api/v1/admin/universities', []);
+
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors([
+        'name_en',
+        'slug',
+        'type',
+        'location',
+    ]);
 });
