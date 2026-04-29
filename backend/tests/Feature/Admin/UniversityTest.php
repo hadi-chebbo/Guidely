@@ -17,6 +17,13 @@ it('requires authentication for admin universities store', function () {
         ->assertUnauthorized();
 });
 
+it('requires authentication for admin universities show', function () {
+    $university = University::factory()->create();
+
+    $this->getJson("/api/v1/admin/universities/{$university->id}")
+        ->assertUnauthorized();
+});
+
 it('returns paginated universities for admin users with default sorting and table fields', function () {
     $admin = User::factory()->admin()->create();
 
@@ -272,4 +279,61 @@ it('cannot create university without required fields', function () {
         'type',
         'location',
     ]);
+});
+
+it('can show single university', function () {
+    $admin = User::factory()->admin()->create();
+
+    $university = University::factory()->create([
+        'name_en' => 'American University of Beirut',
+        'slug' => 'american-university-of-beirut',
+        'type' => 'private',
+        'location' => 'Beirut',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson("/api/v1/admin/universities/{$university->id}");
+
+    $response->assertStatus(200);
+
+    $response->assertJson([
+        'message' => 'University Fetched Successfully',
+        'data' => [
+            'id' => $university->id,
+            'name_en' => 'American University of Beirut',
+            'slug' => 'american-university-of-beirut',
+            'type' => 'private',
+            'location' => 'Beirut',
+        ],
+    ]);
+
+    $response->assertJsonStructure([
+        'message',
+        'data' => [
+            'id',
+            'name_en',
+            'name_ar',
+            'slug',
+            'type',
+            'location',
+            'website',
+            'logo_url',
+            'description_en',
+            'description_ar',
+            'founded_year',
+            'accreditation',
+            'created_at',
+            'updated_at',
+        ],
+    ]);
+});
+
+it('returns 404 when university is not found', function () {
+    $admin = User::factory()->admin()->create();
+
+    Sanctum::actingAs($admin);
+
+    $this->getJson('/api/v1/admin/universities/999999')
+        ->assertNotFound();
 });
