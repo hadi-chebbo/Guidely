@@ -1,32 +1,71 @@
-import axios, { AxiosError, AxiosResponse } from "axios";
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: "https://guidely-production.up.railway.app/api/v1",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  withCredentials: true,
+  withCredentials: false,
 });
 
-/* -- Request: no need for Bearer token with Sanctum cookies -- */
+/* ───────────────────────────── */
 
-/* -- Response: normalise errors ---------------------------------- */
-api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error: AxiosError<{ message?: string }>) => {
-    const status = error.response?.status;
+const getCookieValue = (name: string): string | null => {
+  if (typeof document === "undefined") return null;
 
-    if (status === 401) {
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
+  const cookie = document.cookie
+    .split("; ")
+    .find((entry) => entry.startsWith(`${name}=`));
+
+  return cookie ? decodeURIComponent(cookie.split("=")[1]) : null;
+};
+
+/* ─────────────────────────────
+   REQUEST INTERCEPTOR
+───────────────────────────── */
+
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("token") ||
+          getCookieValue("auth_token")
+        : null;
+
+    config.headers = config.headers ?? {};
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
-    const message =
-      error.response?.data?.message ?? error.message ?? "Something went wrong";
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-    return Promise.reject(new Error(message));
+/* ─────────────────────────────
+   RESPONSE INTERCEPTOR
+───────────────────────────── */
+
+api.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error: AxiosError<unknown>) => {
+    const status = error.response?.status;
+
+    if (status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+
+      // safer than hard reload in SPA
+      window.location.assign("/login");
+    }
+
+    return Promise.reject(error);
   }
 );
 

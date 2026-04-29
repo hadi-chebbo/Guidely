@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
   ArrowRight,
@@ -10,7 +11,6 @@ import {
   AlertCircle,
   Inbox,
 } from "lucide-react";
-import { cn }       from "@/lib/utils";
 import { useAuth }  from "@/app/contexts/AuthContext";
 import Button       from "@/components/ui/Button";
 import FormMessage  from "@/components/ui/FormMessage";
@@ -167,21 +167,32 @@ function PendingPanel({ onVerify, isVerifying, userEmail }: { onVerify: () => vo
 
 /* ── Main page ───────────────────────────────────────────────── */
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyEmailPageContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailPageContent() {
   const [pageState,   setPageState]   = useState<PageState>("pending");
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendMsg,   setResendMsg]   = useState<string | null>(null);
   const [resendType,  setResendType]  = useState<"success" | "error">("success");
-  const { verifyEmail, resendVerificationEmail } = useAuth();
-
-  /* Demo email — in production comes from the URL / session */
-  const userEmail = "jana@example.com";
-  const demoToken = "demo-verification-token";
+  const { verifyEmail, resendVerificationEmail, user } = useAuth();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') || '';
+  const userEmail = user?.email || searchParams.get('email') || '';
 
   const handleVerify = async () => {
+    if (!token) {
+      setPageState("expired");
+      return;
+    }
     setIsVerifying(true);
     try {
-      await verifyEmail(demoToken);
+      await verifyEmail(token);
       setPageState("verified");
     } catch {
       setPageState("expired");
@@ -191,6 +202,7 @@ export default function VerifyEmailPage() {
   };
 
   const handleResend = async () => {
+    if (!userEmail) return;
     setIsResending(true);
     setResendMsg(null);
     try {
@@ -205,31 +217,8 @@ export default function VerifyEmailPage() {
     }
   };
 
-  /* ── Demo state switcher ── (remove in production) */
-  const DemoSwitcher = () => (
-    <div className="mb-6 flex gap-2 rounded-xl bg-gray-100 p-1">
-      {(["pending", "verified", "expired"] as PageState[]).map((s) => (
-        <button
-          key={s}
-          type="button"
-          onClick={() => { setPageState(s); setResendMsg(null); }}
-          className={cn(
-            "flex-1 rounded-lg py-1.5 px-2 text-xs font-medium transition-all",
-            pageState === s
-              ? "bg-white text-brand-600 shadow-sm"
-              : "bg-transparent text-gray-600 hover:text-gray-900"
-          )}
-        >
-          {s.charAt(0).toUpperCase() + s.slice(1)}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="space-y-8">
-      <DemoSwitcher />
-
       {pageState === "pending" && (
         <>
           {resendMsg && (
