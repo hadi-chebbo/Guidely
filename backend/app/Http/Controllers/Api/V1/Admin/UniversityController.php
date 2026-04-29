@@ -20,7 +20,11 @@ class UniversityController extends Controller
         $universities = University::query()
             ->when(
                 $request->filled('search'),
-                fn ($query) => $query->where('name_en', 'like', '%'.$filters['search'].'%')
+                fn ($query) => $query->where(function ($searchQuery) use ($filters) {
+                    $searchQuery
+                        ->where('name_en', 'like', '%'.$filters['search'].'%')
+                        ->orWhere('name_ar', 'like', '%'.$filters['search'].'%');
+                })
             )
             ->when(
                 $request->filled('type'),

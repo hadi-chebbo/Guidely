@@ -91,6 +91,31 @@ it('supports searching universities by english name', function () {
         ->assertJsonPath('data.0.name_en', 'American University of Beirut');
 });
 
+it('supports searching universities by arabic name', function () {
+    $admin = User::factory()->admin()->create();
+
+    University::factory()->create([
+        'name_en' => 'American University of Beirut',
+        'name_ar' => 'الجامعة الأميركية في بيروت',
+        'slug' => 'american-university-of-beirut',
+    ]);
+
+    University::factory()->create([
+        'name_en' => 'Lebanese University',
+        'name_ar' => 'الجامعة اللبنانية',
+        'slug' => 'lebanese-university',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson('/api/v1/admin/universities?search=الأميركية');
+
+    $response
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.name_en', 'American University of Beirut');
+});
+
 it('supports filtering universities by type', function () {
     $admin = User::factory()->admin()->create();
 
