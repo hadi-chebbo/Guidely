@@ -95,6 +95,8 @@ export const majorFormSchema = z
     jobs: z.array(jobOpportunitySchema).default([]),
     companies: z.array(hiringCompanySchema).default([]),
     faqs: z.array(faqSchema).default([]),
+    day_in_life: z.string().nullable().optional(),
+    challenges: z.array(z.object({ content: z.string().min(1, "Challenge is required") })).default([]),
   })
   .refine((d) => d.salary_min <= d.salary_max, {
     message: "Min salary must be less than or equal to max",
