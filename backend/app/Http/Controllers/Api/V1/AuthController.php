@@ -29,6 +29,13 @@ class AuthController extends Controller
             );
         }
 
+        if (!$user->hasVerifiedEmail()) {
+        return $this->error(
+            'Please verify your email before logging in.',
+            403
+        );
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return $this->success(
@@ -57,15 +64,11 @@ class AuthController extends Controller
             'onboarding_data'    => $data['onboarding_data'] ?? null,
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        EmailVerificationController::sendVerificationEmail($user);
 
         return $this->success(
-            [
-                'user'  => new UserResource($user),
-                'token' => $token,
-                'token_type' => 'Bearer',
-            ],
-            'User registered successfully',
+            null,
+            'User registered successfully. A verification email has been sent.',
             201,
         );
     }
