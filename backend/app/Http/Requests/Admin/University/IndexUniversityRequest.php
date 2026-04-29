@@ -21,7 +21,6 @@ class IndexUniversityRequest extends FormRequest
             'search' => ['sometimes', 'string', 'max:255'],
             'type' => ['sometimes', 'in:public,private'],
             'location' => ['sometimes', 'string', 'max:255'],
-            'page' => ['sometimes', 'integer', 'min:1'],
         ];
     }
 }
