@@ -8,4 +8,5 @@ Route::prefix('admin/universities')
     ->middleware('auth:sanctum')
     ->group(function (): void {
         Route::get('/', 'index')->name('api.v1.admin.universities.index');
+        Route::post('/', 'store')->name('api.v1.admin.universities.store');
     });

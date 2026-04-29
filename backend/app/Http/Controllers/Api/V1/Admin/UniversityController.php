@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\University\IndexUniversityRequest;
+use App\Http\Requests\Admin\University\StoreUniversityRequest;
 use App\Http\Resources\AdminUniversityTableResource;
+use App\Http\Resources\UniversityResource;
 use App\Models\University;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
@@ -42,6 +44,17 @@ class UniversityController extends Controller
             AdminUniversityTableResource::collection($universities),
             'Universities retrieved successfully',
             200,
+        );
+    }
+
+    public function store(StoreUniversityRequest $request): JsonResponse
+    {
+        $university = University::create($request->validated());
+
+        return $this->success(
+            new UniversityResource($university),
+            'University Created Successfully',
+            201,
         );
     }
 }
