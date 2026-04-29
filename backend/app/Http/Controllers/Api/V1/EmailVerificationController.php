@@ -19,12 +19,12 @@ class EmailVerificationController extends Controller
 
     public function verify(Request $request, int $id, string $hash): JsonResponse
     {
-        $user = User::findOrFail($id);
-
         if (!URL::hasValidSignature($request)) {
             return $this->error('Invalid or expired verification link.', 422);
         }
 
+        $user = User::findOrFail($id);
+        
         if (!hash_equals($hash, sha1($user->email))) {
             return $this->error('Invalid verification link.', 403);
         }
