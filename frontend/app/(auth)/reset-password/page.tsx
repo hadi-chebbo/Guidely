@@ -33,48 +33,56 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
 
   const handleReset = async () => {
-    if (loading) return;
+  if (loading) return;
 
-    setError(null);
-    setMessage(null);
+  setError(null);
+  setMessage(null);
 
-    if (!token || !email) {
-      setError("Invalid or expired reset link");
-      return;
-    }
+  const cleanPassword = password.trim();
+  const cleanConfirm = confirm.trim();
 
-    if (password !== confirm) {
-      setError("Passwords do not match");
-      return;
-    }
+  if (!token || !email) {
+    setError("Invalid or expired reset link");
+    return;
+  }
 
-    setLoading(true);
+  if (cleanPassword.length < 8) {
+    setError("Password must be at least 8 characters long");
+    return;
+  }
 
-    try {
-      await resetPassword({
-        token,
-        email,
-        password,
-        password_confirmation: confirm,
-      });
+  if (cleanPassword !== cleanConfirm) {
+    setError("Passwords do not match");
+    return;
+  }
 
-      setMessage("Your password has been updated. Redirecting...");
+  setLoading(true);
 
-      setTimeout(() => {
-        router.replace("/login");
-      }, 1500);
-    } catch (err: unknown) {
-      const error = err as ApiError;
+  try {
+    await resetPassword({
+      token,
+      email,
+      password: cleanPassword,
+      password_confirmation: cleanConfirm,
+    });
 
-      setError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Something went wrong. Try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    setMessage("Your password has been updated. Redirecting...");
+
+    setTimeout(() => {
+      router.replace("/login");
+    }, 1500);
+  } catch (err: unknown) {
+    const error = err as ApiError;
+
+    setError(
+      error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong. Try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="space-y-5 max-w-md mx-auto mt-10">

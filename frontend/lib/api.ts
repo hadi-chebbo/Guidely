@@ -1,52 +1,25 @@
-import axios, {
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 
 const api = axios.create({
-  baseURL: "https://guidely-production.up.railway.app/api/v1",
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-  withCredentials: false,
+  baseURL: process.env.NEXT_PUBLIC_API_URL
 });
 
-/* ───────────────────────────── */
-
-const getCookieValue = (name: string): string | null => {
-  if (typeof document === "undefined") return null;
-
-  const cookie = document.cookie
-    .split("; ")
-    .find((entry) => entry.startsWith(`${name}=`));
-
-  return cookie ? decodeURIComponent(cookie.split("=")[1]) : null;
-};
-
 /* ─────────────────────────────
-   REQUEST INTERCEPTOR
+   REQUEST INTERCEPTOR (TOKEN)
 ───────────────────────────── */
 
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("token") ||
-          getCookieValue("auth_token")
-        : null;
+api.interceptors.request.use((config) => {
+  const token = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("auth_token="))
+    ?.split("=")[1];
 
-    config.headers = config.headers ?? {};
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  return config;
+});
 
 /* ─────────────────────────────
    RESPONSE INTERCEPTOR
@@ -54,17 +27,7 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: AxiosError<unknown>) => {
-    const status = error.response?.status;
-
-    if (status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-
-      // safer than hard reload in SPA
-      window.location.assign("/login");
-    }
-
+  (error: AxiosError) => {
     return Promise.reject(error);
   }
 );

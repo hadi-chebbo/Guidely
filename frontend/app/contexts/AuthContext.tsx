@@ -1,7 +1,16 @@
 ﻿﻿"use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
+
 import * as authService from "@/services/authService";
+import { useRouter } from "next/navigation";
+
+/* ───────────────────────────── TYPES ───────────────────────────── */
 
 interface AuthState {
   user: authService.User | null;
@@ -10,156 +19,141 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (
-    email: string,
-    password: string,
-    rememberMe?: boolean
-  ) => Promise<authService.User>;
-
+  login: (email: string, password: string) => Promise<authService.User>;
   logout: () => Promise<void>;
-  register: (data: authService.RegisterData) => Promise<authService.User>;
-  checkAuth: () => Promise<void>;
+  register: (data: authService.RegisterFormData) => Promise<void>;
+  refreshAuth: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
-  verifyEmail: (token: string) => Promise<void>;
+  verifyEmail: (id: string, hash: string) => Promise<void>;
   resendVerificationEmail: (email: string) => Promise<void>;
 }
+
+/* ───────────────────────────── CONTEXT ───────────────────────────── */
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 };
+
+/* ───────────────────────────── PROVIDER ───────────────────────────── */
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const router = useRouter();
+
   const [state, setState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
     loading: true,
   });
 
-  /* ───────────────────────────── */
+  /* ───────────────────────────── SET AUTH ───────────────────────────── */
 
-  const startLoading = () =>
-    setState((prev) => ({ ...prev, loading: true }));
+  const setAuth = (user: authService.User | null) => {
+    setState({
+      user,
+      isAuthenticated: !!user,
+      loading: false,
+    });
+  };
 
-  const stopLoading = () =>
-    setState((prev) => ({ ...prev, loading: false }));
+  /* ───────────────────────────── INIT ───────────────────────────── */
 
-  /* ─────────────────────────────
-     AUTH ACTIONS
-  ───────────────────────────── */
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const user = await authService.checkAuth();
+        setAuth(user);
+      } catch {
+        setAuth(null);
+      }
+    };
 
-  const login = async (
-    email: string,
-    password: string,
-    rememberMe = false
-  ) => {
-    startLoading();
+    init();
+  }, []);
+
+  /* ───────────────────────────── LOGIN ───────────────────────────── */
+
+  const login = async (email: string, password: string) => {
+    setState((p) => ({ ...p, loading: true }));
+
     try {
-      const user = await authService.login(email, password, rememberMe);
+      const user = await authService.login(email, password);
 
-      setState({
-        user,
-        isAuthenticated: true,
-        loading: false,
-      });
+      setAuth(user);
+
+      router.push("/dashboard");
 
       return user;
     } catch (err) {
-      stopLoading();
+      setAuth(null);
       throw err;
     }
   };
+
+  /* ───────────────────────────── LOGOUT ───────────────────────────── */
 
   const logout = async () => {
-    startLoading();
+    setState((p) => ({ ...p, loading: true }));
+
     try {
       await authService.logout();
-
-      setState({
-        user: null,
-        isAuthenticated: false,
-        loading: false,
-      });
-    } catch (err) {
-      stopLoading();
-      throw err;
+    } finally {
+      setAuth(null);
+      router.push("/login");
     }
   };
 
-  const register = async (data: authService.RegisterData) => {
-    startLoading();
-    try {
-      const user = await authService.register(data);
+  /* ───────────────────────────── REGISTER ───────────────────────────── */
 
-      setState({
-        user,
-        isAuthenticated: false,
-        loading: false,
-      });
+  const register = async (data: authService.RegisterFormData) => {
+    setState((p) => ({ ...p, loading: true }));
 
-      return user;
-    } catch (err) {
-      stopLoading();
-      throw err;
-    }
+    await authService.register(data);
+
+    setState({
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+    });
+
+    router.push("/verify-email");
   };
 
-  const checkAuth = async () => {
-    startLoading();
+  /* ───────────────────────────── REFRESH ───────────────────────────── */
+
+  const refreshAuth = async () => {
+    setState((p) => ({ ...p, loading: true }));
+
     try {
       const user = await authService.checkAuth();
-
-      setState({
-        user: user ?? null,
-        isAuthenticated: !!user,
-        loading: false,
-      });
+      setAuth(user);
     } catch {
-      setState({
-        user: null,
-        isAuthenticated: false,
-        loading: false,
-      });
+      setAuth(null);
     }
   };
+
+  /* ───────────────────────────── PASSWORD ───────────────────────────── */
 
   const forgotPassword = async (email: string) => {
-    startLoading();
-    try {
-      await authService.forgotPassword(email);
-    } finally {
-      stopLoading();
-    }
+    await authService.forgotPassword(email);
   };
 
-  const verifyEmail = async (token: string) => {
-    startLoading();
-    try {
-      await authService.verifyEmail(token);
-    } finally {
-      stopLoading();
-    }
+  /* ───────────────────────────── EMAIL ───────────────────────────── */
+
+  const verifyEmail = async (id: string, hash: string) => {
+    await authService.verifyEmail(id, hash);
   };
 
   const resendVerificationEmail = async (email: string) => {
-    startLoading();
-    try {
-      await authService.resendVerificationEmail(email);
-    } finally {
-      stopLoading();
-    }
+    await authService.resendVerificationEmail(email);
   };
 
-  /* ───────────────────────────── */
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  /* ───────────────────────────── PROVIDER ───────────────────────────── */
 
   return (
     <AuthContext.Provider
@@ -168,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         login,
         logout,
         register,
-        checkAuth,
+        refreshAuth,
         forgotPassword,
         verifyEmail,
         resendVerificationEmail,

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\EmailVerificationController;
 
 Route::prefix('auth')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login'])->name('api.v1.auth.login');
@@ -17,4 +18,12 @@ Route::prefix('auth')->group(function (): void {
             return new UserResource($request->user());
         });
     });
+
+Route::prefix('v1')->group(function () {
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->name('verification.verify');
+    Route::post('/email/resend', [EmailVerificationController::class, 'resend'])
+        ->name('verification.resend');
+});
+
 });

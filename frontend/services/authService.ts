@@ -1,6 +1,20 @@
 import api from "@/lib/api";
 
 /* ─────────────────────────────
+   ERROR CLASS
+───────────────────────────── */
+
+export class AuthError extends Error {
+  type?: "EMAIL_NOT_VERIFIED";
+
+  constructor(message: string, type?: "EMAIL_NOT_VERIFIED") {
+    super(message);
+    this.name = "AuthError";
+    this.type = type;
+  }
+}
+
+/* ─────────────────────────────
    TYPES
 ───────────────────────────── */
 
@@ -13,172 +27,161 @@ export interface User {
   role: UserRole;
 }
 
-export type BackendUser = Omit<User, "role"> & {
-  role?: UserRole | null;
-};
-
-export interface RegisterData {
+export interface RegisterFormData {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
+  confirmPassword: string;
   school?: string;
   grade?: string;
   preferredLanguage?: string;
 }
 
 /* ─────────────────────────────
-   STORAGE KEYS
+   API RESPONSE TYPES
 ───────────────────────────── */
 
-const authCookieName = "auth_token";
-const roleCookieName = "user_role";
-const localStorageTokenKey = "token";
-const localStorageRoleKey = "role";
+interface ApiUser {
+  id: number;
+  name: string;
+  email: string;
+  role?: UserRole;
+}
+
+interface AuthResponse {
+  data?: {
+    user?: ApiUser;
+    token?: string;
+  };
+  user?: ApiUser;
+  token?: string;
+}
 
 /* ─────────────────────────────
    HELPERS
 ───────────────────────────── */
 
-const setCookie = (name: string, value: string, maxAgeSeconds: number) => {
-  document.cookie = `${name}=${encodeURIComponent(
-    value
-  )}; path=/; max-age=${maxAgeSeconds}; sameSite=Lax`;
-};
-
-const deleteCookie = (name: string) => {
-  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-};
-
-const getCookieValue = (name: string): string | null => {
-  if (typeof document === "undefined") return null;
-
-  const cookie = document.cookie
-    .split("; ")
-    .find((entry) => entry.startsWith(`${name}=`));
-
-  return cookie ? decodeURIComponent(cookie.split("=")[1]) : null;
-};
-
-const setLocalStorageValue = (name: string, value: string) => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(name, value);
-};
-
-const removeLocalStorageValue = (name: string) => {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(name);
-};
-
-const normalizeUser = (user: BackendUser): User => ({
-  ...user,
+const normalizeUser = (user: ApiUser): User => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
   role: user.role ?? "student",
 });
 
-const transformToBackendRequest = (data: RegisterData) => ({
-  name: `${data.firstName} ${data.lastName}`.trim(),
-  email: data.email,
-  password: data.password,
-  password_confirmation: data.password,
-  school: data.school,
-  grade: data.grade,
-  preferred_language: data.preferredLanguage,
-});
+const setAuthCookie = (token: string): void => {
+  document.cookie = `auth_token=${token}; path=/; max-age=86400`;
+};
+
+const clearAuthCookie = (): void => {
+  document.cookie = `auth_token=; path=/; max-age=0`;
+};
 
 /* ─────────────────────────────
-   AUTH API
+   LOGIN
 ───────────────────────────── */
 
 export const login = async (
   email: string,
-  password: string,
-  rememberMe = false
+  password: string
 ): Promise<User> => {
-  const response = await api.post("/auth/login", {
-    email,
-    password,
-  });
+  try {
+    const res = await api.post<AuthResponse>("/auth/login", {
+      email,
+      password,
+    });
 
-  const { user: backendUser, token } = response.data.data;
+    const userData = res.data.data?.user ?? res.data.user;
+    const token = res.data.data?.token ?? res.data.token;
 
-  const user = normalizeUser(backendUser as BackendUser);
-  const cookieMaxAge = rememberMe
-    ? 60 * 60 * 24 * 30
-    : 60 * 60 * 24;
+    if (!userData) {
+      throw new Error("Invalid login response");
+    }
 
-  setCookie(authCookieName, token, cookieMaxAge);
-  setCookie(roleCookieName, user.role, cookieMaxAge);
+    const user = normalizeUser(userData);
 
-  setLocalStorageValue(localStorageTokenKey, token);
-  setLocalStorageValue(localStorageRoleKey, user.role);
+    if (token) {
+      setAuthCookie(token);
+    }
 
-  return user;
+    return user;
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "response" in err) {
+      const error = err as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      };
+
+      const message = error.response?.data?.message;
+
+      if (message?.toLowerCase().includes("verify")) {
+        throw new AuthError(message, "EMAIL_NOT_VERIFIED");
+      }
+    }
+
+    throw err;
+  }
 };
 
-/* ───────────────────────────── */
+/* ─────────────────────────────
+   REGISTER
+───────────────────────────── */
+
+export const register = async (data: RegisterFormData): Promise<void> => {
+  if (data.password !== data.confirmPassword) {
+    throw new Error("Passwords do not match");
+  }
+
+  await api.post("/auth/register", {
+    name: `${data.firstName} ${data.lastName}`,
+    email: data.email,
+    password: data.password,
+    password_confirmation: data.confirmPassword,
+    school: data.school,
+    grade: data.grade,
+    preferred_language: data.preferredLanguage,
+  });
+};
+
+/* ─────────────────────────────
+   LOGOUT
+───────────────────────────── */
 
 export const logout = async (): Promise<void> => {
   try {
     await api.post("/auth/logout");
   } finally {
-    deleteCookie(authCookieName);
-    deleteCookie(roleCookieName);
-    removeLocalStorageValue(localStorageTokenKey);
-    removeLocalStorageValue(localStorageRoleKey);
+    clearAuthCookie();
   }
 };
 
-/* ───────────────────────────── */
-
-export const register = async (data: RegisterData): Promise<User> => {
-  const backendData = transformToBackendRequest(data);
-  const response = await api.post("/auth/register", backendData);
-
-  const payload = response.data.data;
-  const rawUser = payload?.user ?? payload;
-
-  return normalizeUser(rawUser as BackendUser);
-};
-
-/* ───────────────────────────── */
+/* ─────────────────────────────
+   CHECK AUTH
+───────────────────────────── */
 
 export const checkAuth = async (): Promise<User | null> => {
-  let token = getCookieValue(authCookieName);
-
-  if (!token && typeof window !== "undefined") {
-    token = localStorage.getItem(localStorageTokenKey);
-  }
-
-  if (!token) return null;
-
-  if (typeof window !== "undefined") {
-    setLocalStorageValue(localStorageTokenKey, token);
-  }
-
   try {
-    const response = await api.get("/auth/user");
+    const res = await api.get("/auth/user");
 
-    const user = normalizeUser(response.data.data as BackendUser);
+    const user = res.data?.data?.user ?? res.data?.user;
 
-    setCookie(roleCookieName, user.role, 60 * 60 * 24);
-    setLocalStorageValue(localStorageRoleKey, user.role);
+    if (!user || typeof user.id !== "number") return null;
 
-    return user;
+    return normalizeUser(user);
   } catch {
-    deleteCookie(authCookieName);
-    deleteCookie(roleCookieName);
-    removeLocalStorageValue(localStorageTokenKey);
-    removeLocalStorageValue(localStorageRoleKey);
     return null;
   }
 };
 
 /* ─────────────────────────────
-   PASSWORD RESET FLOW
+   PASSWORD RESET
 ───────────────────────────── */
 
-export const forgotPassword = async (email: string) => {
-  return await api.post("/auth/forgot-password", { email });
+export const forgotPassword = async (email: string): Promise<void> => {
+  await api.post("/auth/forgot-password", { email });
 };
 
 export const resetPassword = async (data: {
@@ -186,18 +189,23 @@ export const resetPassword = async (data: {
   email: string;
   password: string;
   password_confirmation: string;
-}) => {
-  return await api.post("/auth/reset-password", data);
+}): Promise<void> => {
+  await api.post("/auth/reset-password", data);
 };
 
 /* ─────────────────────────────
    EMAIL VERIFICATION
 ───────────────────────────── */
 
-export const verifyEmail = async (token: string) => {
-  return await api.post("/auth/verify-email", { token });
+export const verifyEmail = async (
+  id: string,
+  hash: string
+): Promise<void> => {
+  await api.get(`/email/verify/${id}/${hash}`);
 };
 
-export const resendVerificationEmail = async (email: string) => {
-  return await api.post("/auth/resend-verification-email", { email });
+export const resendVerificationEmail = async (
+  email: string
+): Promise<void> => {
+  await api.post("/email/resend", { email });
 };
