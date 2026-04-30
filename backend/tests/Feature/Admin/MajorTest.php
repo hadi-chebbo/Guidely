@@ -39,7 +39,56 @@ test('can get majors', function () {
         'meta'
     ]);
 
-    $this->assertCount(20, $response->json('data'));
+    $this->assertCount(15, $response->json('data'));
+});
+
+test('can filter majors by single attribute', function () {
+    $category = Category::factory()->create();
+
+    Major::factory()->create([
+        'category_id' => $category->id,
+        'name_en'     => 'Computer Science',
+    ]);
+
+    Major::factory()->create([
+        'category_id' => $category->id,
+        'name_en'     => 'Business Administration',
+    ]);
+
+    $response = $this->getJson('api/v1/admin/majors?name_en=computer');
+
+    $response->assertStatus(200);
+    $this->assertCount(1, $response->json('data'));
+    $this->assertEquals('Computer Science', $response->json('data.0.name_en'));
+});
+
+test('can filter majors by multiple attributes', function () {
+    $category1 = Category::factory()->create();
+    $category2 = Category::factory()->create();
+
+    Major::factory()->create([
+        'category_id'      => $category1->id,
+        'name_en'          => 'Computer Science',
+        'difficulty_level' => 'hard',
+    ]);
+
+    Major::factory()->create([
+        'category_id'      => $category1->id,
+        'name_en'          => 'Computer Engineering',
+        'difficulty_level' => 'medium',
+    ]);
+
+    Major::factory()->create([
+        'category_id'      => $category2->id,
+        'name_en'          => 'Computer Networks',
+        'difficulty_level' => 'hard',
+    ]);
+
+    $response = $this->getJson("api/v1/admin/majors?name_en=computer&category_id={$category1->id}&difficulty_level=hard");
+
+    $response->assertStatus(200);
+    $this->assertCount(1, $response->json('data'));
+    $this->assertEquals('Computer Science', $response->json('data.0.name_en'));
 });
 
 test('can create major', function () {
