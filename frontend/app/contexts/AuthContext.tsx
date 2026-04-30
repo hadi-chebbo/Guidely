@@ -1,7 +1,16 @@
-﻿"use client";
+﻿﻿"use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as authService from '@/services/authService';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
+
+import * as authService from "@/services/authService";
+import { useRouter } from "next/navigation";
+
+/* ───────────────────────────── TYPES ───────────────────────────── */
 
 interface AuthState {
   user: authService.User | null;
@@ -10,74 +19,155 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<authService.User>;
+  login: (email: string, password: string) => Promise<authService.User>;
   logout: () => Promise<void>;
-  register: (data: authService.RegisterData) => Promise<void>;
-  checkAuth: () => Promise<void>;
+  register: (data: authService.RegisterFormData) => Promise<void>;
+  refreshAuth: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
-  verifyEmail: (token: string) => Promise<void>;
+  verifyEmail: (id: string, hash: string) => Promise<void>;
   resendVerificationEmail: (email: string) => Promise<void>;
 }
+
+/* ───────────────────────────── CONTEXT ───────────────────────────── */
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+/* ───────────────────────────── PROVIDER ───────────────────────────── */
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const router = useRouter();
+
   const [state, setState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
     loading: true,
   });
 
-  const login = async (email: string, password: string, rememberMe = false) => {
-    const user = await authService.login(email, password, rememberMe);
-    setState({ user, isAuthenticated: true, loading: false });
-    return user;
+  /* ───────────────────────────── SET AUTH ───────────────────────────── */
+
+  const setAuth = (user: authService.User | null) => {
+    setState({
+      user,
+      isAuthenticated: !!user,
+      loading: false,
+    });
   };
+
+  /* ───────────────────────────── INIT ───────────────────────────── */
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const user = await authService.checkAuth();
+        setAuth(user);
+      } catch {
+        setAuth(null);
+      }
+    };
+
+    init();
+  }, []);
+
+  /* ───────────────────────────── LOGIN ───────────────────────────── */
+
+  const login = async (email: string, password: string) => {
+    setState((p) => ({ ...p, loading: true }));
+
+    try {
+      const user = await authService.login(email, password);
+
+      setAuth(user);
+
+      router.push("/dashboard");
+
+      return user;
+    } catch (err) {
+      setAuth(null);
+      throw err;
+    }
+  };
+
+  /* ───────────────────────────── LOGOUT ───────────────────────────── */
 
   const logout = async () => {
-    await authService.logout();
-    setState({ user: null, isAuthenticated: false, loading: false });
-  };
+    setState((p) => ({ ...p, loading: true }));
 
-  const register = async (data: authService.RegisterData) => {
-    await authService.register(data);
-  };
-
-  const checkAuth = async () => {
-    const user = await authService.checkAuth();
-
-    if (user) {
-      setState({ user, isAuthenticated: true, loading: false });
-      return;
+    try {
+      await authService.logout();
+    } finally {
+      setAuth(null);
+      router.push("/login");
     }
-
-    setState({ user: null, isAuthenticated: false, loading: false });
   };
+
+  /* ───────────────────────────── REGISTER ───────────────────────────── */
+
+  const register = async (data: authService.RegisterFormData) => {
+    setState((p) => ({ ...p, loading: true }));
+
+    await authService.register(data);
+
+    setState({
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+    });
+
+    router.push("/verify-email");
+  };
+
+  /* ───────────────────────────── REFRESH ───────────────────────────── */
+
+  const refreshAuth = async () => {
+    setState((p) => ({ ...p, loading: true }));
+
+    try {
+      const user = await authService.checkAuth();
+      setAuth(user);
+    } catch {
+      setAuth(null);
+    }
+  };
+
+  /* ───────────────────────────── PASSWORD ───────────────────────────── */
 
   const forgotPassword = async (email: string) => {
     await authService.forgotPassword(email);
   };
 
-  const verifyEmail = async (token: string) => {
-    await authService.verifyEmail(token);
+  /* ───────────────────────────── EMAIL ───────────────────────────── */
+
+  const verifyEmail = async (id: string, hash: string) => {
+    await authService.verifyEmail(id, hash);
   };
 
   const resendVerificationEmail = async (email: string) => {
     await authService.resendVerificationEmail(email);
   };
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  /* ───────────────────────────── PROVIDER ───────────────────────────── */
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, register, checkAuth, forgotPassword, verifyEmail, resendVerificationEmail }}>
+    <AuthContext.Provider
+      value={{
+        ...state,
+        login,
+        logout,
+        register,
+        refreshAuth,
+        forgotPassword,
+        verifyEmail,
+        resendVerificationEmail,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

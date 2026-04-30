@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
       setSentTo(data.email);
       setEmailSent(true);
     } catch {
-      setServerError("We couldn''t find an account with that email address.");
+      setServerError("If this email exists, you will receive a reset link.");
     }
   };
 
@@ -217,3 +217,4 @@ export default function ForgotPasswordPage() {
     </>
   );
 }
+

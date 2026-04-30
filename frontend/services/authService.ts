@@ -1,4 +1,24 @@
-export type UserRole = 'student' | 'mentor' | 'admin';
+import api from "@/lib/api";
+
+/* ─────────────────────────────
+   ERROR CLASS
+───────────────────────────── */
+
+export class AuthError extends Error {
+  type?: "EMAIL_NOT_VERIFIED";
+
+  constructor(message: string, type?: "EMAIL_NOT_VERIFIED") {
+    super(message);
+    this.name = "AuthError";
+    this.type = type;
+  }
+}
+
+/* ─────────────────────────────
+   TYPES
+───────────────────────────── */
+
+export type UserRole = "student" | "mentor" | "admin";
 
 export interface User {
   id: number;
@@ -7,131 +27,185 @@ export interface User {
   role: UserRole;
 }
 
-export interface RegisterData {
+export interface RegisterFormData {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
+  confirmPassword: string;
   school?: string;
   grade?: string;
   preferredLanguage?: string;
 }
 
-const simulateNetworkDelay = (ms: number) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+/* ─────────────────────────────
+   API RESPONSE TYPES
+───────────────────────────── */
 
-const authCookieName = 'auth_token';
-const roleCookieName = 'user_role';
+interface ApiUser {
+  id: number;
+  name: string;
+  email: string;
+  role?: UserRole;
+}
 
-const setCookie = (name: string, value: string, maxAgeSeconds: number) => {
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; sameSite=Lax`;
-};
+interface AuthResponse {
+  data?: {
+    user?: ApiUser;
+    token?: string;
+  };
+  user?: ApiUser;
+  token?: string;
+}
 
-const deleteCookie = (name: string) => {
-  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-};
+/* ─────────────────────────────
+   HELPERS
+───────────────────────────── */
 
-const getCookieValue = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const cookie = document.cookie
-    .split('; ')
-    .find((entry) => entry.startsWith(`${name}=`));
-
-  return cookie ? decodeURIComponent(cookie.split('=')[1]) : null;
-};
-
-const buildMockUser = (email: string, role: UserRole): User => ({
-  id: 1,
-  name: role === 'admin' ? 'Admin User' : role === 'mentor' ? 'Mentor User' : 'Student User',
-  email,
-  role,
+const normalizeUser = (user: ApiUser): User => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role ?? "student",
 });
 
-// MOCK ONLY: role inferred from email substring — remove before real API integration
-const getRoleFromEmail = (email: string): UserRole => {
-  if (email.toLowerCase().includes('admin')) return 'admin';
-  if (email.toLowerCase().includes('mentor')) return 'mentor';
-  return 'student';
+const setAuthCookie = (token: string): void => {
+  document.cookie = `auth_token=${token}; path=/; max-age=86400`;
 };
 
-// MOCK DATA (to be replaced with cloud API later)
+const clearAuthCookie = (): void => {
+  document.cookie = `auth_token=; path=/; max-age=0`;
+};
+
+/* ─────────────────────────────
+   LOGIN
+───────────────────────────── */
+
 export const login = async (
   email: string,
-  password: string,
-  rememberMe = false,
+  password: string
 ): Promise<User> => {
-  await simulateNetworkDelay(1000);
+  try {
+    const res = await api.post<AuthResponse>("/auth/login", {
+      email,
+      password,
+    });
 
-  if (!email || !password) {
-    throw new Error('Invalid credentials');
+    const userData = res.data.data?.user ?? res.data.user;
+    const token = res.data.data?.token ?? res.data.token;
+
+    if (!userData) {
+      throw new Error("Invalid login response");
+    }
+
+    const user = normalizeUser(userData);
+
+    if (token) {
+      setAuthCookie(token);
+    }
+
+    return user;
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "response" in err) {
+      const error = err as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      };
+
+      const message = error.response?.data?.message;
+
+      if (message?.toLowerCase().includes("verify")) {
+        throw new AuthError(message, "EMAIL_NOT_VERIFIED");
+      }
+    }
+
+    throw err;
+  }
+};
+
+/* ─────────────────────────────
+   REGISTER
+───────────────────────────── */
+
+export const register = async (data: RegisterFormData): Promise<void> => {
+  if (data.password !== data.confirmPassword) {
+    throw new Error("Passwords do not match");
   }
 
-  const role = getRoleFromEmail(email);
-  const mockUser = buildMockUser(email, role);
-  const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
-
-  setCookie(authCookieName, `mock-token-${Date.now()}`, cookieMaxAge);
-  setCookie(roleCookieName, role, cookieMaxAge);
-
-  return mockUser;
+  await api.post("/auth/register", {
+    name: `${data.firstName} ${data.lastName}`,
+    email: data.email,
+    password: data.password,
+    password_confirmation: data.confirmPassword,
+    school: data.school,
+    grade: data.grade,
+    preferred_language: data.preferredLanguage,
+  });
 };
+
+/* ─────────────────────────────
+   LOGOUT
+───────────────────────────── */
 
 export const logout = async (): Promise<void> => {
-  await simulateNetworkDelay(500);
-  deleteCookie(authCookieName);
-  deleteCookie(roleCookieName);
-};
-
-export const register = async (data: RegisterData): Promise<void> => {
-  await simulateNetworkDelay(1500);
-
-  if (!data.firstName || !data.lastName || !data.email || !data.password) {
-    throw new Error('Registration failed: Missing required fields');
+  try {
+    await api.post("/auth/logout");
+  } finally {
+    clearAuthCookie();
   }
-
-  const fullName = `${data.firstName} ${data.lastName}`.trim();
-  console.log('Mock registration successful:', { ...data, name: fullName });
 };
+
+/* ─────────────────────────────
+   CHECK AUTH
+───────────────────────────── */
 
 export const checkAuth = async (): Promise<User | null> => {
-  await simulateNetworkDelay(500);
+  try {
+    const res = await api.get("/auth/user");
 
-  const token = getCookieValue(authCookieName);
-  const role = getCookieValue(roleCookieName) as UserRole | null;
+    const user = res.data?.data?.user ?? res.data?.user;
 
-  if (!token || !role) {
+    if (!user || typeof user.id !== "number") return null;
+
+    return normalizeUser(user);
+  } catch {
     return null;
   }
-
-  return buildMockUser('demo@mock.local', role);
 };
+
+/* ─────────────────────────────
+   PASSWORD RESET
+───────────────────────────── */
 
 export const forgotPassword = async (email: string): Promise<void> => {
-  await simulateNetworkDelay(1400);
-
-  if (!email) {
-    throw new Error('Email is required');
-  }
-
-  console.log('Mock password reset email sent to:', email);
+  await api.post("/auth/forgot-password", { email });
 };
 
-export const verifyEmail = async (token: string): Promise<void> => {
-  await simulateNetworkDelay(1000);
-
-  if (!token) {
-    throw new Error('Invalid verification token');
-  }
-
-  console.log('Mock email verified with token:', token);
+export const resetPassword = async (data: {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<void> => {
+  await api.post("/auth/reset-password", data);
 };
 
-export const resendVerificationEmail = async (email: string): Promise<void> => {
-  await simulateNetworkDelay(1500);
+/* ─────────────────────────────
+   EMAIL VERIFICATION
+───────────────────────────── */
 
-  if (!email) {
-    throw new Error('Email is required');
-  }
+export const verifyEmail = async (
+  id: string,
+  hash: string
+): Promise<void> => {
+  await api.get(`/email/verify/${id}/${hash}`);
+};
 
-  console.log('Mock verification email resent to:', email);
+export const resendVerificationEmail = async (
+  email: string
+): Promise<void> => {
+  await api.post("/email/resend", { email });
 };
