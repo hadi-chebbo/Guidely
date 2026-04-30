@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\V1\Admin\MajorController;
 
 Route::prefix('admin/majors')
     ->controller(MajorController::class)
-    ->middleware('auth:sanctum')
+    ->middleware(['auth:sanctum','role:admin'])
     ->group(function (): void {
         Route::get('/', 'index');
         Route::post('/', 'store');
