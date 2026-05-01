@@ -1,5 +1,4 @@
 "use client";
-import axios from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -471,44 +470,36 @@ export default function RegisterPage() {
   };
 
   const handleStep3 = async (interests: string[]) => {
-  const finalData: AllFormData = { ...accumulated, interests };
+    const finalData: AllFormData = { ...accumulated, interests };
 
-  setIsSubmitting(true);
-  setServerError(null);
+    setIsSubmitting(true);
+    setServerError(null);
 
-  try {
-    await register({
-      firstName: finalData.firstName,
-      lastName: finalData.lastName,
-      email: finalData.email,
-      password: finalData.password,
-      confirmPassword: finalData.confirmPassword,
-      school: finalData.school,
-      grade: finalData.grade,
-      preferredLanguage: finalData.preferredLanguage,
-    });
+    try {
+      await register({
+        firstName: finalData.firstName,
+        lastName: finalData.lastName,
+        email: finalData.email,
+        password: finalData.password,
+        confirmPassword: finalData.confirmPassword,
+        school: finalData.school,
+        grade: finalData.grade,
+        preferredLanguage: finalData.preferredLanguage,
+      });
 
-    setSuccess(true);
-  } catch (err: unknown) {
-    let message = "Registration failed. Please try again.";
+      setSuccess(true);
+    } catch (err: unknown) {
+      let message = "Registration failed. Please try again.";
 
-    // Axios error handling (BEST PRACTICE)
-    if (axios.isAxiosError(err)) {
-      message =
-        err.response?.data?.message ||
-        err.message ||
-        message;
+      if (err instanceof Error) {
+        message = err.message;
+      }
+
+      setServerError(message);
+    } finally {
+      setIsSubmitting(false);
     }
-    // JS error fallback
-    else if (err instanceof Error) {
-      message = err.message;
-    }
-
-    setServerError(message);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
   if (success) {
     return <SuccessState email={accumulated.email ?? ""} />;
   }

@@ -1,6 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Star } from "lucide-react";
-import Logo from "@/components/ui/Logo";
 
 /* ── Branded left panel ──────────────────────────────────────── */
 function BrandPanel() {
@@ -15,11 +15,16 @@ function BrandPanel() {
 
       {/* ── TOP: Logo ── */}
       <div className="relative z-10">
-        <Link href="/" className="inline-flex items-center gap-3 group" aria-label="Guidely home">
-          <Logo color="white" size="lg" />
-          <span className="text-2xl font-bold text-white font-heading tracking-tight">
-            Guidely
-          </span>
+        <Link href="/" aria-label="Guidely home" className="inline-flex items-center gap-3">
+          <Image
+            src="/logo-transparent.png"
+            alt="Guidely"
+            width={56}
+            height={56}
+            priority
+            className="brightness-0 invert"
+          />
+          <span className="text-2xl font-bold text-white font-heading tracking-tight">Guidely</span>
         </Link>
       </div>
 
@@ -54,8 +59,14 @@ function FormPanel({ children }: { children: React.ReactNode }) {
     <div className="flex flex-1 flex-col items-center justify-center bg-white px-5 py-8 sm:px-8 sm:py-10 lg:px-16 xl:px-20 overflow-y-auto">
 
       {/* Mobile-only logo */}
-      <div className="mb-6 sm:mb-8 flex lg:hidden items-center gap-2.5">
-        <Logo color="brand" size="md" />
+      <div className="mb-6 sm:mb-8 flex lg:hidden items-center justify-center gap-2.5">
+        <Image
+          src="/logo-transparent.png"
+          alt="Guidely"
+          width={40}
+          height={40}
+          priority
+        />
         <span className="text-xl font-bold text-gray-900 font-heading tracking-tight">Guidely</span>
       </div>
 

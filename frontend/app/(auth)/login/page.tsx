@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
@@ -12,7 +13,6 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import Input        from "@/components/ui/Input";
 import Button       from "@/components/ui/Button";
 import FormMessage  from "@/components/ui/FormMessage";
-import Logo         from "@/components/ui/Logo";
 
 export default function LoginPage() {
   const [serverError,   setServerError]   = useState<string | null>(null);
@@ -55,8 +55,14 @@ export default function LoginPage() {
     <>
       {/* Header */}
       <div className="mb-8 sm:mb-10">
-        <div className="hidden lg:inline-flex mb-6 items-center justify-center h-14 w-14 rounded-2xl bg-brand-950 ring-1 ring-brand-950/10 shadow-[0_8px_24px_-8px_rgba(14,23,51,0.25)]">
-          <Logo color="white" size="lg" />
+        <div className="hidden lg:flex mb-6 justify-start">
+          <Image
+            src="/logo-transparent.png"
+            alt="Guidely"
+            width={72}
+            height={72}
+            priority
+          />
         </div>
         <h1 className="text-3xl sm:text-[2rem] font-bold text-gray-900 font-heading tracking-tight leading-[1.1]">
           Welcome back
