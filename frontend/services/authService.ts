@@ -83,7 +83,8 @@ const clearAuthCookie = (): void => {
 
 export const login = async (
   email: string,
-  password: string
+  password: string,
+  rememberMe = false
 ): Promise<User> => {
   try {
     const res = await api.post<AuthResponse>("/auth/login", {
@@ -101,7 +102,8 @@ export const login = async (
     const user = normalizeUser(userData);
 
     if (token) {
-      setAuthCookie(token);
+      const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
+      document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}`;
     }
 
     return user;
