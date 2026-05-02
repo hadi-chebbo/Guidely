@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useMemo,
-  useState,
-  useCallback,
-  Suspense,
-  useRef,
-  useEffect,
-} from "react";
+import { useMemo, useState, useCallback, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
@@ -19,7 +12,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockMajors } from "@/lib/mocks/majors";
+import { mockMajors, mockCategories } from "@/lib/mocks/majors";
 import { useDebounce } from "@/hooks/useDebounce";
 import MajorCard from "@/components/majors/MajorCard";
 import MajorsFilterSidebar, {
@@ -57,43 +50,25 @@ function MajorsContent() {
 
   const debouncedSearch = useDebounce(search, 300);
 
-  // Read filters from URL on mount
   const [filters, setFiltersState] = useState<MajorFilters>(() =>
     paramsToFilters(searchParams),
   );
 
-  const searchRef = useRef(search);
-  useEffect(() => {
-    searchRef.current = search;
-  }, [search]);
-
-  const filtersRef = useRef(filters);
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
-
-  const setFilters = useCallback(
-    (next: MajorFilters) => {
-      setFiltersState(next);
-      const params = filtersToParams(next);
-      const q = searchRef.current.trim();
-      if (q) params.set("q", q);
-      else params.delete("q");
-      router.replace(`/majors?${params.toString()}`, { scroll: false });
-    },
-    [router],
-  );
+  const setFilters = useCallback((next: MajorFilters) => {
+    setFiltersState(next);
+  }, []);
 
   const handleSearch = (val: string) => {
     setSearch(val);
-    const params = filtersToParams(filtersRef.current);
-    if (val.trim()) {
-      params.set("q", val.trim());
-    } else {
-      params.delete("q");
-    }
-    router.replace(`/majors?${params.toString()}`, { scroll: false });
   };
+
+  useEffect(() => {
+    const params = filtersToParams(filters);
+    if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+    else params.delete("q");
+    router.replace(`/majors?${params.toString()}`, { scroll: false });
+  }, [debouncedSearch, filters, router]);
+
   const filtered = useMemo(() => {
     return mockMajors.filter((m) => {
       if (debouncedSearch) {
@@ -126,22 +101,18 @@ function MajorsContent() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
-      {/* ── Hero header ──────────────────────────────────────────── */}
+      {/* ── Hero header ── */}
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-600 to-indigo-700 px-6 pb-8 pt-10">
-        {/* Subtle grid texture */}
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.04]" />
-        {/* Glow blobs */}
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 left-1/3 h-48 w-48 rounded-full bg-brand-400/20 blur-3xl" />
 
         <div className="relative mx-auto max-w-4xl text-center">
-          {/* eyebrow */}
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-white/70 ring-1 ring-white/20 backdrop-blur-sm">
             <GraduationCap className="h-3.5 w-3.5" />
             Guidely — Major Explorer
           </span>
 
-          {/* headline */}
           <h1 className="mt-4 font-heading text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
             Find Your Perfect Major
           </h1>
@@ -150,7 +121,6 @@ function MajorsContent() {
             demand, difficulty, and more.
           </p>
 
-          {/* ── Full-width search bar ─────────────────────────── */}
           <div className="mx-auto mt-7 max-w-2xl">
             <div className="relative flex items-center rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] ring-1 ring-white/20">
               <Search className="pointer-events-none absolute left-4 h-5 w-5 text-gray-400" />
@@ -177,11 +147,10 @@ function MajorsContent() {
             </div>
           </div>
 
-          {/* Stats strip */}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
             {[
               { label: "Majors", value: mockMajors.length },
-              { label: "Categories", value: 4 },
+              { label: "Categories", value: mockCategories.length },
               {
                 label: "High-demand fields",
                 value: mockMajors.filter(
@@ -202,10 +171,9 @@ function MajorsContent() {
         </div>
       </div>
 
-      {/* ── Controls bar ─────────────────────────────────────────── */}
+      {/* ── Controls bar ── */}
       <div className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/90 px-6 py-2.5 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-          {/* Result count + active chips */}
           <div className="flex flex-wrap items-center gap-2 min-w-0">
             <span className="text-sm text-gray-500 flex-shrink-0">
               <span className="font-semibold text-gray-900">
@@ -273,9 +241,7 @@ function MajorsContent() {
             )}
           </div>
 
-          {/* Right controls */}
           <div className="flex flex-shrink-0 items-center gap-2">
-            {/* Mobile filter button */}
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(true)}
@@ -295,7 +261,6 @@ function MajorsContent() {
               )}
             </button>
 
-            {/* View toggle */}
             <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1">
               <button
                 type="button"
@@ -328,10 +293,9 @@ function MajorsContent() {
         </div>
       </div>
 
-      {/* ── Body ─────────────────────────────────────────────────── */}
+      {/* ── Body ── */}
       <div className="mx-auto max-w-7xl px-6 py-6">
         <div className="flex gap-6">
-          {/* ── Sidebar (desktop) ─────────────────────────────── */}
           <div className="hidden w-56 flex-shrink-0 md:block">
             <div className="sticky top-[57px]">
               <MajorsFilterSidebar
@@ -342,9 +306,7 @@ function MajorsContent() {
             </div>
           </div>
 
-          {/* ── Results ───────────────────────────────────────── */}
           <div className="min-w-0 flex-1">
-            {/* Result count */}
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-gray-500">
                 <span className="font-semibold text-gray-900">
@@ -352,7 +314,6 @@ function MajorsContent() {
                 </span>{" "}
                 major{filtered.length !== 1 ? "s" : ""} found
               </p>
-              {/* mobile view toggle */}
               <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1 shadow-sm sm:hidden">
                 <button
                   type="button"
@@ -405,7 +366,7 @@ function MajorsContent() {
         </div>
       </div>
 
-      {/* ── Mobile sidebar drawer ─────────────────────────────────── */}
+      {/* ── Mobile sidebar drawer ── */}
       {mobileSidebarOpen && (
         <>
           <div
@@ -440,7 +401,7 @@ function MajorsContent() {
   );
 }
 
-/* ── Active filter chip ──────────────────────────────────────────── */
+/* ── Active filter chip ── */
 function ActiveChip({
   label,
   onRemove,
@@ -462,7 +423,7 @@ function ActiveChip({
   );
 }
 
-/* ── Empty state ─────────────────────────────────────────────────── */
+/* ── Empty state ── */
 function EmptyState({ onClear }: { onClear: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center">
@@ -485,7 +446,7 @@ function EmptyState({ onClear }: { onClear: () => void }) {
   );
 }
 
-/* ── Page export with Suspense ───────────────────────────────────── */
+/* ── Page export with Suspense ── */
 export default function MajorsPage() {
   return (
     <Suspense
