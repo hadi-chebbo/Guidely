@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo, useState, useCallback, Suspense } from "react";
+import { useMemo, useState, useCallback, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, LayoutGrid, List, SlidersHorizontal, X, SearchX, GraduationCap } from "lucide-react";
+import {
+  Search,
+  LayoutGrid,
+  List,
+  SlidersHorizontal,
+  X,
+  SearchX,
+  GraduationCap,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockMajors } from "@/lib/mocks/majors";
+import { mockMajors, mockCategories } from "@/lib/mocks/majors";
 import { useDebounce } from "@/hooks/useDebounce";
 import MajorCard from "@/components/majors/MajorCard";
 import MajorsFilterSidebar, {
@@ -36,34 +44,30 @@ function MajorsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [search, setSearch]       = useState(searchParams.get("q") ?? "");
-  const [view, setView]           = useState<"grid" | "list">("grid");
+  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const [view, setView] = useState<"grid" | "list">("grid");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
 
-  // Read filters from URL on mount
   const [filters, setFiltersState] = useState<MajorFilters>(() =>
-    paramsToFilters(searchParams)
+    paramsToFilters(searchParams),
   );
 
-  const setFilters = useCallback(
-    (next: MajorFilters) => {
-      setFiltersState(next);
-      const params = filtersToParams(next);
-      if (debouncedSearch) params.set("q", debouncedSearch);
-      router.replace(`/majors?${params.toString()}`, { scroll: false });
-    },
-    [router, debouncedSearch]
-  );
+  const setFilters = useCallback((next: MajorFilters) => {
+    setFiltersState(next);
+  }, []);
 
-  // Sync search to URL
   const handleSearch = (val: string) => {
     setSearch(val);
-    const params = filtersToParams(filters);
-    if (val.trim()) params.set("q", val.trim());
-    router.replace(`/majors?${params.toString()}`, { scroll: false });
   };
+
+  useEffect(() => {
+    const params = filtersToParams(filters);
+    if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+    else params.delete("q");
+    router.replace(`/majors?${params.toString()}`, { scroll: false });
+  }, [debouncedSearch, filters, router]);
 
   const filtered = useMemo(() => {
     return mockMajors.filter((m) => {
@@ -71,19 +75,24 @@ function MajorsContent() {
         const q = debouncedSearch.toLowerCase();
         if (
           !m.name_en.toLowerCase().includes(q) &&
-          !m.name_ar.includes(debouncedSearch) &&
+          !m.name_ar.toLowerCase().includes(q) &&
           !m.overview.toLowerCase().includes(q)
         )
           return false;
       }
-      if (filters.categories.length && !filters.categories.includes(m.category?.slug ?? ""))
+      if (
+        filters.categories.length &&
+        !filters.categories.includes(m.category?.slug ?? "")
+      )
         return false;
       if (filters.demand.length && !filters.demand.includes(m.local_demand))
         return false;
-      if (filters.difficulty.length && !filters.difficulty.includes(m.difficulty_level))
+      if (
+        filters.difficulty.length &&
+        !filters.difficulty.includes(m.difficulty_level)
+      )
         return false;
-      if (filters.featuredOnly && !m.is_featured)
-        return false;
+      if (filters.featuredOnly && !m.is_featured) return false;
       return true;
     });
   }, [debouncedSearch, filters]);
@@ -92,31 +101,26 @@ function MajorsContent() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
-
-      {/* ── Hero header ──────────────────────────────────────────── */}
+      {/* ── Hero header ── */}
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-600 to-indigo-700 px-6 pb-8 pt-10">
-        {/* Subtle grid texture */}
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.04]" />
-        {/* Glow blobs */}
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 left-1/3 h-48 w-48 rounded-full bg-brand-400/20 blur-3xl" />
 
         <div className="relative mx-auto max-w-4xl text-center">
-          {/* eyebrow */}
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-white/70 ring-1 ring-white/20 backdrop-blur-sm">
             <GraduationCap className="h-3.5 w-3.5" />
             Guidely — Major Explorer
           </span>
 
-          {/* headline */}
           <h1 className="mt-4 font-heading text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
             Find Your Perfect Major
           </h1>
           <p className="mt-3 text-base text-white/60 sm:text-lg">
-            Browse {mockMajors.length}+ programs across every field — filter by demand, difficulty, and more.
+            Browse {mockMajors.length}+ programs across every field — filter by
+            demand, difficulty, and more.
           </p>
 
-          {/* ── Full-width search bar ─────────────────────────── */}
           <div className="mx-auto mt-7 max-w-2xl">
             <div className="relative flex items-center rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] ring-1 ring-white/20">
               <Search className="pointer-events-none absolute left-4 h-5 w-5 text-gray-400" />
@@ -143,14 +147,22 @@ function MajorsContent() {
             </div>
           </div>
 
-          {/* Stats strip */}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
             {[
               { label: "Majors", value: mockMajors.length },
-              { label: "Categories", value: 4 },
-              { label: "High-demand fields", value: mockMajors.filter(m => m.local_demand === "very_high" || m.local_demand === "high").length },
+              { label: "Categories", value: mockCategories.length },
+              {
+                label: "High-demand fields",
+                value: mockMajors.filter(
+                  (m) =>
+                    m.local_demand === "very_high" || m.local_demand === "high",
+                ).length,
+              },
             ].map((s) => (
-              <div key={s.label} className="flex items-center gap-2 text-white/70">
+              <div
+                key={s.label}
+                className="flex items-center gap-2 text-white/70"
+              >
                 <span className="text-xl font-bold text-white">{s.value}</span>
                 <span className="text-sm">{s.label}</span>
               </div>
@@ -159,62 +171,121 @@ function MajorsContent() {
         </div>
       </div>
 
-      {/* ── Controls bar ─────────────────────────────────────────── */}
+      {/* ── Controls bar ── */}
       <div className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/90 px-6 py-2.5 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-          {/* Result count + active chips */}
           <div className="flex flex-wrap items-center gap-2 min-w-0">
             <span className="text-sm text-gray-500 flex-shrink-0">
-              <span className="font-semibold text-gray-900">{filtered.length}</span> major{filtered.length !== 1 ? "s" : ""}
+              <span className="font-semibold text-gray-900">
+                {filtered.length}
+              </span>{" "}
+              major{filtered.length !== 1 ? "s" : ""}
             </span>
             {filterCount > 0 && (
               <>
                 <span className="h-3 w-px bg-gray-200 flex-shrink-0" />
                 {filters.categories.map((slug) => (
-                  <ActiveChip key={slug} label={slug} onRemove={() => setFilters({ ...filters, categories: filters.categories.filter((c) => c !== slug) })} />
+                  <ActiveChip
+                    key={slug}
+                    label={slug}
+                    onRemove={() =>
+                      setFilters({
+                        ...filters,
+                        categories: filters.categories.filter(
+                          (c) => c !== slug,
+                        ),
+                      })
+                    }
+                  />
                 ))}
                 {filters.demand.map((d) => (
-                  <ActiveChip key={d} label={`${d.replace("_", " ")} demand`} onRemove={() => setFilters({ ...filters, demand: filters.demand.filter((v) => v !== d) })} />
+                  <ActiveChip
+                    key={d}
+                    label={`${d.replace("_", " ")} demand`}
+                    onRemove={() =>
+                      setFilters({
+                        ...filters,
+                        demand: filters.demand.filter((v) => v !== d),
+                      })
+                    }
+                  />
                 ))}
                 {filters.difficulty.map((d) => (
-                  <ActiveChip key={d} label={d.replace("_", " ")} onRemove={() => setFilters({ ...filters, difficulty: filters.difficulty.filter((v) => v !== d) })} />
+                  <ActiveChip
+                    key={d}
+                    label={d.replace("_", " ")}
+                    onRemove={() =>
+                      setFilters({
+                        ...filters,
+                        difficulty: filters.difficulty.filter((v) => v !== d),
+                      })
+                    }
+                  />
                 ))}
                 {filters.featuredOnly && (
-                  <ActiveChip label="Featured" onRemove={() => setFilters({ ...filters, featuredOnly: false })} />
+                  <ActiveChip
+                    label="Featured"
+                    onRemove={() =>
+                      setFilters({ ...filters, featuredOnly: false })
+                    }
+                  />
                 )}
-                <button type="button" onClick={() => setFilters(DEFAULT_FILTERS)} className="text-xs text-brand-600 hover:text-brand-700 font-medium flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setFilters(DEFAULT_FILTERS)}
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium flex-shrink-0"
+                >
                   Clear all
                 </button>
               </>
             )}
           </div>
 
-          {/* Right controls */}
           <div className="flex flex-shrink-0 items-center gap-2">
-            {/* Mobile filter button */}
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(true)}
               className={cn(
                 "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-medium transition-all md:hidden",
-                filterCount > 0 ? "border-brand-300 bg-brand-50 text-brand-700" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                filterCount > 0
+                  ? "border-brand-300 bg-brand-50 text-brand-700"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
               )}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Filters
               {filterCount > 0 && (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white">{filterCount}</span>
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white">
+                  {filterCount}
+                </span>
               )}
             </button>
 
-            {/* View toggle */}
             <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1">
-              <button type="button" onClick={() => setView("grid")} aria-label="Grid view"
-                className={cn("rounded-lg p-1.5 transition-all", view === "grid" ? "bg-brand-600 text-white shadow-sm" : "text-gray-400 hover:text-gray-600")}>
+              <button
+                type="button"
+                onClick={() => setView("grid")}
+                aria-label="Grid view"
+                className={cn(
+                  "rounded-lg p-1.5 transition-all",
+                  view === "grid"
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "text-gray-400 hover:text-gray-600",
+                )}
+              >
                 <LayoutGrid className="h-4 w-4" />
               </button>
-              <button type="button" onClick={() => setView("list")} aria-label="List view"
-                className={cn("rounded-lg p-1.5 transition-all", view === "list" ? "bg-brand-600 text-white shadow-sm" : "text-gray-400 hover:text-gray-600")}>
+              <button
+                type="button"
+                onClick={() => setView("list")}
+                aria-label="List view"
+                className={cn(
+                  "rounded-lg p-1.5 transition-all",
+                  view === "list"
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "text-gray-400 hover:text-gray-600",
+                )}
+              >
                 <List className="h-4 w-4" />
               </button>
             </div>
@@ -222,11 +293,9 @@ function MajorsContent() {
         </div>
       </div>
 
-      {/* ── Body ─────────────────────────────────────────────────── */}
+      {/* ── Body ── */}
       <div className="mx-auto max-w-7xl px-6 py-6">
         <div className="flex gap-6">
-
-          {/* ── Sidebar (desktop) ─────────────────────────────── */}
           <div className="hidden w-56 flex-shrink-0 md:block">
             <div className="sticky top-[57px]">
               <MajorsFilterSidebar
@@ -237,27 +306,49 @@ function MajorsContent() {
             </div>
           </div>
 
-          {/* ── Results ───────────────────────────────────────── */}
           <div className="min-w-0 flex-1">
-            {/* Result count */}
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-gray-500">
-                <span className="font-semibold text-gray-900">{filtered.length}</span>{" "}
+                <span className="font-semibold text-gray-900">
+                  {filtered.length}
+                </span>{" "}
                 major{filtered.length !== 1 ? "s" : ""} found
               </p>
-              {/* mobile view toggle */}
               <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1 shadow-sm sm:hidden">
-                <button type="button" onClick={() => setView("grid")} className={cn("rounded-lg p-1.5", view === "grid" ? "bg-brand-600 text-white" : "text-gray-400")}>
+                <button
+                  type="button"
+                  onClick={() => setView("grid")}
+                  className={cn(
+                    "rounded-lg p-1.5",
+                    view === "grid"
+                      ? "bg-brand-600 text-white"
+                      : "text-gray-400",
+                  )}
+                >
                   <LayoutGrid className="h-4 w-4" />
                 </button>
-                <button type="button" onClick={() => setView("list")} className={cn("rounded-lg p-1.5", view === "list" ? "bg-brand-600 text-white" : "text-gray-400")}>
+                <button
+                  type="button"
+                  onClick={() => setView("list")}
+                  className={cn(
+                    "rounded-lg p-1.5",
+                    view === "list"
+                      ? "bg-brand-600 text-white"
+                      : "text-gray-400",
+                  )}
+                >
                   <List className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
             {filtered.length === 0 ? (
-              <EmptyState onClear={() => { setFilters(DEFAULT_FILTERS); handleSearch(""); }} />
+              <EmptyState
+                onClear={() => {
+                  setFilters(DEFAULT_FILTERS);
+                  handleSearch("");
+                }}
+              />
             ) : view === "grid" ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {filtered.map((m) => (
@@ -275,7 +366,7 @@ function MajorsContent() {
         </div>
       </div>
 
-      {/* ── Mobile sidebar drawer ─────────────────────────────────── */}
+      {/* ── Mobile sidebar drawer ── */}
       {mobileSidebarOpen && (
         <>
           <div
@@ -296,7 +387,10 @@ function MajorsContent() {
             <div className="p-4">
               <MajorsFilterSidebar
                 filters={filters}
-                onChange={(f) => { setFilters(f); setMobileSidebarOpen(false); }}
+                onChange={(f) => {
+                  setFilters(f);
+                  setMobileSidebarOpen(false);
+                }}
                 totalResults={filtered.length}
               />
             </div>
@@ -307,19 +401,29 @@ function MajorsContent() {
   );
 }
 
-/* ── Active filter chip ──────────────────────────────────────────── */
-function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+/* ── Active filter chip ── */
+function ActiveChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
   return (
     <span className="flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-200 capitalize">
       {label}
-      <button type="button" onClick={onRemove} className="ml-0.5 text-brand-400 hover:text-brand-600">
+      <button
+        type="button"
+        onClick={onRemove}
+        className="ml-0.5 text-brand-400 hover:text-brand-600"
+      >
         <X className="h-3 w-3" />
       </button>
     </span>
   );
 }
 
-/* ── Empty state ─────────────────────────────────────────────────── */
+/* ── Empty state ── */
 function EmptyState({ onClear }: { onClear: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center">
@@ -328,7 +432,8 @@ function EmptyState({ onClear }: { onClear: () => void }) {
       </div>
       <h3 className="mt-4 font-semibold text-gray-900">No majors found</h3>
       <p className="mt-1 text-sm text-gray-500 max-w-xs">
-        Try adjusting your search or filters to find what you&apos;re looking for.
+        Try adjusting your search or filters to find what you&apos;re looking
+        for.
       </p>
       <button
         type="button"
@@ -341,7 +446,7 @@ function EmptyState({ onClear }: { onClear: () => void }) {
   );
 }
 
-/* ── Page export with Suspense ───────────────────────────────────── */
+/* ── Page export with Suspense ── */
 export default function MajorsPage() {
   return (
     <Suspense
