@@ -17,8 +17,6 @@ import {
   X,
   SearchX,
   GraduationCap,
-  AlertCircle,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -34,7 +32,7 @@ import MajorsFilterSidebar, {
   type MajorFilters,
 } from "@/components/majors/MajorsFilterSidebar";
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 20;
 
 /* ── Skeleton ── */
 function CardSkeleton() {
@@ -55,7 +53,7 @@ function CardSkeleton() {
 function SkeletonGrid() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+      {Array.from({ length: 6 }).map((_, i) => (
         <CardSkeleton key={i} />
       ))}
     </div>
@@ -82,29 +80,6 @@ function EmptyState({ onClear }: { onClear: () => void }) {
         className="mt-4 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
       >
         Clear filters
-      </button>
-    </div>
-  );
-}
-
-/* ── Error state ── */
-function ErrorState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-red-200 bg-white py-16 text-center transition-all">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
-        <AlertCircle className="h-8 w-8 text-red-400" />
-      </div>
-      <h3 className="mt-4 font-semibold text-gray-900">Something went wrong</h3>
-      <p className="mt-1 text-sm text-gray-500 max-w-xs">
-        We couldn&apos;t load the majors. Please try again.
-      </p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 transition-colors"
-      >
-        <RefreshCw className="h-4 w-4" />
-        Try again
       </button>
     </div>
   );
@@ -187,8 +162,6 @@ function MajorsContent() {
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
   const [page, setPage] = useState(Number(searchParams.get("page") ?? "1"));
 
   const debouncedSearch = useDebounce(search, 300);
@@ -196,12 +169,6 @@ function MajorsContent() {
   const [filters, setFiltersState] = useState<MajorFilters>(() =>
     paramsToFilters(searchParams),
   );
-
-  // Simulate initial loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
 
   const setFilters = useCallback((next: MajorFilters) => {
     setFiltersState(next);
@@ -211,27 +178,6 @@ function MajorsContent() {
   const handleSearch = (val: string) => {
     setSearch(val);
     setPage(1);
-  };
-
-  // Single effect handles all URL updates
-  useEffect(() => {
-    const params = filtersToParams(filters);
-    if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
-    else params.delete("q");
-    if (page > 1) params.set("page", String(page));
-    else params.delete("page");
-    router.replace(`/majors?${params.toString()}`, { scroll: false });
-  }, [debouncedSearch, filters, page, router]);
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const handleRetry = () => {
-    setHasError(false);
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 800);
   };
 
   const filtered = useMemo(() => {
@@ -263,36 +209,28 @@ function MajorsContent() {
   }, [debouncedSearch, filters]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  // Clamp page if out of range
+  useEffect(() => {
+    if (page > totalPages && totalPages > 0) setPage(1);
+  }, [page, totalPages]);
+
+  // Single effect handles all URL updates
+  useEffect(() => {
+    const params = filtersToParams(filters);
+    if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+    else params.delete("q");
+    if (page > 1) params.set("page", String(page));
+    else params.delete("page");
+    router.replace(`/majors?${params.toString()}`, { scroll: false });
+  }, [debouncedSearch, filters, page, router]);
+
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const filterCount = activeFilterCount(filters);
 
-  const renderResults = () => {
-    if (isLoading) return <SkeletonGrid />;
-    if (hasError) return <ErrorState onRetry={handleRetry} />;
-    if (filtered.length === 0)
-      return (
-        <EmptyState
-          onClear={() => {
-            setFilters(DEFAULT_FILTERS);
-            handleSearch("");
-          }}
-        />
-      );
-    if (view === "grid")
-      return (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {paginated.map((m) => (
-            <MajorCard key={m.id} major={m} view="grid" />
-          ))}
-        </div>
-      );
-    return (
-      <div className="flex flex-col gap-2.5">
-        {paginated.map((m) => (
-          <MajorCard key={m.id} major={m} view="list" />
-        ))}
-      </div>
-    );
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
@@ -505,20 +443,14 @@ function MajorsContent() {
           <div className="min-w-0 flex-1" ref={resultsRef}>
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-gray-500">
-                {isLoading ? (
-                  <span className="inline-block h-4 w-24 animate-pulse rounded bg-gray-200" />
-                ) : (
-                  <>
-                    <span className="font-semibold text-gray-900">
-                      {filtered.length}
-                    </span>{" "}
-                    major{filtered.length !== 1 ? "s" : ""} found
-                    {totalPages > 1 && (
-                      <span className="ml-2 text-gray-400">
-                        · Page {page} of {totalPages}
-                      </span>
-                    )}
-                  </>
+                <span className="font-semibold text-gray-900">
+                  {filtered.length}
+                </span>{" "}
+                major{filtered.length !== 1 ? "s" : ""} found
+                {totalPages > 1 && (
+                  <span className="ml-2 text-gray-400">
+                    · Page {page} of {totalPages}
+                  </span>
                 )}
               </p>
               <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1 shadow-sm sm:hidden">
@@ -549,15 +481,32 @@ function MajorsContent() {
               </div>
             </div>
 
-            <div className="transition-all duration-300">{renderResults()}</div>
-
-            {!isLoading && !hasError && filtered.length > 0 && (
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
+            {filtered.length === 0 ? (
+              <EmptyState
+                onClear={() => {
+                  setFilters(DEFAULT_FILTERS);
+                  handleSearch("");
+                }}
               />
+            ) : view === "grid" ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {paginated.map((m) => (
+                  <MajorCard key={m.id} major={m} view="grid" />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                {paginated.map((m) => (
+                  <MajorCard key={m.id} major={m} view="list" />
+                ))}
+              </div>
             )}
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
       </div>
