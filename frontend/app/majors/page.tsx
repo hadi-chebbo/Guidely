@@ -1,6 +1,13 @@
 "use client";
 
-import { useMemo, useState, useCallback, Suspense, useEffect } from "react";
+import {
+  useMemo,
+  useState,
+  useCallback,
+  Suspense,
+  useEffect,
+  useRef,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
@@ -10,6 +17,8 @@ import {
   X,
   SearchX,
   GraduationCap,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { mockMajors, mockCategories } from "@/lib/mocks/majors";
@@ -23,7 +32,9 @@ import MajorsFilterSidebar, {
   type MajorFilters,
 } from "@/components/majors/MajorsFilterSidebar";
 
-/* ── Skeleton ────────────────────────────────────────────────────── */
+const PAGE_SIZE = 20;
+
+/* ── Skeleton ── */
 function CardSkeleton() {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden animate-pulse">
@@ -39,14 +50,119 @@ function CardSkeleton() {
   );
 }
 
-/* ── Main content (needs Suspense for useSearchParams) ───────────── */
+function SkeletonGrid() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <CardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+/* ── Empty state ── */
+function EmptyState({ onClear }: { onClear: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center transition-all">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
+        <SearchX className="h-8 w-8 text-gray-400" />
+      </div>
+      <h3 className="mt-4 font-semibold text-gray-900">
+        No majors match your filters
+      </h3>
+      <p className="mt-1 text-sm text-gray-500 max-w-xs">
+        Try adjusting your search or filters to find what you&apos;re looking
+        for.
+      </p>
+      <button
+        type="button"
+        onClick={onClear}
+        className="mt-4 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
+      >
+        Clear filters
+      </button>
+    </div>
+  );
+}
+
+/* ── Pagination ── */
+function Pagination({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (p: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="mt-8 flex items-center justify-center gap-2">
+      <button
+        type="button"
+        onClick={() => onPageChange(page - 1)}
+        disabled={page === 1}
+        className={cn(
+          "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all",
+          page === 1
+            ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+            : "border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600",
+        )}
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Previous
+      </button>
+
+      <div className="flex items-center gap-1">
+        {Array.from({ length: totalPages }).map((_, i) => {
+          const p = i + 1;
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onPageChange(p)}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-xl text-sm font-medium transition-all",
+                p === page
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "border border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600",
+              )}
+            >
+              {p}
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onPageChange(page + 1)}
+        disabled={page === totalPages}
+        className={cn(
+          "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all",
+          page === totalPages
+            ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+            : "border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600",
+        )}
+      >
+        Next
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+/* ── Main content ── */
 function MajorsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [page, setPage] = useState(Number(searchParams.get("page") ?? "1"));
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -56,18 +172,13 @@ function MajorsContent() {
 
   const setFilters = useCallback((next: MajorFilters) => {
     setFiltersState(next);
+    setPage(1);
   }, []);
 
   const handleSearch = (val: string) => {
     setSearch(val);
+    setPage(1);
   };
-
-  useEffect(() => {
-    const params = filtersToParams(filters);
-    if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
-    else params.delete("q");
-    router.replace(`/majors?${params.toString()}`, { scroll: false });
-  }, [debouncedSearch, filters, router]);
 
   const filtered = useMemo(() => {
     return mockMajors.filter((m) => {
@@ -97,11 +208,34 @@ function MajorsContent() {
     });
   }, [debouncedSearch, filters]);
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  // Clamp page if out of range
+  useEffect(() => {
+    if (page > totalPages && totalPages > 0) setPage(1);
+  }, [page, totalPages]);
+
+  // Single effect handles all URL updates
+  useEffect(() => {
+    const params = filtersToParams(filters);
+    if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+    else params.delete("q");
+    if (page > 1) params.set("page", String(page));
+    else params.delete("page");
+    router.replace(`/majors?${params.toString()}`, { scroll: false });
+  }, [debouncedSearch, filters, page, router]);
+
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const filterCount = activeFilterCount(filters);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
-      {/* ── Hero header ── */}
+      {/* Hero header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-600 to-indigo-700 px-6 pb-8 pt-10">
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.04]" />
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
@@ -171,7 +305,7 @@ function MajorsContent() {
         </div>
       </div>
 
-      {/* ── Controls bar ── */}
+      {/* Controls bar */}
       <div className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/90 px-6 py-2.5 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -293,7 +427,7 @@ function MajorsContent() {
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* Body */}
       <div className="mx-auto max-w-7xl px-6 py-6">
         <div className="flex gap-6">
           <div className="hidden w-56 flex-shrink-0 md:block">
@@ -306,13 +440,18 @@ function MajorsContent() {
             </div>
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1" ref={resultsRef}>
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-gray-500">
                 <span className="font-semibold text-gray-900">
                   {filtered.length}
                 </span>{" "}
                 major{filtered.length !== 1 ? "s" : ""} found
+                {totalPages > 1 && (
+                  <span className="ml-2 text-gray-400">
+                    · Page {page} of {totalPages}
+                  </span>
+                )}
               </p>
               <div className="flex items-center rounded-xl border border-gray-200 bg-white p-1 shadow-sm sm:hidden">
                 <button
@@ -351,22 +490,28 @@ function MajorsContent() {
               />
             ) : view === "grid" ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {filtered.map((m) => (
+                {paginated.map((m) => (
                   <MajorCard key={m.id} major={m} view="grid" />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col gap-2.5">
-                {filtered.map((m) => (
+                {paginated.map((m) => (
                   <MajorCard key={m.id} major={m} view="list" />
                 ))}
               </div>
             )}
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
       </div>
 
-      {/* ── Mobile sidebar drawer ── */}
+      {/* Mobile sidebar drawer */}
       {mobileSidebarOpen && (
         <>
           <div
@@ -423,29 +568,6 @@ function ActiveChip({
   );
 }
 
-/* ── Empty state ── */
-function EmptyState({ onClear }: { onClear: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
-        <SearchX className="h-8 w-8 text-gray-400" />
-      </div>
-      <h3 className="mt-4 font-semibold text-gray-900">No majors found</h3>
-      <p className="mt-1 text-sm text-gray-500 max-w-xs">
-        Try adjusting your search or filters to find what you&apos;re looking
-        for.
-      </p>
-      <button
-        type="button"
-        onClick={onClear}
-        className="mt-4 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
-      >
-        Clear all filters
-      </button>
-    </div>
-  );
-}
-
 /* ── Page export with Suspense ── */
 export default function MajorsPage() {
   return (
@@ -453,11 +575,7 @@ export default function MajorsPage() {
       fallback={
         <div className="min-h-screen bg-gray-50/60 p-6">
           <div className="mx-auto max-w-7xl">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <CardSkeleton key={i} />
-              ))}
-            </div>
+            <SkeletonGrid />
           </div>
         </div>
       }
