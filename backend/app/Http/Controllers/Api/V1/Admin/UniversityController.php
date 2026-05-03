@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\University\IndexUniversityRequest;
 use App\Http\Requests\Admin\University\StoreUniversityRequest;
+use App\Http\Requests\Admin\University\UpdateUniversityRequest;
 use App\Http\Resources\AdminUniversityTableResource;
 use App\Http\Resources\UniversityResource;
 use App\Models\University;
@@ -63,6 +64,17 @@ class UniversityController extends Controller
         return $this->success(
             new UniversityResource($university),
             'University Fetched Successfully',
+            200,
+        );
+    }
+
+    public function update(UpdateUniversityRequest $request, University $university): JsonResponse
+    {
+        $university->update($request->validated());
+
+        return $this->success(
+            new UniversityResource($university->fresh()),
+            'University Updated Successfully',
             200,
         );
     }

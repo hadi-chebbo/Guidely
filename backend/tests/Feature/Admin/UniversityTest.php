@@ -24,6 +24,13 @@ it('requires authentication for admin universities show', function () {
         ->assertUnauthorized();
 });
 
+it('requires authentication for admin universities update', function () {
+    $university = University::factory()->create();
+
+    $this->putJson("/api/v1/admin/universities/{$university->id}", [])
+        ->assertUnauthorized();
+});
+
 it('returns paginated universities for admin users with default sorting and table fields', function () {
     $admin = User::factory()->admin()->create();
 
@@ -336,4 +343,124 @@ it('returns 404 when university is not found', function () {
 
     $this->getJson('/api/v1/admin/universities/999999')
         ->assertNotFound();
+});
+
+it('can update university', function () {
+    $admin = User::factory()->admin()->create();
+
+    $university = University::factory()->create([
+        'name_en' => 'Old University Name',
+        'slug' => 'old-university-name',
+        'type' => 'public',
+        'location' => 'Tripoli',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $payload = [
+        'name_en' => 'Updated University Name',
+        'name_ar' => 'جامعة محدثة',
+        'slug' => 'updated-university-name',
+        'type' => 'private',
+        'location' => 'Beirut',
+        'website' => 'https://www.updated.edu.lb',
+        'logo_url' => 'https://cdn.example.com/updated-logo.png',
+        'description_en' => 'Updated university description.',
+        'description_ar' => 'وصف الجامعة المحدث.',
+        'founded_year' => 1900,
+        'accreditation' => 'NECHE',
+    ];
+
+    $response = $this->putJson("/api/v1/admin/universities/{$university->id}", $payload);
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('message', 'University Updated Successfully')
+        ->assertJsonPath('data.id', $university->id)
+        ->assertJsonPath('data.slug', 'updated-university-name')
+        ->assertJsonPath('data.location', 'Beirut');
+
+    $this->assertDatabaseHas('universities', [
+        'id' => $university->id,
+        'name_en' => 'Updated University Name',
+        'slug' => 'updated-university-name',
+        'type' => 'private',
+        'location' => 'Beirut',
+    ]);
+});
+
+it('validates required university fields on update', function () {
+    $admin = User::factory()->admin()->create();
+    $university = University::factory()->create();
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->putJson("/api/v1/admin/universities/{$university->id}", []);
+
+    $response
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'name_en',
+            'slug',
+            'type',
+            'location',
+        ]);
+});
+
+it('allows keeping the same slug when updating university', function () {
+    $admin = User::factory()->admin()->create();
+
+    $university = University::factory()->create([
+        'slug' => 'same-university-slug',
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->putJson("/api/v1/admin/universities/{$university->id}", [
+        'name_en' => $university->name_en,
+        'name_ar' => $university->name_ar,
+        'slug' => 'same-university-slug',
+        'type' => $university->type,
+        'location' => $university->location,
+        'website' => $university->website,
+        'logo_url' => $university->logo_url,
+        'description_en' => $university->description_en,
+        'description_ar' => $university->description_ar,
+        'founded_year' => $university->founded_year,
+        'accreditation' => $university->accreditation,
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('data.slug', 'same-university-slug');
+});
+
+it('rejects duplicate slug when updating university', function () {
+    $admin = User::factory()->admin()->create();
+
+    $existing = University::factory()->create([
+        'slug' => 'taken-university-slug',
+    ]);
+
+    $university = University::factory()->create();
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->putJson("/api/v1/admin/universities/{$university->id}", [
+        'name_en' => $university->name_en,
+        'name_ar' => $university->name_ar,
+        'slug' => $existing->slug,
+        'type' => $university->type,
+        'location' => $university->location,
+        'website' => $university->website,
+        'logo_url' => $university->logo_url,
+        'description_en' => $university->description_en,
+        'description_ar' => $university->description_ar,
+        'founded_year' => $university->founded_year,
+        'accreditation' => $university->accreditation,
+    ]);
+
+    $response
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['slug']);
 });
