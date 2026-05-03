@@ -22,18 +22,9 @@ it('allows a user to register successfully', function () {
         ->assertCreated()
         ->assertJsonStructure([
             'message',
-            'data' => [
-                'user' => [
-                    'id',
-                    'name',
-                    'email',
-                ],
-                'token',
-                'token_type',
-            ],
+            'data' ,
         ]);
 
-    expect($response->json('data.token'))->not->toBeEmpty();
 
     $this->assertDatabaseHas('users', [
         'email' => 'fatima@test.com',

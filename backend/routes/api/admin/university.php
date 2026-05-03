@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\V1\Admin\UniversityController;
 
 Route::prefix('admin/universities')
     ->controller(UniversityController::class)
-    ->middleware('auth:sanctum')
+    ->middleware(['auth:sanctum','role:admin'])
     ->group(function (): void {
         Route::get('/', 'index')->name('api.v1.admin.universities.index');
         Route::post('/', 'store')->name('api.v1.admin.universities.store');

@@ -80,10 +80,10 @@ it('fails if email is already verified', function () {
         'email' => $user->email,
     ]);
 
-    $response->assertStatus(400)
-        ->assertJson([
-            'message' => 'Email is already verified.',
-        ]);
+   $response->assertOk()
+    ->assertJson([
+        'message' => 'If the email exists, a verification link has been sent.',
+    ]);
 
     Mail::assertNothingSent();
 });

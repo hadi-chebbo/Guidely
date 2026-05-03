@@ -10,8 +10,8 @@ use Laravel\Sanctum\Sanctum;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    $admin = User::factory()->admin()->create();
+    Sanctum::actingAs($admin);
 });
 
 test('example', function () {
@@ -29,7 +29,7 @@ test('can get majors', function () {
     ]);
 
 
-    $response = $this->getJson('api/v1/admin/majors');
+    $response = $this->getJson('/api/v1/admin/majors');
 
     $response->assertStatus(200);
 
@@ -63,7 +63,7 @@ test('can create major', function () {
         'skills'               => $skills->pluck('id')->toArray(),
     ];
 
-    $response = $this->postJson('api/v1/admin/majors', $payload);
+    $response = $this->postJson('/api/v1/admin/majors', $payload);
 
     $response->assertStatus(201);
 
@@ -89,7 +89,7 @@ test('can create major', function () {
 });
 
 test('cannot create major without required fields', function () {
-    $response = $this->postJson('api/v1/admin/majors', []);
+    $response = $this->postJson('/api/v1/admin/majors', []);
 
     $response->assertStatus(422);
     $response->assertJsonValidationErrors([
@@ -118,7 +118,7 @@ test('can show single major' , function() {
                 'slug' => 'computer-science',
             ]);
 
-    $response = $this->getJson("api/v1/admin/majors/{$major->id}");
+    $response = $this->getJson("/api/v1/admin/majors/{$major->id}");
 
     $response->assertStatus(200);
 
