@@ -10,6 +10,7 @@ use App\Traits\ApiResponseTrait;
 use App\Http\Requests\Admin\Major\StoreMajorRequest;
 use App\Http\Requests\Admin\Major\IndexMajorRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
 
 class MajorController extends Controller
 {
@@ -99,4 +100,5 @@ class MajorController extends Controller
     {
         return $this->success(new MajorResource($major),"Major Fetched Successfully",200);
     }
+
 }
