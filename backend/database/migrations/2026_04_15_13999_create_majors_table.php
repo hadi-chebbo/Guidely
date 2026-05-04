@@ -25,18 +25,18 @@ return new class extends Migration
             $table->text('description');
 
             // Study info
-            $table->tinyInteger('duration_years');
+            $table->tinyInteger('duration_years')->index();
             $table->enum('difficulty_level', ['easy', 'medium', 'hard', 'very_hard']);
 
             // Salary range (USD)
-            $table->unsignedInteger('salary_min');
-            $table->unsignedInteger('salary_max');
+            $table->unsignedInteger('salary_min')->index();
+            $table->unsignedInteger('salary_max')->index();
 
             // Market demand
             $table->enum('local_demand', ['low', 'medium', 'high', 'very_high']);
             $table->enum('international_demand', ['low', 'medium', 'high', 'very_high']);
 
-            $table->boolean('is_featured')->default(false);
+            $table->boolean('is_featured')->default(false)->index();
             $table->string('cover_image', 500)->nullable();
 
             $table->timestamps();
