@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Major;
 use App\Http\Resources\MajorResource;
-use App\Http\Resources\FaqResource;
 use App\Traits\ApiResponseTrait;
 use App\Http\Requests\Admin\Major\StoreMajorRequest;
 use App\Http\Requests\Admin\Major\IndexMajorRequest;
@@ -102,17 +101,4 @@ class MajorController extends Controller
         return $this->success(new MajorResource($major),"Major Fetched Successfully",200);
     }
 
-   public function faqs(Major $major): JsonResponse
-    {
-        $faqs = $major->faqs()
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get();
-
-        return $this->success(
-            FaqResource::collection($faqs),
-            'Major FAQs Fetched Successfully',
-            200
-        );
-    }
 }
