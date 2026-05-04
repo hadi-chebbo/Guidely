@@ -9,5 +9,6 @@ Route::prefix('admin/majors')
     ->group(function (): void {
         Route::get('/', 'index');
         Route::post('/', 'store');
+        Route::get('/{major}/faqs', 'faqs')->name('api.v1.admin.majors.faqs');
         Route::get('/{major}','show');
 });
