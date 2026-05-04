@@ -55,8 +55,7 @@ export default function AdminMajorsPage() {
   };
 
   const handleEdit = (id: number) => {
-    // TI-41: navigate to edit form
-    void id;
+    router.push(`/admin/majors/${id}/edit`);
   };
 
   const handleDelete = (id: number) => {
@@ -88,6 +87,7 @@ export default function AdminMajorsPage() {
           size="sm"
           fullWidth={false}
           leftIcon={<Plus className="h-4 w-4" />}
+          onClick={() => router.push("/admin/majors/create")}
         >
           Add Major
         </Button>
