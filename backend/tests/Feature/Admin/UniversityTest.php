@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Major;
 use App\Models\University;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -502,4 +503,31 @@ it('rejects duplicate slug when updating university', function () {
     $response
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['slug']);
+});
+
+it('returns empty array when university has no majors', function () {
+    $user = User::factory()->admin()->create();
+
+    Sanctum::actingAs($user);
+
+    $university = University::factory()->create();
+
+    $response = $this->getJson("/api/v1/admin/universities/{$university->id}/majors");
+
+    $response->assertStatus(200)
+        ->assertJson([
+            'data' => []
+        ]);
+});
+it('returns majors for a university', function () {
+    $university = University::factory()->create();
+
+    $majors = Major::factory()->count(3)->create([
+        'university_id' => $university->id,
+    ]);
+
+    $response = $this->getJson("/api/v1/admin/universities/{$university->id}/majors");
+
+    $response->assertStatus(200)
+        ->assertJsonCount(3, 'data');
 });

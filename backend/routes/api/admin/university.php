@@ -11,6 +11,7 @@ Route::prefix('admin/universities')
                 Route::middleware('throttle:admin-read')->group(function () {
                         Route::get('/', 'index')->name('api.v1.admin.universities.index');
                         Route::get('/{university}', 'show')->name('api.v1.admin.universities.show');
+                        Route::get('/{university}/majors', 'majors')->name('api.v1.admin.universities.show');
                 });
 
                 //Write routes

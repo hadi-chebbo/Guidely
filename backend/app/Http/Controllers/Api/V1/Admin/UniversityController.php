@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\University\IndexUniversityRequest;
 use App\Http\Requests\Admin\University\StoreUniversityRequest;
 use App\Http\Requests\Admin\University\UpdateUniversityRequest;
+use App\Http\Resources\MajorResource;
 use App\Http\Resources\UniversityResource;
 use App\Models\University;
 use App\Traits\ApiResponseTrait;
@@ -22,19 +23,19 @@ class UniversityController extends Controller
         $universities = University::query()
             ->when(
                 $request->filled('search'),
-                fn ($query) => $query->where(function ($searchQuery) use ($filters) {
+                fn($query) => $query->where(function ($searchQuery) use ($filters) {
                     $searchQuery
-                        ->where('name_en', 'like', '%'.$filters['search'].'%')
-                        ->orWhere('name_ar', 'like', '%'.$filters['search'].'%');
+                        ->where('name_en', 'like', '%' . $filters['search'] . '%')
+                        ->orWhere('name_ar', 'like', '%' . $filters['search'] . '%');
                 })
             )
             ->when(
                 $request->filled('type'),
-                fn ($query) => $query->where('type', $filters['type'])
+                fn($query) => $query->where('type', $filters['type'])
             )
             ->when(
                 $request->filled('location'),
-                fn ($query) => $query->where('location', $filters['location'])
+                fn($query) => $query->where('location', $filters['location'])
             )
             ->latest()
             ->paginate(15)
@@ -75,6 +76,16 @@ class UniversityController extends Controller
             new UniversityResource($university->fresh()),
             'University Updated Successfully',
             200,
+        );
+    }
+
+    public function majors(University $uni)
+    {
+        $majors = $uni->universityMajors()->paginate(15);
+        return $this->success(
+            MajorResource::collection($majors),
+            'Majors retrieved successfully',
+            200
         );
     }
 }
