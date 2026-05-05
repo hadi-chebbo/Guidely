@@ -1,7 +1,7 @@
 "use client";
 
 import type { University } from "@/types/university";
-
+import { Pencil, Eye } from "lucide-react";
 export default function UniversitiesTable({
   data,
   onEdit,
@@ -138,19 +138,23 @@ export default function UniversitiesTable({
                 <td className="p-4">
                   <div className="flex justify-end gap-2">
 
-                    <button
-                      onClick={() => onView(u.id)}
-                      className="px-3 py-1.5 rounded-lg text-brand-700 hover:bg-brand-100"
-                    >
-                      View
-                    </button>
+                  <button
+  onClick={() => onView(u.id)}
+  className="rounded-lg p-1.5 text-brand-700 transition-colors hover:bg-brand-100"
+  aria-label={`View ${u.name_en}`}
+  title={`View ${u.name_en}`}
+>
+  <Eye className="h-4 w-4" />
+</button>
 
-                    <button
-                      onClick={() => onEdit(u)}
-                      className="px-3 py-1.5 rounded-lg bg-brand-600 text-white hover:bg-brand-700 shadow-brand"
-                    >
-                      Edit
-                    </button>
+<button
+  onClick={() => onEdit(u)}
+  className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-950"
+  aria-label={`Edit ${u.name_en}`}
+  title={`Edit ${u.name_en}`}
+>
+  <Pencil className="h-4 w-4" />
+</button>
 
                   </div>
                 </td>

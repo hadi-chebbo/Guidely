@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { universityService } from "@/services/universityService";
 
 import type { University } from "@/types/university";
-
+import { Search, X } from "lucide-react";
 import UniversitiesTable from "@/components/admin/universities/UniversitiesTable";
 import UniversityForm from "@/components/admin/universities/UniversityForm";
 
@@ -116,16 +116,33 @@ export default function UniversitiesPage() {
       {/* SEARCH + FILTER */}
       <div className="mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
 
+        {/* SEARCH */}
         <div className="relative w-full md:max-w-sm">
+
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-20" />
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search universities..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-brand-100 bg-white/70 backdrop-blur focus:outline-none focus:ring-2 focus:ring-brand-300 text-sm"
+            className="relative z-10 w-full pl-10 pr-10 py-2.5 rounded-xl border border-brand-100 bg-white/70 backdrop-blur text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-200 hover:border-brand-200"
           />
+
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+
         </div>
 
-        <div className="flex gap-2">
+        {/* FILTER */}
+        <div className="flex gap-2 flex-wrap">
+
           {(["all", "public", "private"] as FilterType[]).map((type) => (
             <button
               key={type}
@@ -139,6 +156,7 @@ export default function UniversitiesPage() {
               {type}
             </button>
           ))}
+
         </div>
 
       </div>
