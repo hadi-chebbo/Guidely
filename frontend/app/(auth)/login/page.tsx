@@ -34,7 +34,7 @@ export default function LoginPage() {
     setServerSuccess(null);
 
     try {
-      const user = await login(data.email, data.password, data.rememberMe);
+      const user = await login(data.email, data.password);
       setServerSuccess("Logged in successfully! Redirecting…");
 
       const redirectParam = new URLSearchParams(window.location.search).get('redirect');

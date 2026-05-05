@@ -61,7 +61,6 @@ interface AuthResponse {
 /* ─────────────────────────────
    HELPERS
 ───────────────────────────── */
-
 const normalizeUser = (user: ApiUser): User => ({
   id: user.id,
   name: user.name,
@@ -69,8 +68,12 @@ const normalizeUser = (user: ApiUser): User => ({
   role: user.role ?? "student",
 });
 
-const setAuthCookie = (token: string): void => {
-  document.cookie = `auth_token=${token}; path=/; max-age=86400`;
+/* ─────────────────────────────
+   COOKIE HELPERS
+───────────────────────────── */
+
+const setAuthCookie = (token: string, maxAge: number): void => {
+  document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}`;
 };
 
 const clearAuthCookie = (): void => {
@@ -90,6 +93,8 @@ export const login = async (
     const res = await api.post<AuthResponse>("/auth/login", {
       email,
       password,
+   
+      
     });
 
     const userData = res.data.data?.user ?? res.data.user;
@@ -102,8 +107,11 @@ export const login = async (
     const user = normalizeUser(userData);
 
     if (token) {
-      const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
-      document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}`;
+      const maxAge = rememberMe
+        ? 60 * 60 * 24 * 30 // 30 days
+        : 60 * 60 * 24;    // 1 day
+
+      setAuthCookie(token, maxAge);
     }
 
     return user;
@@ -127,6 +135,9 @@ export const login = async (
     throw err;
   }
 };
+
+
+
 
 /* ─────────────────────────────
    REGISTER
