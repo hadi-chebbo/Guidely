@@ -50,4 +50,14 @@ class FaqController extends Controller
             200
         );
 }
+    public function destroy(Faq $faq): JsonResponse
+    {
+        $faq->delete();
+
+        return $this->success(
+            null,
+            'FAQ Deleted Successfully',
+            200
+        );
+    }
 }

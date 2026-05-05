@@ -16,4 +16,5 @@ Route::prefix('admin/faqs')
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function (): void {
         Route::put('/{faq}', 'update')->name('api.v1.admin.faqs.update');
+        Route::delete('/{faq}', 'destroy')->name('api.v1.admin.faqs.destroy');
     });
