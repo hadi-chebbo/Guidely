@@ -7,6 +7,7 @@ use Laravel\Sanctum\Sanctum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
 it('can reset password using valid token', function () {
     // 1. Create user (normal DB creation)
     $user = User::factory()->create([
@@ -71,4 +72,22 @@ it('fails if email does not exist', function () {
     ]);
 
     $response->assertStatus(400);
+});
+
+it('throttles reset password requests after 5 attempts', function () {
+    $payload = [
+        'email' => 'test@example.com',
+        'token' => 'fake-token',
+        'password' => 'new-password123',
+        'password_confirmation' => 'new-password123',
+    ];
+
+    for ($i = 0; $i < 5; $i++) {
+        $response = $this->postJson('/api/v1/auth/reset-password', $payload);
+        $response->assertStatus(400);
+    }
+
+    $response = $this->postJson('/api/v1/auth/reset-password', $payload);
+
+    $response->assertStatus(429);
 });

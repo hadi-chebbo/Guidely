@@ -22,7 +22,7 @@ it('allows a user to register successfully', function () {
         ->assertCreated()
         ->assertJsonStructure([
             'message',
-            'data' ,
+            'data',
         ]);
 
 
@@ -64,4 +64,26 @@ it('validates registration request payload', function () {
             'email',
             'password',
         ]);
+});
+
+it('throttles register requests after 5 attempts for same email and ip', function () {
+    $payload = [
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+    ];
+
+
+    $this->postJson('/api/v1/auth/register', $payload)
+        ->assertStatus(201);
+
+    for ($i = 0; $i < 4; $i++) {
+        $this->postJson('/api/v1/auth/register', $payload)
+            ->assertStatus(422);
+    }
+
+    $response = $this->postJson('/api/v1/auth/register', $payload);
+
+    $response->assertStatus(429);
 });

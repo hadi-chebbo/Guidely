@@ -7,8 +7,7 @@ Route::prefix('admin/majors')
     ->controller(MajorController::class)
     ->middleware(['auth:sanctum','role:admin'])
     ->group(function (): void {
-        Route::get('/', 'index');
-        Route::post('/', 'store');
-        Route::get('/{major}','show');
-        Route::put('/{major}','update');
+        Route::get('/', 'index')->middleware('throtle:admin-read');
+        Route::post('/', 'store')->middleware('throtle:admin-write');
+        Route::get('/{major}','show')->middleware('throtle:admin-read');
 });

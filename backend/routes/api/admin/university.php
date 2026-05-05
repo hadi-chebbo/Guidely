@@ -7,8 +7,7 @@ Route::prefix('admin/universities')
     ->controller(UniversityController::class)
     ->middleware(['auth:sanctum','role:admin'])
     ->group(function (): void {
-        Route::get('/', 'index')->name('api.v1.admin.universities.index');
-        Route::post('/', 'store')->name('api.v1.admin.universities.store');
-        Route::get('/{university}', 'show')->name('api.v1.admin.universities.show');
-        Route::put('/{university}', 'update')->name('api.v1.admin.universities.update');
+        Route::get('/', 'index')->middleware('throtle:admin-read')->name('api.v1.admin.universities.index');
+        Route::post('/', 'store')->middleware('throtle:admin-write')->name('api.v1.admin.universities.store');
+        Route::get('/{university}', 'show')->middleware('throtle:admin-read')->name('api.v1.admin.universities.show');
     });
