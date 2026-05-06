@@ -7,8 +7,13 @@ Route::prefix('admin/users')
         ->controller(UserController::class)
         ->middleware(['auth:sanctum', 'role:admin'])
         ->group(function (): void {
-            Route::get('/','index');
-            Route::patch('/{user}/toggleBlock','toggleBlock');
-        });
+                Route::middleware('throttle:admin-read')->group(function () {
+                    Route::get('/','index');
+                    Route::get('/search','search');
+                });
+                Route::middleware('throttle:admin-write')->group(function () {
+                    Route::patch('/{user}/toggleBlock','toggleBlock');
+                });
 
+        });
 

@@ -129,3 +129,20 @@ test('only admin can block user', function() {
 
     expect($userToBeBlocked->fresh()->is_blocked)->toBeFalse();
 });
+
+test('admin can search user by username', function() {
+    $admin = User::factory()->admin()->create();
+
+    $user = User::factory()->student()->create([
+        'username' => 'test_username'
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson("/api/v1/admin/users/search?username={$user->username}");
+
+    $response->assertStatus(200);
+
+    $response->assertJsonPath('data.0.username', $user->username);
+
+});
