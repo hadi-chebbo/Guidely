@@ -7,14 +7,21 @@ Route::prefix('admin/majors/{major}/faqs')
     ->controller(FaqController::class)
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function (): void {
-        Route::get('/', 'index')->name('api.v1.admin.majors.faqs.index');
-        Route::post('/', 'store')->name('api.v1.admin.majors.faqs.store');
+        Route::middleware('throttle:admin-read')->group(function (): void {
+            Route::get('/', 'index')->name('api.v1.admin.majors.faqs.index');
+        });
+
+        Route::middleware('throttle:admin-write')->group(function (): void {
+            Route::post('/', 'store')->name('api.v1.admin.majors.faqs.store');
+        });
     });
 
 Route::prefix('admin/faqs')
     ->controller(FaqController::class)
     ->middleware(['auth:sanctum', 'role:admin'])
     ->group(function (): void {
-        Route::put('/{faq}', 'update')->name('api.v1.admin.faqs.update');
-        Route::delete('/{faq}', 'destroy')->name('api.v1.admin.faqs.destroy');
+        Route::middleware('throttle:admin-write')->group(function (): void {
+            Route::put('/{faq}', 'update')->name('api.v1.admin.faqs.update');
+            Route::delete('/{faq}', 'destroy')->name('api.v1.admin.faqs.destroy');
+        });
     });
