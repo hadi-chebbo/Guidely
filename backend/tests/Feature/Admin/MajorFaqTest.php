@@ -99,3 +99,75 @@ it('returns faqs for selected major only', function () {
             'question' => 'Other major question',
         ]);
 });
+
+it('requires authentication to delete faq', function () {
+    $category = Category::factory()->create();
+
+    $major = Major::factory()->create([
+        'category_id' => $category->id,
+    ]);
+
+    $faq = Faq::factory()->create([
+        'major_id' => $major->id,
+    ]);
+
+    $this->deleteJson("/api/v1/admin/faqs/{$faq->id}")
+        ->assertUnauthorized();
+});
+
+it('requires admin role to delete faq', function () {
+    $student = User::factory()->student()->create();
+
+    Sanctum::actingAs($student);
+
+    $category = Category::factory()->create();
+
+    $major = Major::factory()->create([
+        'category_id' => $category->id,
+    ]);
+
+    $faq = Faq::factory()->create([
+        'major_id' => $major->id,
+    ]);
+
+    $this->deleteJson("/api/v1/admin/faqs/{$faq->id}")
+        ->assertForbidden();
+});
+
+it('can delete faq', function () {
+    $admin = User::factory()->admin()->create();
+
+    Sanctum::actingAs($admin);
+
+    $category = Category::factory()->create();
+
+    $major = Major::factory()->create([
+        'category_id' => $category->id,
+    ]);
+
+    $faq = Faq::factory()->create([
+        'major_id' => $major->id,
+        'question' => 'Question to delete',
+        'answer' => 'Answer to delete',
+        'sort_order' => 1,
+    ]);
+
+    $response = $this->deleteJson("/api/v1/admin/faqs/{$faq->id}");
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('message', 'FAQ Deleted Successfully');
+
+    $this->assertDatabaseMissing('faqs', [
+        'id' => $faq->id,
+    ]);
+});
+
+it('returns 404 when deleting faq that does not exist', function () {
+    $admin = User::factory()->admin()->create();
+
+    Sanctum::actingAs($admin);
+
+    $this->deleteJson('/api/v1/admin/faqs/999999')
+        ->assertNotFound();
+});
