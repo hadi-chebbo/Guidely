@@ -15,5 +15,6 @@ Route::prefix('admin/majors')
         Route::middleware('throttle:admin-write')->group(function () {
             Route::post('/', 'store');
             Route::put('/{major}', 'update');
+            Route::patch('/{major}/toggleFeatured','toggleFeatured');
         });
 });

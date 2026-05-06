@@ -153,14 +153,14 @@ test('cannot create major without required fields', function () {
     ]);
 });
 
-test('can show single major' , function() {
+test('can show single major', function () {
     $category = Category::factory()->create();
 
     $major = Major::factory()->create([
-                'category_id'=> $category->id,
-                'name_en' => 'Computer Science',
-                'slug' => 'computer-science',
-            ]);
+        'category_id' => $category->id,
+        'name_en' => 'Computer Science',
+        'slug' => 'computer-science',
+    ]);
 
     $response = $this->getJson("/api/v1/admin/majors/{$major->id}");
 
@@ -194,7 +194,6 @@ test('can show single major' , function() {
             'cover_image',
         ],
     ]);
-
 });
 
 test('can update major and sync skills', function () {
@@ -264,3 +263,4 @@ test('can update major and sync skills', function () {
         ]);
     }
 });
+
