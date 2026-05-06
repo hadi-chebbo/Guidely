@@ -28,8 +28,16 @@ class University extends Model
         'founded_year' => 'integer',
     ];
 
-    public function universityMajors(): HasMany
+    public function majors()
     {
-        return $this->hasMany(UniversityMajor::class);
+        return $this->belongsToMany(Major::class, 'university_majors')
+            ->withPivot([
+                'credit_price_usd',
+                'total_credits',
+                'admission_requirements',
+                'language_of_instruction',
+                'has_scholarship',
+                'campus',
+            ]);
     }
 }

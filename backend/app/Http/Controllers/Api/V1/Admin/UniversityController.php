@@ -79,12 +79,15 @@ class UniversityController extends Controller
         );
     }
 
-    public function majors(University $uni)
+    public function majors($id)
     {
-        $majors = $uni->universityMajors()->paginate(15);
+        $university = University::findOrFail($id);
+
+        $majors = $university->majors()->paginate(10);
+
         return $this->success(
             MajorResource::collection($majors),
-            'Majors retrieved successfully',
+            'University majors retrieved successfully',
             200
         );
     }
