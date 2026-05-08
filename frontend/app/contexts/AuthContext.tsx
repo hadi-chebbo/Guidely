@@ -19,7 +19,12 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<authService.User>;
+  login: (
+    email: string,
+    password: string,
+    rememberMe?: boolean
+  ) => Promise<authService.User>;
+
   logout: () => Promise<void>;
   register: (data: authService.RegisterFormData) => Promise<void>;
   refreshAuth: () => Promise<void>;
@@ -78,11 +83,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   /* ───────────────────────────── LOGIN ───────────────────────────── */
 
-  const login = async (email: string, password: string) => {
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe: boolean = false
+  ) => {
     setState((p) => ({ ...p, loading: true }));
 
     try {
-      const user = await authService.login(email, password);
+      const user = await authService.login({
+        email,
+        password,
+        rememberMe,
+      });
 
       setAuth(user);
 
@@ -92,6 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (err) {
       setAuth(null);
       throw err;
+    } finally {
+      setState((p) => ({ ...p, loading: false }));
     }
   };
 
@@ -113,15 +128,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const register = async (data: authService.RegisterFormData) => {
     setState((p) => ({ ...p, loading: true }));
 
-    await authService.register(data);
+    try {
+      await authService.register(data);
 
-    setState({
-      user: null,
-      isAuthenticated: false,
-      loading: false,
-    });
+      setAuth(null);
 
-    router.push("/verify-email");
+      router.push("/verify-email");
+    } finally {
+      setState((p) => ({ ...p, loading: false }));
+    }
   };
 
   /* ───────────────────────────── REFRESH ───────────────────────────── */
@@ -140,17 +155,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   /* ───────────────────────────── PASSWORD ───────────────────────────── */
 
   const forgotPassword = async (email: string) => {
-    await authService.forgotPassword(email);
+    return authService.forgotPassword(email);
   };
 
   /* ───────────────────────────── EMAIL ───────────────────────────── */
 
   const verifyEmail = async (id: string, hash: string) => {
-    await authService.verifyEmail(id, hash);
+    return authService.verifyEmail(id, hash);
   };
 
   const resendVerificationEmail = async (email: string) => {
-    await authService.resendVerificationEmail(email);
+    return authService.resendVerificationEmail(email);
   };
 
   /* ───────────────────────────── PROVIDER ───────────────────────────── */

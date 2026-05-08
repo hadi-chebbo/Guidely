@@ -103,7 +103,6 @@ export default function UniversityForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ FIXED CHANGE DETECTION
   const isFormChanged = () => {
     if (!originalForm) return false;
 
@@ -120,6 +119,9 @@ export default function UniversityForm({
     !!form.slug.trim() &&
     !!form.location.trim();
 
+  const isDisabled =
+    !isFormValid || (isEdit && !isFormChanged());
+
   const handleSubmit = () => {
     if (!validate()) return;
 
@@ -127,16 +129,7 @@ export default function UniversityForm({
 
     onSubmit(form);
     onClose();
-
-    const message = isEdit
-      ? "University updated successfully ✅"
-      : "University created successfully ✅";
-
-    alert(message);
   };
-
-  const isDisabled =
-    !isFormValid || (isEdit && !isFormChanged());
 
   return (
     <div className="max-h-[85vh] overflow-y-auto pr-2 space-y-5">
@@ -191,7 +184,6 @@ export default function UniversityForm({
           className="input"
         />
 
-        {/* LOGO */}
         <div className="space-y-1">
           <input
             value={form.logo_url}
@@ -199,10 +191,6 @@ export default function UniversityForm({
             placeholder="Logo URL"
             className={`input ${errors.logo_url ? "input-error" : ""}`}
           />
-
-          <p className="text-xs text-gray-500 leading-snug break-words">
-            Paste a direct image URL (PNG, JPG, WEBP) for the university logo
-          </p>
 
           {errors.logo_url && (
             <p className="text-xs text-red-500">{errors.logo_url}</p>
@@ -281,6 +269,7 @@ export default function UniversityForm({
         >
           {isEdit ? "Update" : "Save"}
         </button>
+
       </div>
 
       {/* STYLE */}
@@ -293,17 +282,11 @@ export default function UniversityForm({
           background: #fff;
           font-size: 14px;
           outline: none;
-          transition: 0.2s;
         }
 
         .input:focus {
           border-color: #6366f1;
           box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-        }
-
-        .input::placeholder {
-          color: #9ca3af;
-          opacity: 1;
         }
 
         .input-error {

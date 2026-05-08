@@ -28,6 +28,9 @@ export const registerStep1Schema = z
       .min(1, "Last name is required")
       .min(2, "Last name must be at least 2 characters")
       .max(50, "Last name is too long"),
+      username: z
+  .string()
+  .min(3, "Username must be at least 3 characters"),
     email: z
       .string()
       .min(1, "Email is required")

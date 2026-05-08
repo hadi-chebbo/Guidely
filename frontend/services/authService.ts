@@ -30,6 +30,7 @@ export interface User {
 export interface RegisterFormData {
   firstName: string;
   lastName: string;
+  username: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -37,10 +38,6 @@ export interface RegisterFormData {
   grade?: string;
   preferredLanguage?: string;
 }
-
-/* ─────────────────────────────
-   API RESPONSE TYPES
-───────────────────────────── */
 
 interface ApiUser {
   id: number;
@@ -61,6 +58,7 @@ interface AuthResponse {
 /* ─────────────────────────────
    HELPERS
 ───────────────────────────── */
+
 const normalizeUser = (user: ApiUser): User => ({
   id: user.id,
   name: user.name,
@@ -72,57 +70,59 @@ const normalizeUser = (user: ApiUser): User => ({
    COOKIE HELPERS
 ───────────────────────────── */
 
-const setAuthCookie = (token: string, maxAge: number): void => {
+const setAuthCookies = (
+  token: string,
+  role: UserRole,
+  maxAge: number
+): void => {
   document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}`;
+  document.cookie = `user_role=${role}; path=/; max-age=${maxAge}`;
 };
 
-const clearAuthCookie = (): void => {
+const clearAuthCookies = (): void => {
   document.cookie = `auth_token=; path=/; max-age=0`;
+  document.cookie = `user_role=; path=/; max-age=0`;
 };
 
 /* ─────────────────────────────
    LOGIN
 ───────────────────────────── */
 
-export const login = async (
-  email: string,
-  password: string,
-  rememberMe = false
-): Promise<User> => {
+export const login = async ({
+  email,
+  password,
+  rememberMe = false,
+}: {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}): Promise<User> => {
   try {
     const res = await api.post<AuthResponse>("/auth/login", {
       email,
       password,
-   
-      
     });
 
     const userData = res.data.data?.user ?? res.data.user;
     const token = res.data.data?.token ?? res.data.token;
 
-    if (!userData) {
+    if (!userData || !token) {
       throw new Error("Invalid login response");
     }
 
     const user = normalizeUser(userData);
 
-    if (token) {
-      const maxAge = rememberMe
-        ? 60 * 60 * 24 * 30 // 30 days
-        : 60 * 60 * 24;    // 1 day
+    const maxAge = rememberMe
+      ? 60 * 60 * 24 * 30 // 30 days
+      : 60 * 60 * 24;     // 1 day
 
-      setAuthCookie(token, maxAge);
-    }
+    setAuthCookies(token, user.role, maxAge);
 
     return user;
   } catch (err: unknown) {
     if (typeof err === "object" && err !== null && "response" in err) {
       const error = err as {
-        response?: {
-          data?: {
-            message?: string;
-          };
-        };
+        response?: { data?: { message?: string } };
       };
 
       const message = error.response?.data?.message;
@@ -136,9 +136,6 @@ export const login = async (
   }
 };
 
-
-
-
 /* ─────────────────────────────
    REGISTER
 ───────────────────────────── */
@@ -150,6 +147,7 @@ export const register = async (data: RegisterFormData): Promise<void> => {
 
   await api.post("/auth/register", {
     name: `${data.firstName} ${data.lastName}`,
+    username: data.username,
     email: data.email,
     password: data.password,
     password_confirmation: data.confirmPassword,
@@ -167,7 +165,7 @@ export const logout = async (): Promise<void> => {
   try {
     await api.post("/auth/logout");
   } finally {
-    clearAuthCookie();
+    clearAuthCookies();
   }
 };
 

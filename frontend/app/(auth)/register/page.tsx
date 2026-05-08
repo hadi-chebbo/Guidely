@@ -30,7 +30,11 @@ import Button        from "@/components/ui/Button";
 import FormMessage   from "@/components/ui/FormMessage";
 
 /* ── Types ───────────────────────────────────────────────────── */
-type AllFormData = RegisterStep1Data & Partial<RegisterStep2Data> & { interests?: string[] };
+type AllFormData = RegisterStep1Data &
+  Partial<RegisterStep2Data> & {
+    username: string;
+    interests?: string[];
+  };
 
 /* ── Step indicator ──────────────────────────────────────────── */
 const STEPS = [
@@ -170,7 +174,15 @@ function Step1({
         error={errors.lastName?.message}
         {...register("lastName")}
       />
-
+       <Input
+  label="Username"
+  type="text"
+  placeholder="jana.khalil"
+  autoComplete="username"
+  leftIcon={<User className="w-4 h-4" />}
+  error={errors.username?.message}
+  {...register("username")}
+/>
       <Input
         label="Email address"
         type="email"
@@ -479,6 +491,7 @@ export default function RegisterPage() {
       await register({
         firstName: finalData.firstName,
         lastName: finalData.lastName,
+        username: finalData.username,
         email: finalData.email,
         password: finalData.password,
         confirmPassword: finalData.confirmPassword,
