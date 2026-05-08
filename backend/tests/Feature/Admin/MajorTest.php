@@ -263,4 +263,42 @@ test('can update major and sync skills', function () {
         ]);
     }
 });
+it('allows admin to toggle major featured status', function () {
+    $admin = User::factory()->admin()->create();
 
+    $category = Category::factory()->create();
+
+    $major = Major::factory()->create([
+        'category_id' => $category->id,
+        'is_featured' => false,
+    ]);
+
+    $response = $this->actingAs($admin, 'sanctum')
+        ->patchJson("/api/v1/admin/majors/{$major->id}/toggleFeatured");
+
+    $response->assertStatus(200);
+
+    expect($major->fresh()->is_featured)->toBe(1);
+
+    $response->assertJson([
+        'message' => 'Major marked as featured',
+    ]);
+});
+
+it('prevents non-admin users from toggling major featured status', function () {
+    $user = User::factory()->student()->create();
+
+    $category = Category::factory()->create();
+
+    $major = Major::factory()->create([
+        'category_id' => $category->id,
+        'is_featured' => false,
+    ]);
+
+    $response = $this->actingAs($user, 'sanctum')
+        ->patchJson("/api/v1/admin/majors/{$major->id}/toggleFeatured");
+
+    $response->assertStatus(403);
+
+    expect($major->fresh()->is_featured)->toBe(0);
+});
