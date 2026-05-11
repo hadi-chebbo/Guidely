@@ -25,4 +25,5 @@ class MajorController extends Controller
             200
         );
     }
+    
 }
