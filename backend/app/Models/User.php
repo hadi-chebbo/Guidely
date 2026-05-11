@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -38,5 +39,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function quizResults()
     {
         return $this->hasMany(QuizResult::class);
+    }
+
+    public function favoriteMajors(): BelongsToMany
+    {
+        return $this->belongsToMany(Major::class, 'user_favorites')
+            ->withTimestamps();
     }
 }
