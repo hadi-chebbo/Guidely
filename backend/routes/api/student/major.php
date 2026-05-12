@@ -9,3 +9,10 @@ Route::prefix('user/favorites')
         Route::get('/', [MajorController::class, 'favorites'])
             ->name('api.v1.user.favorites.index');
     });
+
+Route::prefix('majors')
+    ->middleware('auth:sanctum')
+    ->group(function (): void {
+        Route::patch('/{major}/favorite', [MajorController::class, 'toggleFavorite'])
+            ->name('api.v1.majors.favorite');
+    });
