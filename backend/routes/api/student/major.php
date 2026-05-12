@@ -13,6 +13,6 @@ Route::prefix('user/favorites')
 Route::prefix('majors')
     ->middleware('auth:sanctum')
     ->group(function (): void {
-        Route::patch('/{major}/favorite', [MajorController::class, 'toggleFavorite'])
+        Route::patch('/{major:slug}/favorite', [MajorController::class, 'toggleFavorite'])
             ->name('api.v1.majors.favorite');
     });
