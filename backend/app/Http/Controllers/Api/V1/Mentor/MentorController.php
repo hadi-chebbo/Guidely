@@ -48,40 +48,52 @@ class MentorController extends Controller
     {
         $user = $request->user();
 
-        $major = Major::where('slug', $request->major_slug)->value('id');
+        $majorId = Major::where('slug', $request->major_slug)->value('id');
+
+        $data = collect($request->validated())
+            ->except('major_slug')
+            ->toArray();
+
+        $data['major_id'] = $majorId;
+        $data['status'] = 'pending';
+        $data['is_accepting_students'] = $request->boolean(
+            'is_accepting_students',
+            false
+        );
 
         if ($user->mentorProfile) {
-            $status = $user->mentorProfile->status;
-            if ($status === 'pending') {
-                return $this->error('You already have a pending mentor application', 409);
-            }
-            if ($status === 'approved') {
-                return $this->error('You are already an approved mentor', 409);
+
+            if ($user->mentorProfile->status === 'pending') {
+                return $this->error(
+                    'You already have a pending mentor application',
+                    409
+                );
             }
 
-            $user->mentorProfile->update([
-                ...collect($request->validated())->except('major_slug')->toArray(),
-                'major_id'              => $major,
-                'status'                => 'pending',
-                'is_accepting_students' => $request->boolean('is_accepting_students', false),
-            ]);
+            if ($user->mentorProfile->status === 'approved') {
+                return $this->error(
+                    'You are already an approved mentor',
+                    409
+                );
+            }
+
+            $user->mentorProfile->update($data);
+
+            $user->mentorProfile->load('major');
 
             return $this->success(
-                $user->username,
+                new MentorResource($user->mentorProfile),
                 'Your application has been re-submitted successfully.',
                 200
             );
         }
 
-        $user->mentorProfile()->create([
-            ...collect($request->validated())->except('major_slug')->toArray(),
-            'major_id'              => $major,
-            'status'                => 'pending',
-            'is_accepting_students' => $request->boolean('is_accepting_students', false),
-        ]);
+        $mentorProfile = $user->mentorProfile()->create($data);
+
+        $mentorProfile->load('major');
 
         return $this->success(
-            $user->username,
+            new MentorResource($mentorProfile),
             'Your mentor application has been submitted successfully.',
             201
         );
