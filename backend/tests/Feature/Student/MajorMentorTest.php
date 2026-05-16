@@ -18,6 +18,7 @@ it('returns paginated approved mentors for a major publicly', function () {
 
     $mentor = User::factory()->mentor()->create([
         'name' => 'Rana Mentor',
+        'username' => 'rana-mentor',
         'avatar_url' => 'https://cdn.example.com/rana.png',
     ]);
 
@@ -30,28 +31,6 @@ it('returns paginated approved mentors for a major publicly', function () {
         'university_name' => 'Lebanese University',
         'graduation_year' => 2020,
         'languages' => ['English', 'Arabic'],
-    ]);
-
-    $mentor->mentorSessions()->create([
-        'title' => 'Application review',
-        'description' => 'Review applications.',
-        'type' => 'one-on-one',
-        'duration_minutes' => 60,
-        'max_capacity' => 1,
-        'price' => 45,
-        'currency' => 'USD',
-        'is_active' => true,
-    ]);
-
-    $mentor->mentorSessions()->create([
-        'title' => 'Inactive session',
-        'description' => 'Inactive session.',
-        'type' => 'group',
-        'duration_minutes' => 90,
-        'max_capacity' => 5,
-        'price' => 20,
-        'currency' => 'USD',
-        'is_active' => false,
     ]);
 
     $pendingMentor = User::factory()->mentor()->create([
@@ -79,20 +58,17 @@ it('returns paginated approved mentors for a major publicly', function () {
         ->assertJsonPath('message', 'Major mentors retrieved successfully')
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.name', 'Rana Mentor')
+        ->assertJsonPath('data.0.username', 'rana-mentor')
         ->assertJsonPath('data.0.avatar_url', 'https://cdn.example.com/rana.png')
-        ->assertJsonPath('data.0.bio', 'Computer science mentor bio.')
-        ->assertJsonPath('data.0.years_experience', 6)
-        ->assertJsonPath('data.0.is_accepting_students', true)
-        ->assertJsonPath('data.0.is_available', true)
-        ->assertJsonPath('data.0.starting_price', '45.00')
-        ->assertJsonPath('data.0.currency', 'USD')
-        ->assertJsonPath('data.0.session_duration_minutes', 60)
-        ->assertJsonPath('data.0.active_sessions_count', 1)
+        ->assertJsonPath('data.0.profile.bio', 'Computer science mentor bio.')
+        ->assertJsonPath('data.0.profile.years_experience', 6)
+        ->assertJsonPath('data.0.profile.is_accepting_students', true)
+        ->assertJsonPath('data.0.profile.major.slug', 'computer-science')
         ->assertJsonPath('meta.per_page', 15)
         ->assertJsonMissingPath('data.0.id')
         ->assertJsonMissingPath('data.0.user_id')
-        ->assertJsonMissingPath('data.0.major_id')
-        ->assertJsonMissingPath('data.0.status')
+        ->assertJsonMissingPath('data.0.profile.major_id')
+        ->assertJsonMissingPath('data.0.profile.status')
         ->assertJsonMissing(['name' => 'Pending Mentor'])
         ->assertJsonMissing(['name' => 'Medicine Mentor']);
 });
