@@ -9,3 +9,4 @@ Route::prefix('mentor/profile')
     ->group(function (): void {
         Route::patch('/', 'update')->name('api.v1.mentor.profile.update');
     });
+Route::middleware('auth:sanctum')->post('/mentors/apply', [MentorController::class, 'apply']);
