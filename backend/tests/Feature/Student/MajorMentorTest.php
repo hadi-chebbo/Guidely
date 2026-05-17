@@ -111,10 +111,19 @@ it('returns an empty list when a major has no approved mentors', function () {
         ->assertJsonCount(0, 'data');
 });
 
-it('validates the major slug and pagination query', function () {
-    $response = $this->getJson('/api/v1/majors/missing-major/mentors?per_page=100');
+it('returns not found for a missing major slug', function () {
+    $this->getJson('/api/v1/majors/missing-major/mentors')
+        ->assertNotFound();
+});
+
+it('validates the pagination query', function () {
+    $major = Major::factory()->create([
+        'slug' => 'computer-engineering',
+    ]);
+
+    $response = $this->getJson("/api/v1/majors/{$major->slug}/mentors?per_page=100");
 
     $response
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['major_slug', 'per_page']);
+        ->assertJsonValidationErrors(['per_page']);
 });

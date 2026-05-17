@@ -13,7 +13,7 @@ Route::prefix('user/favorites')
 
 Route::prefix('majors')
     ->group(function (): void {
-        Route::get('/{major_slug}/mentors', [MentorController::class, 'indexByMajor'])
+        Route::get('/{major:slug}/mentors', [MentorController::class, 'indexByMajor'])
             ->name('api.v1.majors.mentors.index');
     });
 

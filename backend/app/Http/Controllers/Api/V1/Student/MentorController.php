@@ -15,14 +15,10 @@ class MentorController extends Controller
     //
     use ApiResponseTrait;
 
-    public function indexByMajor(IndexMajorMentorRequest $request)
+    public function indexByMajor(IndexMajorMentorRequest $request, Major $major)
     {
         $filters = $request->validated();
         $perPage = (int) ($filters['per_page'] ?? 15);
-
-        $major = Major::query()
-            ->where('slug', $filters['major_slug'])
-            ->first();
 
         $mentors = User::query()
             ->where('role', 'mentor')
