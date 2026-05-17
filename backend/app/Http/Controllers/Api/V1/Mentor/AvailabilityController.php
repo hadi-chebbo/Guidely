@@ -26,14 +26,6 @@ class AvailabilityController extends Controller
         }
 
         $availabilities = $mentorSession->availabilities()
-            ->select([
-                'id',
-                'uuid',
-                'scheduled_at',
-                'ends_at',
-                'status',
-                'timezone',
-            ])
             ->orderBy('scheduled_at')
             ->orderBy('id')
             ->get();
