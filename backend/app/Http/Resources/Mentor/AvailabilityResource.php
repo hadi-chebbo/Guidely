@@ -15,7 +15,7 @@ class AvailabilityResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'uuid' => $this->uuid,
             'scheduled_at' => $this->scheduled_at,
             'ends_at' => $this->ends_at,
             'status' => $this->status,

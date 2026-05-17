@@ -75,14 +75,14 @@ it('returns ordered availability slots for an owned session', function () {
         ->assertOk()
         ->assertJsonPath('message', 'Session availabilities retrieved successfully')
         ->assertJsonCount(2, 'data')
-        ->assertJsonPath('data.0.id', $earlierSlot->id)
+        ->assertJsonPath('data.0.uuid', $earlierSlot->uuid)
         ->assertJsonPath('data.0.status', 'open')
-        ->assertJsonPath('data.1.id', $laterSlot->id)
+        ->assertJsonPath('data.1.uuid', $laterSlot->uuid)
         ->assertJsonPath('data.1.status', 'full')
         ->assertJsonStructure([
             'data' => [
                 '*' => [
-                    'id',
+                    'uuid',
                     'scheduled_at',
                     'ends_at',
                     'status',
@@ -91,8 +91,9 @@ it('returns ordered availability slots for an owned session', function () {
             ],
             'message',
         ])
+        ->assertJsonMissingPath('data.0.id')
         ->assertJsonMissingPath('data.0.mentor_session_id')
-        ->assertJsonMissing(['id' => $otherSlot->id]);
+        ->assertJsonMissing(['uuid' => $otherSlot->uuid]);
 });
 
 it('does not allow mentors to list another mentors session availabilities', function () {
