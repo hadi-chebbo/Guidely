@@ -167,6 +167,7 @@ it('compares two universities successfully', function () {
         'type' => 'private',
     ]);
 
+    // Common major
     $universityA->majors()->attach($major1->id, [
         'credit_price_usd' => 300,
         'total_credits' => 90,
@@ -176,12 +177,22 @@ it('compares two universities successfully', function () {
         'campus' => 'Beirut',
     ]);
 
-    $universityB->majors()->attach($major2->id, [
+    $universityB->majors()->attach($major1->id, [
         'credit_price_usd' => 250,
         'total_credits' => 95,
         'admission_requirements' => 'Entrance exam',
         'language_of_instruction' => 'English',
         'has_scholarship' => false,
+        'campus' => 'Byblos',
+    ]);
+
+    // Unique major for LAU
+    $universityB->majors()->attach($major2->id, [
+        'credit_price_usd' => 200,
+        'total_credits' => 80,
+        'admission_requirements' => 'Interview',
+        'language_of_instruction' => 'English',
+        'has_scholarship' => true,
         'campus' => 'Byblos',
     ]);
 
@@ -212,6 +223,7 @@ it('compares two universities successfully', function () {
                     'founded_year',
                     'accreditation',
                 ],
+
                 'university_b' => [
                     'name_en',
                     'name_ar',
@@ -225,9 +237,46 @@ it('compares two universities successfully', function () {
                     'founded_year',
                     'accreditation',
                 ],
+
                 'comparison' => [
                     'basic_info',
-                    'majors',
+
+                    'common_majors' => [
+                        '*' => [
+                            'major' => [
+                                'name',
+                            ],
+
+                            'university_a' => [
+                                'credit_price_usd',
+                                'total_credits',
+                                'estimated_total_cost',
+                                'language_of_instruction',
+                                'has_scholarship',
+                                'campus',
+                            ],
+
+                            'university_b' => [
+                                'credit_price_usd',
+                                'total_credits',
+                                'estimated_total_cost',
+                                'language_of_instruction',
+                                'has_scholarship',
+                                'campus',
+                            ],
+
+                            'comparison' => [
+                                'credit_price_difference',
+                                'cheaper_university',
+                                'total_cost_difference',
+                            ],
+                        ],
+                    ],
+
+                    'unique_majors' => [
+                        'university_a',
+                        'university_b',
+                    ],
                 ],
             ],
         ]);
