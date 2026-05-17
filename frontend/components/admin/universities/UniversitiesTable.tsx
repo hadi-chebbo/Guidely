@@ -1,7 +1,10 @@
 "use client";
 
+import { ExternalLink, Eye, Pencil } from "lucide-react";
+import Badge from "@/components/ui/Badge";
+import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
 import type { University } from "@/types/university";
-import { Pencil, Eye } from "lucide-react";
+
 export default function UniversitiesTable({
   data,
   onEdit,
@@ -12,160 +15,94 @@ export default function UniversitiesTable({
   onView: (id: number) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-brand-100 bg-white/60 backdrop-blur-xl">
-
-      <table className="w-full min-w-[1000px] text-sm">
-
-        {/* HEADER */}
-        <thead className="bg-brand-50/70 backdrop-blur sticky top-0 z-10">
-          <tr className="text-left text-gray-700">
-            <th className="p-4 font-semibold">Logo</th>
-            <th className="p-4 font-semibold">Name</th>
-            <th className="p-4 font-semibold">Location</th>
-            <th className="p-4 font-semibold">Type</th>
-            <th className="p-4 font-semibold">Description</th>
-            <th className="p-4 font-semibold">Website</th>
-            <th className="p-4 font-semibold">Founded</th>
-            <th className="p-4 font-semibold">Accreditation</th>
-            <th className="p-4 font-semibold text-right">Actions</th>
-          </tr>
-        </thead>
-
-        {/* BODY */}
-        <tbody className="divide-y divide-brand-100 bg-white/70">
-
-          {data.length === 0 ? (
-            <tr>
-              <td colSpan={9} className="p-14 text-center text-gray-400">
-                No universities found
-              </td>
-            </tr>
-          ) : (
-            data.map((u) => (
-              <tr
-                key={u.id}
-                className="group hover:bg-brand-50/60 transition"
-              >
-
-                {/* LOGO */}
-                <td className="p-4">
-                  <div className="w-11 h-11 rounded-xl overflow-hidden border border-brand-100 bg-white">
-
-                    {u.logo_url ? (
-                      <img
-                        src={u.logo_url}
-                        alt={u.name_en}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder-logo.png";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs text-brand-600 bg-brand-100">
-                        {u.name_en?.slice(0, 2).toUpperCase()}
-                      </div>
-                    )}
-
-                  </div>
-                </td>
-
-                {/* NAME */}
-                <td className="p-4">
-                  <p className="font-medium text-gray-900 group-hover:text-brand-700">
-                    {u.name_en}
-                  </p>
-                  {u.name_ar && (
-                    <p className="text-xs text-gray-400">{u.name_ar}</p>
-                  )}
-                </td>
-
-                {/* LOCATION */}
-                <td className="p-4 text-gray-600">{u.location}</td>
-
-                {/* TYPE */}
-                <td className="p-4">
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                      u.type === "public"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-purple-100 text-purple-700"
-                    }`}
-                  >
-                    {u.type}
-                  </span>
-                </td>
-
-                {/* DESCRIPTION */}
-                <td className="p-4">
-                  <p className="text-gray-600 line-clamp-2">
-                    {u.description_en ?? "-"}
-                  </p>
-
-                  {u.description_ar && (
-                    <p className="text-xs text-gray-400 line-clamp-2 mt-1">
-                      {u.description_ar}
-                    </p>
-                  )}
-                </td>
-
-                {/* WEBSITE */}
-                <td className="p-4">
-                  {u.website ? (
-                    <a
-                      href={u.website.startsWith("http") ? u.website : `https://${u.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand-600 hover:underline"
-                    >
-                      Visit
-                    </a>
+    <Table>
+      <THead className="bg-gray-50 text-gray-600">
+        <TR>
+          <TH>University</TH>
+          <TH>Location</TH>
+          <TH>Type</TH>
+          <TH>Description</TH>
+          <TH>Website</TH>
+          <TH>Founded</TH>
+          <TH>Accreditation</TH>
+          <TH className="text-right">Actions</TH>
+        </TR>
+      </THead>
+      <TBody>
+        {data.map((u) => (
+          <TR key={u.id} className="hover:bg-brand-50/40">
+            <TD>
+              <div className="flex min-w-64 items-center gap-3">
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                  {u.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={u.logo_url}
+                      alt={u.name_en}
+                      className="h-full w-full object-cover"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
                   ) : (
-                    <span className="text-gray-400">-</span>
+                    <div className="flex h-full w-full items-center justify-center bg-brand-50 text-xs font-semibold text-brand-700">
+                      {u.name_en?.slice(0, 2).toUpperCase()}
+                    </div>
                   )}
-                </td>
-
-                {/* FOUNDED */}
-                <td className="p-4 text-gray-600">
-                  {u.founded_year ?? "-"}
-                </td>
-
-                {/* ACCREDITATION */}
-                <td className="p-4 text-gray-600">
-                  {u.accreditation ?? "-"}
-                </td>
-
-                {/* ACTIONS */}
-                <td className="p-4">
-                  <div className="flex justify-end gap-2">
-
-                  <button
-  onClick={() => onView(u.id)}
-  className="rounded-lg p-1.5 text-brand-700 transition-colors hover:bg-brand-100"
-  aria-label={`View ${u.name_en}`}
-  title={`View ${u.name_en}`}
->
-  <Eye className="h-4 w-4" />
-</button>
-
-<button
-  onClick={() => onEdit(u)}
-  className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-950"
-  aria-label={`Edit ${u.name_en}`}
-  title={`Edit ${u.name_en}`}
->
-  <Pencil className="h-4 w-4" />
-</button>
-
-                  </div>
-                </td>
-
-              </tr>
-            ))
-          )}
-
-        </tbody>
-
-      </table>
-    </div>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{u.name_en}</p>
+                  {u.name_ar && <p className="text-xs text-gray-400">{u.name_ar}</p>}
+                </div>
+              </div>
+            </TD>
+            <TD className="text-gray-600">{u.location || "-"}</TD>
+            <TD>
+              <Badge variant={u.type === "public" ? "success" : "info"}>{u.type}</Badge>
+            </TD>
+            <TD className="max-w-xs text-gray-600">
+              <p className="line-clamp-2">{u.description_en ?? "-"}</p>
+            </TD>
+            <TD>
+              {u.website ? (
+                <a
+                  href={u.website.startsWith("http") ? u.website : `https://${u.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-900"
+                >
+                  Visit
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              ) : (
+                <span className="text-gray-400">-</span>
+              )}
+            </TD>
+            <TD className="text-gray-600">{u.founded_year ?? "-"}</TD>
+            <TD className="max-w-[12rem] truncate text-gray-600">{u.accreditation ?? "-"}</TD>
+            <TD>
+              <div className="flex justify-end gap-1">
+                <button
+                  onClick={() => onView(u.id)}
+                  className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-brand-50 hover:text-brand-700"
+                  aria-label={`View ${u.name_en}`}
+                  title={`View ${u.name_en}`}
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => onEdit(u)}
+                  className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                  aria-label={`Edit ${u.name_en}`}
+                  title={`Edit ${u.name_en}`}
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </div>
+            </TD>
+          </TR>
+        ))}
+      </TBody>
+    </Table>
   );
 }

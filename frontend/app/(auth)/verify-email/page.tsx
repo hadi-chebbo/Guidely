@@ -43,7 +43,7 @@ export default function VerifyEmailPage() {
 
     if (id && hash) run();
     else setState("error");
-  }, [id, hash]);
+  }, [id, hash, verifyEmail]);
 
   /* ───────────────────────────── RESEND ───────────────────────────── */
 

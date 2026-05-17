@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { GraduationCap, Menu, X, LogOut, Shield } from "lucide-react";
+import {Menu, X, LogOut, Shield } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/app/contexts/AuthContext";
 
 const navLinks = [
-  { href: "/majors",      label: "Explore Majors" },
+  { href: "/student/dashboard", label: "Dashboard" },
+  { href: "/student/majors",    label: "Explore Majors" },
+  { href: "/student/favorites", label: "Favorites" },
   { href: "/compare",     label: "Compare" },
   { href: "/universities",label: "Universities" },
-  { href: "/quiz",        label: "Personality Test" },
+  { href: "/student/quiz",      label: "Personality Test" },
   { href: "/mentors",     label: "Mentors" },
 ];
 
@@ -36,10 +39,23 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-heading font-bold text-brand-700">
-          <GraduationCap className="h-6 w-6" />
-          <span className="text-xl">Guidely</span>
-        </Link>
+        <Link
+  href="/student/dashboard"
+  className="flex items-center gap-2"
+>
+  <Image
+    src="/logo-transparent.png"
+    alt="Guidely"
+    width={44}
+    height={44}
+    priority
+    className="object-contain"
+  />
+
+  <span className="text-xl font-heading font-bold text-brand-700">
+    Guidely
+  </span>
+</Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1">

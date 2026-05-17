@@ -241,6 +241,7 @@ export default function UniversityForm({
 
       {/* LOGO PREVIEW */}
       {form.logo_url && (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={form.logo_url}
           alt="logo preview"

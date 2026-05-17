@@ -50,9 +50,13 @@ interface AuthResponse {
   data?: {
     user?: ApiUser;
     token?: string;
+    access_token?: string;
+    plainTextToken?: string;
   };
   user?: ApiUser;
   token?: string;
+  access_token?: string;
+  plainTextToken?: string;
 }
 
 /* ─────────────────────────────
@@ -75,14 +79,62 @@ const setAuthCookies = (
   role: UserRole,
   maxAge: number
 ): void => {
-  document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}`;
+  const encodedToken = encodeURIComponent(token);
+  document.cookie = `auth_token=${encodedToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
   document.cookie = `user_role=${role}; path=/; max-age=${maxAge}`;
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("auth_token", token);
+  }
+};
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") return null;
+
+  return (
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(`${name}=`))
+      ?.split("=")[1] ?? null
+  );
+};
+
+const setCachedUser = (user: User): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("auth_user", JSON.stringify(user));
+};
+
+const getCachedUser = (): User | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem("auth_user");
+    if (!raw) return null;
+
+    const user = JSON.parse(raw) as User;
+    if (!user || typeof user.id !== "number") return null;
+
+    return user;
+  } catch {
+    return null;
+  }
 };
 
 const clearAuthCookies = (): void => {
   document.cookie = `auth_token=; path=/; max-age=0`;
   document.cookie = `user_role=; path=/; max-age=0`;
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem("auth_user");
+    window.localStorage.removeItem("auth_token");
+  }
 };
+
+const extractToken = (payload: AuthResponse): string | undefined =>
+  payload.data?.token ??
+  payload.data?.access_token ??
+  payload.data?.plainTextToken ??
+  payload.token ??
+  payload.access_token ??
+  payload.plainTextToken;
 
 /* ─────────────────────────────
    LOGIN
@@ -104,7 +156,7 @@ export const login = async ({
     });
 
     const userData = res.data.data?.user ?? res.data.user;
-    const token = res.data.data?.token ?? res.data.token;
+    const token = extractToken(res.data);
 
     if (!userData || !token) {
       throw new Error("Invalid login response");
@@ -117,6 +169,7 @@ export const login = async ({
       : 60 * 60 * 24;     // 1 day
 
     setAuthCookies(token, user.role, maxAge);
+    setCachedUser(user);
 
     return user;
   } catch (err: unknown) {
@@ -174,17 +227,21 @@ export const logout = async (): Promise<void> => {
 ───────────────────────────── */
 
 export const checkAuth = async (): Promise<User | null> => {
-  try {
-    const res = await api.get("/auth/user");
+  const token = getCookie("auth_token") ?? (
+    typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null
+  );
+  if (!token) return null;
 
-    const user = res.data?.data?.user ?? res.data?.user;
+  const cachedUser = getCachedUser();
+  if (cachedUser) return cachedUser;
 
-    if (!user || typeof user.id !== "number") return null;
-
-    return normalizeUser(user);
-  } catch {
-    return null;
-  }
+  const role = (getCookie("user_role") as UserRole | null) ?? "student";
+  return {
+    id: 0,
+    name: role === "admin" ? "Admin" : "Student",
+    email: "",
+    role,
+  };
 };
 
 /* ─────────────────────────────

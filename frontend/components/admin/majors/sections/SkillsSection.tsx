@@ -1,34 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { useFieldArray, useFormContext, Controller } from "react-hook-form";
+import { useFieldArray, useFormContext } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { X, Plus } from "lucide-react";
+import { ADMIN_SKILLS, resolveAdminSkillLabel } from "@/lib/adminSkills";
+import { getAvailableSkills } from "@/services/majorsService";
 import type { MajorFormData } from "@/lib/validations/major";
 
-// Mock skill options — TI-43: replace with API call to /admin/skills
-const MOCK_SKILLS: { id: number; label: string }[] = [
-  { id: 1, label: "Python" },
-  { id: 2, label: "Data Analysis" },
-  { id: 3, label: "Machine Learning" },
-  { id: 4, label: "Communication" },
-  { id: 5, label: "Critical Thinking" },
-  { id: 6, label: "JavaScript" },
-  { id: 7, label: "SQL" },
-  { id: 8, label: "Project Management" },
-  { id: 9, label: "Research" },
-  { id: 10, label: "Problem Solving" },
-];
+interface SkillsSectionProps {
+  lockedSkillIds?: number[];
+}
 
-export default function SkillsSection() {
+export default function SkillsSection({ lockedSkillIds = [] }: SkillsSectionProps) {
   const { control, formState: { errors } } = useFormContext<MajorFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: "skills" });
+  const { data: availableSkills } = useQuery({
+    queryKey: ["admin-major-skill-options"],
+    queryFn: getAvailableSkills,
+  });
 
   const [search, setSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
   const selectedIds = fields.map((f) => f.skill_id);
+  const skillOptions = availableSkills?.length
+    ? availableSkills.map((skill) => ({
+        id: skill.id,
+        label: skill.name,
+        type: skill.type,
+      }))
+    : ADMIN_SKILLS;
+  const skillLabels = new Map(skillOptions.map((skill) => [skill.id, skill.label]));
 
-  const filtered = MOCK_SKILLS.filter(
+  const filtered = skillOptions.filter(
     (s) =>
       !selectedIds.includes(s.id) &&
       s.label.toLowerCase().includes(search.toLowerCase())
@@ -53,17 +58,20 @@ export default function SkillsSection() {
           <span className="text-sm text-gray-400 italic">No skills selected</span>
         )}
         {fields.map((field, index) => {
-          const skill = MOCK_SKILLS.find((s) => s.id === field.skill_id);
+          const skillName = skillLabels.get(field.skill_id) ?? resolveAdminSkillLabel(field.skill_id);
+          const isLocked = lockedSkillIds.includes(field.skill_id);
           return (
             <span
               key={field.id}
               className="inline-flex items-center gap-1.5 rounded-full bg-brand-950 px-3 py-1 text-xs font-medium text-white"
             >
-              {skill?.label ?? `Skill #${field.skill_id}`}
+              {skillName ?? `Skill #${field.skill_id}`}
               <button
                 type="button"
+                disabled={isLocked}
                 onClick={() => remove(index)}
-                className="hover:opacity-70 transition-opacity"
+                title={isLocked ? "Existing skills can be kept or new skills can be added." : "Remove skill"}
+                className="transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -76,7 +84,6 @@ export default function SkillsSection() {
         <p className="text-xs text-red-500">{errors.skills.message}</p>
       )}
 
-      {/* Search + dropdown */}
       <div className="relative">
         <div className="flex gap-2">
           <input

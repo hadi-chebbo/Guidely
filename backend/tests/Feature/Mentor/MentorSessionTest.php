@@ -25,28 +25,31 @@ it('returns only sessions owned by the authenticated mentor', function () {
     $mentor = User::factory()->mentor()->create();
     $otherMentor = User::factory()->mentor()->create();
 
-    $ownSession = MentorSession::factory()->for($mentor, 'mentor')->create([
-        'title' => 'College application review',
-        'type' => 'one-on-one',
+    $ownSession = MentorSession::factory()->create([
+        'user_id'          => $mentor->id,
+        'title'            => 'College application review',
+        'type'             => 'one-on-one',
         'duration_minutes' => 60,
-        'max_capacity' => 1,
-        'price' => 50,
-        'currency' => 'USD',
-        'is_active' => true,
+        'max_capacity'     => 1,
+        'price'            => 50,
+        'currency'         => 'USD',
+        'is_active'        => true,
     ]);
 
-    MentorSession::factory()->for($mentor, 'mentor')->create([
-        'title' => 'Portfolio planning group',
-        'type' => 'group',
+    MentorSession::factory()->create([
+        'user_id'          => $mentor->id,
+        'title'            => 'Portfolio planning group',
+        'type'             => 'group',
         'duration_minutes' => 90,
-        'max_capacity' => 8,
-        'price' => 35,
-        'currency' => 'USD',
-        'is_active' => false,
+        'max_capacity'     => 8,
+        'price'            => 35,
+        'currency'         => 'USD',
+        'is_active'        => false,
     ]);
 
-    MentorSession::factory()->for($otherMentor, 'mentor')->create([
-        'title' => 'Other mentor session',
+    MentorSession::factory()->create([
+        'user_id' => $otherMentor->id,
+        'title'   => 'Other mentor session',
     ]);
 
     Sanctum::actingAs($mentor);
@@ -58,15 +61,15 @@ it('returns only sessions owned by the authenticated mentor', function () {
         ->assertJsonPath('message', 'Mentor sessions retrieved successfully')
         ->assertJsonCount(2, 'data')
         ->assertJsonFragment([
-            'id' => $ownSession->id,
-            'title' => 'College application review',
-            'type' => 'one-on-one',
+            'id'               => $ownSession->id,
+            'title'            => 'College application review',
+            'type'             => 'one-on-one',
             'duration_minutes' => 60,
-            'max_capacity' => 1,
-            'price' => '50.00',
-            'currency' => 'USD',
-            'is_active' => true,
-            'status' => 'active',
+            'max_capacity'     => 1,
+            'price'            => '50.00',
+            'currency'         => 'USD',
+            'is_active'        => true,
+            'status'           => 'active',
         ])
         ->assertJsonStructure([
             'data' => [
@@ -92,7 +95,6 @@ it('returns only sessions owned by the authenticated mentor', function () {
         ->assertJsonMissingPath('data.1.user_id')
         ->assertJsonMissing(['title' => 'Other mentor session']);
 });
-
 it('returns an empty list when the mentor has no sessions', function () {
     $mentor = User::factory()->mentor()->create();
 
@@ -102,4 +104,74 @@ it('returns an empty list when the mentor has no sessions', function () {
         ->assertOk()
         ->assertJsonPath('message', 'Mentor sessions retrieved successfully')
         ->assertJsonCount(0, 'data');
+});
+
+
+//StoreSessionTests
+it('stores the session linked to the authenticated mentor', function () {
+    $mentor = User::factory()->mentor()->create();
+    Sanctum::actingAs($mentor);
+
+    $this->postJson('/api/v1/mentor/sessions', [
+        'title'            => 'Advanced Laravel Architecture',
+        'description'      => 'A deep dive into Laravel service layers.',
+        'type'             => 'one-on-one',
+        'duration_minutes' => 60,
+        'max_capacity'     => 1,
+        'price'            => 99.99, 
+        'currency'         => 'USD',
+        'is_active'        => true,
+    ])->assertCreated();
+
+    $this->assertDatabaseHas('mentor_sessions', [
+        'user_id' => $mentor->id,
+        'title'   => 'Advanced Laravel Architecture',
+    ]);
+});
+it('requires all mandatory fields', function () {
+    Sanctum::actingAs(User::factory()->mentor()->create());
+
+    $this->postJson('/api/v1/mentor/sessions', [])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'title', 'description', 'type',
+            'duration_minutes', 'max_capacity', 'price', 'currency',
+        ]);
+});
+it('respects max_capacity for group sessions', function () {
+    Sanctum::actingAs(User::factory()->mentor()->create());
+
+    $this->postJson('/api/v1/mentor/sessions', [
+        'title'            => 'Laravel for Beginners',
+        'description'      => 'Introductory group session covering routing and Eloquent.',
+        'type'             => 'group',
+        'duration_minutes' => 90,
+        'max_capacity'     => 15,
+        'price'            => 29.99,
+        'currency'         => 'USD',
+        'is_active'        => true,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.max_capacity', 15);
+});
+it('forces max_capacity to 1 for one-on-one sessions regardless of input', function () {
+    Sanctum::actingAs(User::factory()->mentor()->create());
+
+    $this->postJson('/api/v1/mentor/sessions', [
+        'title'            => 'Advanced Laravel Architecture',
+        'description'      => 'A deep dive into Laravel service layers.',
+        'type'             => 'one-on-one',
+        'duration_minutes' => 60,
+        'max_capacity'     => 99,
+        'price'            => 99.99,
+        'currency'         => 'USD',
+        'is_active'        => true,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.max_capacity', 1);
+
+    $this->assertDatabaseHas('mentor_sessions', [
+        'type'         => 'one-on-one',
+        'max_capacity' => 1,
+    ]);
 });

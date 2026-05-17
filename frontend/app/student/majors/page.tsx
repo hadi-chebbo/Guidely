@@ -9,7 +9,7 @@ import {
   useRef,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
   LayoutGrid,
@@ -22,9 +22,18 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getPublicMajors } from "@/services/studentService";
+import {
+  getCategories,
+  getFavoriteMajors,
+  getPublicMajorId,
+  getPublicMajorsTotal,
+  getPublicMajors,
+  syncFavoriteMajorFromToggle,
+  toggleFavoriteMajor,
+} from "@/services/studentService";
 import { useDebounce } from "@/hooks/useDebounce";
 import MajorCard from "@/components/majors/MajorCard";
+import { useAuth } from "@/app/contexts/AuthContext";
 import MajorsFilterSidebar, {
   DEFAULT_FILTERS,
   activeFilterCount,
@@ -158,12 +167,16 @@ function Pagination({
 function MajorsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const resultsRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated } = useAuth();
+  const majorsPath = "/student/majors";
 
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [page, setPage] = useState(Number(searchParams.get("page") ?? "1"));
+  const [pendingFavoriteId, setPendingFavoriteId] = useState<number | null>(null);
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -186,6 +199,27 @@ function MajorsContent() {
     queryFn: () => getPublicMajors({ per_page: PAGE_SIZE, page }),
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ["student-categories"],
+    queryFn: getCategories,
+  });
+
+  const { data: favorites = [], refetch: refetchFavorites } = useQuery({
+    queryKey: ["student-favorite-majors"],
+    queryFn: getFavoriteMajors,
+    enabled: isAuthenticated,
+  });
+
+  const favoriteIds = useMemo(
+    () =>
+      new Set(
+        favorites
+          .map((major) => getPublicMajorId(major))
+          .filter((id): id is number => Boolean(id)),
+      ),
+    [favorites],
+  );
+
   const allMajors = useMemo(() => {
     if (!majorsData) return [];
     return [
@@ -202,7 +236,8 @@ function MajorsContent() {
         if (
           !m.name_en.toLowerCase().includes(q) &&
           !m.name_ar.toLowerCase().includes(q) &&
-          !m.overview.toLowerCase().includes(q)
+          !(m.overview ?? "").toLowerCase().includes(q) &&
+          !(m.category?.name_en ?? "").toLowerCase().includes(q)
         )
           return false;
       }
@@ -223,6 +258,7 @@ function MajorsContent() {
     });
   }, [allMajors, debouncedSearch, filters]);
 
+  const totalMajors = getPublicMajorsTotal(majorsData);
   const totalPages = majorsData?.others.meta.last_page ?? 1;
 
   useEffect(() => {
@@ -236,8 +272,11 @@ function MajorsContent() {
     else params.delete("q");
     if (page > 1) params.set("page", String(page));
     else params.delete("page");
-    router.replace(`/majors?${params.toString()}`, { scroll: false });
-  }, [debouncedSearch, filters, page, router]);
+    const query = params.toString();
+    router.replace(query ? `${majorsPath}?${query}` : majorsPath, {
+      scroll: false,
+    });
+  }, [debouncedSearch, filters, majorsPath, page, router]);
 
   // Normalize category.name → category.name_en for MajorCard compatibility
   const normalizedFiltered = filtered.map((m) => ({
@@ -252,8 +291,48 @@ function MajorsContent() {
     resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const handleToggleFavorite = async (majorId: number) => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    setPendingFavoriteId(majorId);
+    await queryClient.cancelQueries({ queryKey: ["student-favorite-majors"] });
+
+    const previousFavorites =
+      queryClient.getQueryData<typeof favorites>(["student-favorite-majors"]) ??
+      favorites;
+    const selectedMajor = allMajors.find((major) => major.id === majorId);
+
+    try {
+      const result = await toggleFavoriteMajor(majorId);
+      const nextFavorites = await syncFavoriteMajorFromToggle(
+        selectedMajor ?? { id: majorId },
+        result.is_favorite,
+      );
+
+      queryClient.setQueryData<typeof favorites>(
+        ["student-favorite-majors"],
+        nextFavorites,
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: ["student-favorite-majors"],
+      });
+      await refetchFavorites();
+    } catch {
+      queryClient.setQueryData(
+        ["student-favorite-majors"],
+        previousFavorites,
+      );
+    } finally {
+      setPendingFavoriteId(null);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#f5f5f7]">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-slate-100">
       {/* Hero header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-600 to-indigo-700 px-6 pb-8 pt-10">
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.04]" />
@@ -301,7 +380,7 @@ function MajorsContent() {
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
             {[
-              { label: "Majors", value: majorsData?.others.meta.total ?? "—" },
+              { label: "Majors", value: totalMajors || "—" },
               {
                 label: "High-demand fields",
                 value: allMajors.filter(
@@ -449,6 +528,7 @@ function MajorsContent() {
                 filters={filters}
                 onChange={setFilters}
                 totalResults={filtered.length}
+                categories={categories}
               />
             </div>
           </div>
@@ -506,13 +586,27 @@ function MajorsContent() {
             ) : view === "grid" ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {normalizedFiltered.map((m) => (
-                  <MajorCard key={m.slug} major={m as never} view="grid" />
+                  <MajorCard
+                    key={m.slug}
+                    major={m as never}
+                    view="grid"
+                    isFavorite={favoriteIds.has(m.id)}
+                    favoriteDisabled={pendingFavoriteId === m.id}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col gap-2.5">
                 {normalizedFiltered.map((m) => (
-                  <MajorCard key={m.slug} major={m as never} view="list" />
+                  <MajorCard
+                    key={m.slug}
+                    major={m as never}
+                    view="list"
+                    isFavorite={favoriteIds.has(m.id)}
+                    favoriteDisabled={pendingFavoriteId === m.id}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
                 ))}
               </div>
             )}
@@ -552,6 +646,7 @@ function MajorsContent() {
                   setMobileSidebarOpen(false);
                 }}
                 totalResults={filtered.length}
+                categories={categories}
               />
             </div>
           </div>
@@ -588,7 +683,7 @@ export default function MajorsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50/60 p-6">
+        <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-slate-100 p-6">
           <div className="mx-auto max-w-7xl">
             <SkeletonGrid />
           </div>

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { X } from "lucide-react";
+import { AdminModalFrame } from "@/components/admin/AdminPage";
 import type { FAQ } from "@/types/major";
 
 const schema = z.object({
@@ -47,9 +48,7 @@ export default function FaqModal({ open, faq, onClose, onSubmit, isSubmitting }:
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-brand-100 p-6">
-
+    <AdminModalFrame className="max-w-lg p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-gray-900">
             {faq ? "Edit FAQ" : "Add FAQ"}
@@ -57,6 +56,7 @@ export default function FaqModal({ open, faq, onClose, onSubmit, isSubmitting }:
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+            aria-label="Close FAQ modal"
           >
             <X className="h-4 w-4" />
           </button>
@@ -67,7 +67,7 @@ export default function FaqModal({ open, faq, onClose, onSubmit, isSubmitting }:
             <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
             <input
               {...register("question")}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
               placeholder="What is this major about?"
             />
             {errors.question && (
@@ -80,7 +80,7 @@ export default function FaqModal({ open, faq, onClose, onSubmit, isSubmitting }:
             <textarea
               {...register("answer")}
               rows={4}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none"
               placeholder="This major covers..."
             />
             {errors.answer && (
@@ -94,7 +94,7 @@ export default function FaqModal({ open, faq, onClose, onSubmit, isSubmitting }:
               {...register("sort_order")}
               type="number"
               min={0}
-              className="w-32 rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="w-32 rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
             />
             {errors.sort_order && (
               <p className="mt-1 text-xs text-red-500">{errors.sort_order.message}</p>
@@ -105,20 +105,19 @@ export default function FaqModal({ open, faq, onClose, onSubmit, isSubmitting }:
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50"
+              className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-medium disabled:opacity-60 hover:bg-brand-700 transition-colors"
+              className="flex-1 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-60 hover:bg-brand-700 transition-colors"
             >
               {isSubmitting ? "Saving..." : faq ? "Update" : "Create"}
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AdminModalFrame>
   );
 }
