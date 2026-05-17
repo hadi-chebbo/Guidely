@@ -3,8 +3,8 @@
 import { useCallback } from "react";
 import { X, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockCategories } from "@/lib/mocks/majors";
 import type { DemandLevel, DifficultyLevel } from "@/types/major";
+import type { StudentCategory } from "@/services/studentService";
 
 /* ── Filter shape ────────────────────────────────────────────────── */
 
@@ -121,9 +121,15 @@ interface Props {
   filters: MajorFilters;
   onChange: (f: MajorFilters) => void;
   totalResults: number;
+  categories?: StudentCategory[];
 }
 
-export default function MajorsFilterSidebar({ filters, onChange, totalResults }: Props) {
+export default function MajorsFilterSidebar({
+  filters,
+  onChange,
+  totalResults,
+  categories = [],
+}: Props) {
   const count = activeFilterCount(filters);
 
   const toggle = useCallback(
@@ -173,7 +179,12 @@ export default function MajorsFilterSidebar({ filters, onChange, totalResults }:
         <div>
           <SectionHeader label="Category" />
           <div className="flex flex-col gap-0.5">
-            {mockCategories.map((cat) => (
+            {categories.length === 0 && (
+              <p className="px-2.5 py-1.5 text-xs text-gray-400">
+                Categories unavailable
+              </p>
+            )}
+            {categories.map((cat) => (
               <CheckRow
                 key={cat.slug}
                 checked={filters.categories.includes(cat.slug)}

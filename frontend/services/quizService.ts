@@ -4,22 +4,41 @@ import api from "@/lib/api";
 export interface QuizOption {
   id: number;
   text_en: string;
+  text_ar?: string;
   text?: string;
 }
 
 export interface QuizQuestion {
-  id: number;
+  id?: number;
   text_en: string;
+  text_ar?: string;
   text?: string;
   options: QuizOption[];
 }
 
-export interface QuizAnswer {
-  question_id: number;
-  option_id: number;
+export type QuizAnswer = number;
+
+export interface QuizRecommendation {
+  id?: number;
+  major_id?: number;
+  slug?: string;
+  major_name?: string;
+  en_major_name?: string;
+  ar_major_name?: string;
+  name_en?: string;
+  name_ar?: string;
+  match_percentage?: number;
+  overview?: string;
 }
 
 export interface QuizResult {
+  score?: number;
+  recommended_majors?: QuizRecommendation[];
+  recommendations?: QuizRecommendation[];
+  message?: string;
+}
+
+export interface LegacyQuizResult {
   score?: number;
   recommended_majors?: Array<{
     id: number;
@@ -32,16 +51,16 @@ export interface QuizResult {
 
 /* ── API calls ── */
 
-// GET /student/test/questions
+// GET /test/questions
 export const getQuizQuestions = async (): Promise<QuizQuestion[]> => {
-  const res = await api.get("/student/test/questions");
+  const res = await api.get("/test/questions");
   return res.data.data ?? res.data;
 };
 
-// POST /student/test/submit
+// POST /test/submit
 export const submitQuiz = async (
-  answers: QuizAnswer[],
+  answers: number[],
 ): Promise<QuizResult> => {
-  const res = await api.post("/student/test/submit", { answers });
+  const res = await api.post("/test/submit", { answers });
   return res.data.data ?? res.data;
 };

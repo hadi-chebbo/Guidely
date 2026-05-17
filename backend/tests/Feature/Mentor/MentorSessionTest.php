@@ -61,7 +61,7 @@ it('returns only sessions owned by the authenticated mentor', function () {
         ->assertJsonPath('message', 'Mentor sessions retrieved successfully')
         ->assertJsonCount(2, 'data')
         ->assertJsonFragment([
-            'id'               => $ownSession->id,
+            'slug'               => $ownSession->slug,
             'title'            => 'College application review',
             'type'             => 'one-on-one',
             'duration_minutes' => 60,
@@ -74,7 +74,7 @@ it('returns only sessions owned by the authenticated mentor', function () {
         ->assertJsonStructure([
             'data' => [
                 '*' => [
-                    'id',
+                    'slug',
                     'title',
                     'description',
                     'type',
@@ -173,5 +173,57 @@ it('forces max_capacity to 1 for one-on-one sessions regardless of input', funct
     $this->assertDatabaseHas('mentor_sessions', [
         'type'         => 'one-on-one',
         'max_capacity' => 1,
+    ]);
+});
+
+it('prevents mentor from updating sessions they do not own', function () {
+    $mentor = User::factory()->mentor()->create();
+    $otherMentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->for($otherMentor, 'mentor')->create();
+
+    Sanctum::actingAs($mentor);
+
+    $response = $this->putJson("/api/v1/mentor/sessions/{$session->slug}", [
+        'title' => 'Updated Title',
+    ]);
+
+    $response
+        ->assertForbidden()
+        ->assertStatus(403);
+});
+
+it('updates the mentor session successfully and regenerates the slug when the title changes', function () {
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->for($mentor, 'mentor')->create([
+        'title'   => 'Old Laravel Session',
+        'slug'    => 'old-laravel-session-abc123',
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $response = $this->putJson("/api/v1/mentor/sessions/{$session->slug}", [
+        'title'            => 'Advanced Laravel APIs',
+        'description'      => 'Updated session description.',
+        'duration_minutes' => 90,
+        'price'            => 120,
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('message', 'Session updated successfully')
+        ->assertJsonPath('data.title', 'Advanced Laravel APIs')
+        ->assertJsonPath('data.duration_minutes', 90);
+
+    $session->refresh();
+
+    expect($session->title)->toBe('Advanced Laravel APIs');
+    expect($session->slug)->not->toBe('old-laravel-session-abc123');
+    expect($session->slug)->toStartWith('advanced-laravel-apis');
+
+    $this->assertDatabaseHas('mentor_sessions', [
+        'id'    => $session->id,
+        'title' => 'Advanced Laravel APIs',
     ]);
 });

@@ -1,9 +1,17 @@
 "use client";
-import { toast } from "sonner";
+
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { BookOpen, Plus, Search, Star, X } from "lucide-react";
 import { universityService } from "@/services/universityService";
-import type { University } from "@/types/university";
-import { Search, X } from "lucide-react";
+import type { University, UniversityMajor } from "@/types/university";
+import {
+  AdminCard,
+  AdminModalFrame,
+  AdminPageHeader,
+  AdminPageShell,
+  AdminToolbar,
+} from "@/components/admin/AdminPage";
 import UniversitiesTable from "@/components/admin/universities/UniversitiesTable";
 import UniversityForm from "@/components/admin/universities/UniversityForm";
 
@@ -27,18 +35,26 @@ export default function UniversitiesPage() {
   const [data, setData] = useState<University[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
-
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [selected, setSelected] = useState<University | null>(null);
   const [open, setOpen] = useState(false);
-
+  const [viewUniversity, setViewUniversity] = useState<University | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [majorsLoading, setMajorsLoading] = useState(false);
+  const [universityMajors, setUniversityMajors] = useState<UniversityMajor[]>([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<FilterType>("all");
 
-  const fetchData = async () => {
+  const fetchData = async (pageNum = 1) => {
     setPageLoading(true);
     try {
-      const res = await universityService.getAll();
+      const res = await universityService.getAll(pageNum);
       setData(Array.isArray(res.data) ? res.data : []);
+      setPage(res.meta?.current_page ?? pageNum);
+      setLastPage(res.meta?.last_page ?? 1);
+      setTotal(res.meta?.total ?? 0);
     } finally {
       setPageLoading(false);
       setHasLoaded(true);
@@ -46,151 +62,151 @@ export default function UniversitiesPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(1);
   }, []);
 
-  const handleSubmit = async (form: FormState) => {
-  try {
-    const payload = {
-      ...form,
-      founded_year: form.founded_year ? Number(form.founded_year) : null,
-    };
+  const handleView = async (university: University) => {
+    setViewUniversity(university);
+    setViewOpen(true);
+    setMajorsLoading(true);
+    setUniversityMajors([]);
 
-    if (selected) {
-      const res = await universityService.update(selected.id, payload);
-      const updated = res;
-
-      setData((prev) =>
-        prev.map((u) => (u.id === updated.id ? updated : u))
-      );
-
-      toast.success("University updated successfully ✅");
-    } else {
-      const res = await universityService.create(payload);
-      const created = res;
-
-      setData((prev) => [created, ...prev]);
-
-      toast.success("University created successfully 🎉");
+    try {
+      const majors = await universityService.getMajors(university.id);
+      setUniversityMajors(majors);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load university majors");
+    } finally {
+      setMajorsLoading(false);
     }
+  };
 
-    setOpen(false);
-    setSelected(null);
-  } catch (error) {
-    console.error(error);
-    toast.error("Something went wrong. Please try again ❌");
-  }
-};
+  const handleSubmit = async (form: FormState) => {
+    try {
+      const payload = {
+        ...form,
+        founded_year: form.founded_year ? Number(form.founded_year) : null,
+      };
+
+      if (selected) {
+        const updated = await universityService.update(selected.id, payload);
+        setData((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+        toast.success("University updated successfully");
+      } else {
+        const created = await universityService.create(payload);
+        setData((prev) => [created, ...prev]);
+        toast.success("University created successfully");
+      }
+
+      setOpen(false);
+      setSelected(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong. Please try again");
+    }
+  };
 
   const filteredData = data.filter((u) => {
+    const normalizedSearch = search.toLowerCase();
     const matchesSearch =
-      u.name_en.toLowerCase().includes(search.toLowerCase()) ||
-      u.name_ar?.toLowerCase().includes(search.toLowerCase()) ||
-      u.location?.toLowerCase().includes(search.toLowerCase());
+      u.name_en.toLowerCase().includes(normalizedSearch) ||
+      u.name_ar?.toLowerCase().includes(normalizedSearch) ||
+      u.location?.toLowerCase().includes(normalizedSearch);
 
-    const matchesType =
-      filterType === "all" || u.type === filterType;
-
-    return matchesSearch && matchesType;
+    return matchesSearch && (filterType === "all" || u.type === filterType);
   });
 
-  const isEmpty =
-    hasLoaded && !pageLoading && filteredData.length === 0;
+  const isEmpty = hasLoaded && !pageLoading && filteredData.length === 0;
+  const hasLocalFilters = search.trim().length > 0 || filterType !== "all";
+
+  const handlePrev = async () => {
+    if (pageLoading || page <= 1 || hasLocalFilters) return;
+    await fetchData(page - 1);
+  };
+
+  const handleNext = async () => {
+    if (pageLoading || page >= lastPage || hasLocalFilters) return;
+    await fetchData(page + 1);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100 relative overflow-hidden p-6">
+    <AdminPageShell>
+      <AdminPageHeader
+        eyebrow="Institutions"
+        title="Universities"
+        description="Create, edit, and review institution records and their offered majors."
+        actions={
+          <button
+            onClick={() => {
+              setSelected(null);
+              setOpen(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add University
+          </button>
+        }
+      />
 
-      {/* background */}
-      <div className="absolute -top-20 -left-20 w-72 h-72 bg-brand-200 rounded-full blur-3xl opacity-30" />
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-brand-300 rounded-full blur-3xl opacity-30" />
-
-      {/* header */}
-      <div className="flex items-center justify-between mb-8 relative z-10">
-        <div>
-          <h1 className="text-4xl font-heading text-gray-900">
-            Universities Management
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Create, edit, and manage all universities
-          </p>
+      <AdminToolbar>
+        <div className="relative w-full md:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-gray-500" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search universities..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
-        <button
-          onClick={() => {
-            setSelected(null);
-            setOpen(true);
-          }}
-          className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-2xl shadow-brand transition hover:scale-[1.03]"
-        >
-          + Add University
-        </button>
-      </div>
-
-      {/* search + filter */}
-      <div className="mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
-
-        <div className="relative w-full md:max-w-sm">
-  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none z-10" />
-
-  <input
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    placeholder="Search universities..."
-    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-brand-100 bg-white/80 backdrop-blur text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
-  />
-
-  {search && (
-    <button
-      onClick={() => setSearch("")}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-    >
-      <X className="h-4 w-4" />
-    </button>
-  )}
-</div>
-
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {(["all", "public", "private"] as FilterType[]).map((type) => (
             <button
               key={type}
               onClick={() => setFilterType(type)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+              className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${
                 filterType === type
                   ? "bg-brand-600 text-white"
-                  : "bg-white/70 border border-brand-100 text-gray-600"
+                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
               }`}
             >
               {type}
             </button>
           ))}
         </div>
-      </div>
+      </AdminToolbar>
 
-      {/* table */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-card border border-brand-100 overflow-hidden relative z-10">
-
-        <div className="p-4 text-xs text-gray-400">
-          Showing {filteredData.length} results
+      <AdminCard>
+        <div className="border-b border-gray-200 px-4 py-3 text-xs font-medium text-gray-500">
+          {hasLocalFilters
+            ? `Showing ${filteredData.length} filtered result${filteredData.length === 1 ? "" : "s"} on this page`
+            : `Showing ${filteredData.length} of ${total} universities`}
         </div>
 
         {pageLoading ? (
           [...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="grid grid-cols-6 p-4 border-b animate-pulse"
-            >
-              <div className="h-4 bg-gray-200 rounded w-24" />
-              <div className="h-4 bg-gray-200 rounded w-32" />
-              <div className="h-4 bg-gray-200 rounded w-16" />
-              <div className="h-4 bg-gray-200 rounded w-16" />
-              <div className="h-4 bg-gray-200 rounded w-20" />
-              <div className="h-4 bg-gray-200 rounded w-8 ml-auto" />
+            <div key={i} className="grid grid-cols-6 gap-4 border-b border-gray-100 p-4 animate-pulse">
+              <div className="h-4 w-24 rounded bg-gray-200" />
+              <div className="h-4 w-32 rounded bg-gray-200" />
+              <div className="h-4 w-16 rounded bg-gray-200" />
+              <div className="h-4 w-16 rounded bg-gray-200" />
+              <div className="h-4 w-20 rounded bg-gray-200" />
+              <div className="ml-auto h-4 w-8 rounded bg-gray-200" />
             </div>
           ))
         ) : isEmpty ? (
-          <div className="p-6 text-center text-gray-500">
-            No universities found
-          </div>
+          <div className="p-10 text-center text-sm text-gray-500">No universities found</div>
         ) : (
           <UniversitiesTable
             data={filteredData}
@@ -198,35 +214,112 @@ export default function UniversitiesPage() {
               setSelected(u);
               setOpen(true);
             }}
-            onView={(id) => console.log(id)}
+            onView={(id) => {
+              const university = data.find((item) => item.id === id);
+              if (university) handleView(university);
+            }}
           />
         )}
 
-      </div>
+        <div className="flex items-center justify-between border-t border-gray-200 p-4">
+          <button
+            onClick={handlePrev}
+            disabled={pageLoading || page <= 1 || hasLocalFilters}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span className="text-sm text-gray-500">
+            Page {page} of {lastPage}
+          </span>
+          <button
+            onClick={handleNext}
+            disabled={pageLoading || page >= lastPage || hasLocalFilters}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </AdminCard>
 
-      {/* modal */}
       {open && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50">
+        <AdminModalFrame className="max-w-xl p-6">
+          <h2 className="mb-4 text-xl font-semibold text-gray-900">
+            {selected ? "Edit University" : "Create University"}
+          </h2>
+          <UniversityForm
+            initialData={selected}
+            onSubmit={handleSubmit}
+            onClose={() => {
+              setOpen(false);
+              setSelected(null);
+            }}
+          />
+        </AdminModalFrame>
+      )}
 
-          <div className="bg-white w-full max-w-xl rounded-2xl shadow-card p-6 border border-brand-100">
-
-            <h2 className="text-xl font-heading mb-4">
-              {selected ? "Edit University" : "Create University"}
-            </h2>
-
-            <UniversityForm
-              initialData={selected}
-              onSubmit={handleSubmit}
-              onClose={() => {
-                setOpen(false);
-                setSelected(null);
+      {viewOpen && viewUniversity && (
+        <AdminModalFrame className="max-w-2xl p-6">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+                <BookOpen className="h-3.5 w-3.5" />
+                University majors
+              </p>
+              <h2 className="text-2xl font-semibold text-gray-900">{viewUniversity.name_en}</h2>
+              <p className="mt-1 text-sm text-gray-500">{viewUniversity.location}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setViewOpen(false);
+                setViewUniversity(null);
+                setUniversityMajors([]);
               }}
-            />
-
+              className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
+              aria-label="Close majors modal"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
-        </div>
+          <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50">
+            {majorsLoading ? (
+              <div className="space-y-3 p-4">
+                {[...Array(4)].map((_, index) => (
+                  <div key={index} className="h-16 animate-pulse rounded-lg bg-white" />
+                ))}
+              </div>
+            ) : universityMajors.length === 0 ? (
+              <div className="p-8 text-center text-sm text-gray-500">
+                No majors found for this university.
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {universityMajors.map((major) => (
+                  <div key={major.id} className="flex items-center justify-between gap-4 bg-white p-4">
+                    <div>
+                      <p className="font-medium text-gray-900">{major.name ?? major.name_en ?? "-"}</p>
+                      <p className="mt-1 text-xs text-gray-400">{major.slug}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
+                        Category #{major.category_id}
+                      </span>
+                      {major.is_featured && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                          <Star className="h-3 w-3" />
+                          Featured
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </AdminModalFrame>
       )}
-    </div>
+    </AdminPageShell>
   );
 }

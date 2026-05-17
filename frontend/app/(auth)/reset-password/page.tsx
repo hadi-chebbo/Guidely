@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 
@@ -18,7 +18,7 @@ type ApiError = {
   message?: string;
 };
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -33,56 +33,56 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
 
   const handleReset = async () => {
-  if (loading) return;
+    if (loading) return;
 
-  setError(null);
-  setMessage(null);
+    setError(null);
+    setMessage(null);
 
-  const cleanPassword = password.trim();
-  const cleanConfirm = confirm.trim();
+    const cleanPassword = password.trim();
+    const cleanConfirm = confirm.trim();
 
-  if (!token || !email) {
-    setError("Invalid or expired reset link");
-    return;
-  }
+    if (!token || !email) {
+      setError("Invalid or expired reset link");
+      return;
+    }
 
-  if (cleanPassword.length < 8) {
-    setError("Password must be at least 8 characters long");
-    return;
-  }
+    if (cleanPassword.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
 
-  if (cleanPassword !== cleanConfirm) {
-    setError("Passwords do not match");
-    return;
-  }
+    if (cleanPassword !== cleanConfirm) {
+      setError("Passwords do not match");
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    await resetPassword({
-      token,
-      email,
-      password: cleanPassword,
-      password_confirmation: cleanConfirm,
-    });
+    try {
+      await resetPassword({
+        token,
+        email,
+        password: cleanPassword,
+        password_confirmation: cleanConfirm,
+      });
 
-    setMessage("Your password has been updated. Redirecting...");
+      setMessage("Your password has been updated. Redirecting...");
 
-    setTimeout(() => {
-      router.replace("/login");
-    }, 1500);
-  } catch (err: unknown) {
-    const error = err as ApiError;
+      setTimeout(() => {
+        router.replace("/login");
+      }, 1500);
+    } catch (err: unknown) {
+      const error = err as ApiError;
 
-    setError(
-      error?.response?.data?.message ||
-        error?.message ||
-        "Something went wrong. Try again."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      setError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong. Try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-5 max-w-md mx-auto mt-10">
@@ -116,5 +116,13 @@ export default function ResetPasswordPage() {
         Reset password
       </Button>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

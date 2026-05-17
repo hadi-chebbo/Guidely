@@ -24,13 +24,31 @@ interface MajorsTableProps {
   items: MajorListItem[];
   loading?: boolean;
   onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
+  onDelete?: (id: number) => void;
 }
+
+const formatDate = (date?: string) => {
+  if (!date) {
+    return "-";
+  }
+
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "-";
+  }
+
+  return parsed.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
 
 export default function MajorsTable({ items, loading = false, onEdit, onDelete }: MajorsTableProps) {
   return (
     <Table>
-      <THead>
+      <THead className="bg-brand-50/60 text-gray-600">
         <TR>
           <TH>Major</TH>
           <TH>Category</TH>
@@ -56,12 +74,12 @@ export default function MajorsTable({ items, loading = false, onEdit, onDelete }
           <TableEmpty colSpan={COL_COUNT}>No majors found.</TableEmpty>
         ) : (
           items.map((item) => (
-            <TR key={item.id}>
+            <TR key={item.id} className="border-t hover:bg-brand-50/40">
               <TD>
                 <p className="font-medium text-gray-900">{item.name_en}</p>
                 <p className="text-xs text-gray-400">{item.name_ar}</p>
               </TD>
-              <TD className="text-gray-600">{item.category?.name_en ?? "—"}</TD>
+              <TD className="text-gray-600">{item.category?.name_en ?? "-"}</TD>
               <TD className="text-gray-600">
                 {item.duration_years} yr{item.duration_years !== 1 ? "s" : ""}
               </TD>
@@ -75,31 +93,27 @@ export default function MajorsTable({ items, loading = false, onEdit, onDelete }
                   {item.is_featured ? "Featured" : "No"}
                 </Badge>
               </TD>
-              <TD className="text-gray-500">
-                {new Date(item.updated_at).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </TD>
+              <TD className="text-gray-500">{formatDate(item.updated_at)}</TD>
               <TD>
                 <div className="flex justify-end gap-1">
                   <button
                     type="button"
                     onClick={() => onEdit(item.id)}
-                    className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-950"
+                    className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-brand-100 hover:text-brand-950"
                     aria-label={`Edit ${item.name_en}`}
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(item.id)}
-                    className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                    aria-label={`Delete ${item.name_en}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(item.id)}
+                      className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                      aria-label={`Delete ${item.name_en}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </TD>
             </TR>

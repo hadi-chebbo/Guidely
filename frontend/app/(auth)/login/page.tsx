@@ -57,7 +57,7 @@ export default function LoginPage() {
           ? "/admin"
           : user.role === "mentor"
           ? "/mentor"
-          : "/dashboard";
+          : "/student/dashboard";
 
       const safeRedirect =
         redirectParam && redirectParam.startsWith("/")

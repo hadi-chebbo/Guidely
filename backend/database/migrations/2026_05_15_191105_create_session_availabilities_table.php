@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('session_availabilities', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->foreignId('mentor_session_id')->constrained()->cascadeOnDelete();
             $table->dateTime('scheduled_at');
             $table->dateTime('ends_at')->nullable();

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+use Override;
 
 #[Fillable([
     'scheduled_at',
@@ -21,6 +23,14 @@ class SessionAvailability extends Model
         'scheduled_at' => 'datetime',
         'ends_at' => 'datetime',
     ];
+
+    #[Override]
+    protected static function booted()
+    {
+        static::creating(function ($availability) {
+            $availability->uuid = Str::uuid();
+        });
+    }
 
     public function session()
     {

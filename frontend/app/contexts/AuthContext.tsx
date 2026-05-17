@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setAuth(user);
 
-      router.push("/dashboard");
+      router.push(user.role === "admin" ? "/admin" : "/student/dashboard");
 
       return user;
     } catch (err) {

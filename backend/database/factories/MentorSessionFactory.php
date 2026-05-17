@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\MentorSession;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<MentorSession>
@@ -19,11 +20,13 @@ class MentorSessionFactory extends Factory
     public function definition(): array
     {
 
-        $type = fake()->RandomElement(['one-on-one','group']);
+        $type = fake()->randomElement(['one-on-one','group']);
+        $title = fake()->sentence(4);
 
         return [
+            'slug' => Str::slug($title) . '-' . Str::random(6),
             'user_id' => User::factory()->mentor()->create(),
-            'title' => fake()->sentence(4),
+            'title' => $title,
             'description' => fake()->paragraph(),
             'type' => $type,
             'duration_minutes' => fake()->randomElement([30, 45, 60, 90, 120]),
