@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\SessionAvailability;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<SessionAvailability>
@@ -21,6 +22,7 @@ class SessionAvailabilityFactory extends Factory
         $start = fake()->dateTimeBetween('+1 days', '+1 month');
 
         return [
+            'uuid' => Str::uuid(),
             'scheduled_at' => $start,
             'status' => fake()->randomElement(['open', 'full', 'cancelled', 'completed']),
         ];
