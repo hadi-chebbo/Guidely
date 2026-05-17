@@ -32,7 +32,7 @@ class PublicMentorResource extends JsonResource
                 'languages'             => $profile->languages,
                 'is_accepting_students' => $profile->is_accepting_students,
                 'major'                 => $profile->major
-                    ? ['name' => $profile->major->name, 'slug' => $profile->major->slug]
+                    ? ['name_en' => $profile->major->name_en, 'name_ar' => $profile->major->name_ar, 'slug' => $profile->major->slug]
                     : null,
                 'social_links' => array_filter([
                     'linkedin' => $profile->linkedin_url,
