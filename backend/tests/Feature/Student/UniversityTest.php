@@ -140,3 +140,159 @@ it('returns a single university', function() {
         ]);
 
 });
+//UniversityComparisonTest
+it('compares two universities successfully', function () {
+
+    $major1 = Major::factory()->create([
+        'name_en' => 'Computer Science',
+        'slug' => 'computer-science',
+    ]);
+
+    $major2 = Major::factory()->create([
+        'name_en' => 'Business',
+        'slug' => 'business',
+    ]);
+
+    $universityA = University::factory()->create([
+        'name_en' => 'American University of Beirut',
+        'slug' => 'aub',
+        'location' => 'Beirut',
+        'type' => 'private',
+    ]);
+
+    $universityB = University::factory()->create([
+        'name_en' => 'Lebanese American University',
+        'slug' => 'lau',
+        'location' => 'Byblos',
+        'type' => 'private',
+    ]);
+
+    // Common major
+    $universityA->majors()->attach($major1->id, [
+        'credit_price_usd' => 300,
+        'total_credits' => 90,
+        'admission_requirements' => 'SAT required',
+        'language_of_instruction' => 'English',
+        'has_scholarship' => true,
+        'campus' => 'Beirut',
+    ]);
+
+    $universityB->majors()->attach($major1->id, [
+        'credit_price_usd' => 250,
+        'total_credits' => 95,
+        'admission_requirements' => 'Entrance exam',
+        'language_of_instruction' => 'English',
+        'has_scholarship' => false,
+        'campus' => 'Byblos',
+    ]);
+
+    // Unique major for LAU
+    $universityB->majors()->attach($major2->id, [
+        'credit_price_usd' => 200,
+        'total_credits' => 80,
+        'admission_requirements' => 'Interview',
+        'language_of_instruction' => 'English',
+        'has_scholarship' => true,
+        'campus' => 'Byblos',
+    ]);
+
+    $response = $this->postJson('/api/v1/universities/compare', [
+        'universities' => [
+            'aub',
+            'lau',
+        ],
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertJson([
+            'message' => 'Universities Compared Successfully',
+        ])
+        ->assertJsonStructure([
+            'data' => [
+                'university_a' => [
+                    'name_en',
+                    'name_ar',
+                    'slug',
+                    'type',
+                    'location',
+                    'website',
+                    'logo_url',
+                    'description_en',
+                    'description_ar',
+                    'founded_year',
+                    'accreditation',
+                ],
+
+                'university_b' => [
+                    'name_en',
+                    'name_ar',
+                    'slug',
+                    'type',
+                    'location',
+                    'website',
+                    'logo_url',
+                    'description_en',
+                    'description_ar',
+                    'founded_year',
+                    'accreditation',
+                ],
+
+                'comparison' => [
+                    'basic_info',
+
+                    'common_majors' => [
+                        '*' => [
+                            'major' => [
+                                'name',
+                            ],
+
+                            'university_a' => [
+                                'credit_price_usd',
+                                'total_credits',
+                                'estimated_total_cost',
+                                'language_of_instruction',
+                                'has_scholarship',
+                                'campus',
+                            ],
+
+                            'university_b' => [
+                                'credit_price_usd',
+                                'total_credits',
+                                'estimated_total_cost',
+                                'language_of_instruction',
+                                'has_scholarship',
+                                'campus',
+                            ],
+
+                            'comparison' => [
+                                'credit_price_difference',
+                                'cheaper_university',
+                                'total_cost_difference',
+                            ],
+                        ],
+                    ],
+
+                    'unique_majors' => [
+                        'university_a',
+                        'university_b',
+                    ],
+                ],
+            ],
+        ]);
+});
+
+it('fails when less than two universities are provided', function () {
+
+    $response = $this->postJson('/api/v1/universities/compare', [
+        'universities' => [
+            'aub',
+        ],
+    ]);
+
+    $response
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'universities',
+        ]);
+});
