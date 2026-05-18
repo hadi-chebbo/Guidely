@@ -8,4 +8,5 @@ Route::prefix('mentors')
     ->controller(MentorController::class)
     ->group(function (): void {
         Route::get('/{user:username}', 'show');
+        Route::post('/apply','apply');
     });
