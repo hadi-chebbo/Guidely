@@ -11,7 +11,9 @@ class StoreSessionAvailabilityRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $session = $this->route('session');
+
+        return $session && $session->user_id === $this->user()->id;
     }
 
     /**

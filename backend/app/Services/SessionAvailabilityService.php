@@ -44,9 +44,12 @@ class SessionAvailabilityService
         ];
     }
 
-    private function hasConflict(MentorSession $session, array $slot): bool
+    private function hasConflict(MentorSession $session, array $slot,?int $ignoreId = null): bool
     {
         return $session->availabilities()
+            ->when($ignoreId, function ($query) use ($ignoreId) {
+            $query->where('id', '!=', $ignoreId);
+        })
             ->where('status', '!=', 'cancelled')
             ->where(function ($query) use ($slot) {
 

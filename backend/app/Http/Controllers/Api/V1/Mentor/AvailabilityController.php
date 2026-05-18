@@ -37,9 +37,6 @@ class AvailabilityController extends Controller
         MentorSession $session,
         SessionAvailabilityService $service
     ) {
-        if ($session->user_id !== $request->user()->id) {
-            return $this->error('Forbidden', 403);
-        }
 
         $result = $service->createSlots(
             $session,
