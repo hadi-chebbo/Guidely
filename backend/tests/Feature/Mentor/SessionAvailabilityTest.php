@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\MentorSession;
+use App\Models\SessionAvailability;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -149,4 +151,45 @@ it('returns an empty list when the owned session has no availabilities', functio
         ->assertOk()
         ->assertJsonPath('message', 'Session availabilities retrieved successfully')
         ->assertJsonCount(0, 'data');
+});
+
+it('allows mentors to delete a session availability they own', function () {
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->for($mentor , 'mentor')->create();
+
+    $availability = SessionAvailability::factory()->for($session , 'session')->create();
+
+    Sanctum::actingAs($mentor);
+
+    $response = $this->deleteJson("api/v1/mentor/sessions/{$session->slug}/availabilities/{$availability->uuid}");
+
+    $response->assertOk();
+
+    $this->assertDatabaseMissing('session_availabilities', [
+        'id' => $availability->id,
+    ]);
+});
+
+it('prevents a mentor from deleting another mentors availability', function () {
+    $mentor  = User::factory()->mentor()->create();
+    $another = User::factory()->mentor()->create();
+
+    $session      = MentorSession::factory()->for($another, 'mentor')->create();
+    $availability = SessionAvailability::factory()->for($session , 'session')->create();
+
+    Sanctum::actingAs($mentor);
+
+    $response = $this->deleteJson("api/v1/mentor/sessions/{$session->slug}/availabilities/$availability->uuid");
+
+    $response->assertNotFound();
+});
+
+it('prevents unauthenticated users from deleting an availability', function () {
+    $session      = MentorSession::factory()->create();
+    $availability = SessionAvailability::factory()->for($session, 'session')->create();
+
+    $response = $this->deleteJson("api/v1/mentor/sessions/{$session->slug}/availabilities/$availability->uuid");
+
+    $response->assertUnauthorized();
 });
