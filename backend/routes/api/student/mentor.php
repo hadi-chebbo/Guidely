@@ -9,3 +9,5 @@ Route::prefix('mentors')
         Route::get('/{user:username}', 'show');
         Route::get('/' , 'index');
     });
+        Route::post('/apply','apply');
+    });
