@@ -59,4 +59,11 @@ class UniversityController extends Controller
             200
         );
     }
+
+    public function show(University $university)
+    {
+        $university->load('majors');
+
+        return $this->success(new UniversityResource($university),"University Fetched Successfully", 200);
+    }
 }
