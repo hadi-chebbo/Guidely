@@ -51,4 +51,24 @@ class SessionController extends Controller
         $session->update($data);
         return $this->success(new SessionResource($session->fresh()), "Session updated successfully", 200);
     }
+    public function destroy(Request $request, MentorSession $session)
+    {
+        $user = $request->user();
+
+        $session = $user->mentorSessions()
+            ->whereKey($session->id)
+            ->first();
+
+        if (! $session) {
+            return $this->error('Session not found or unauthorized.', 404);
+        }
+
+        $session->delete();
+
+        return $this->success(
+            null,
+            'Session deleted successfully.',
+            200
+        );
+    }
 }
