@@ -9,4 +9,5 @@ Route::prefix('mentor/sessions/{session:slug}')
     ->group(function (): void {
         Route::get('/availabilities', 'index')
             ->name('api.v1.mentor.sessions.availabilities.index');
+        Route::post('/availabilities', 'store')->name('api.v1.mentor.sessionavailabilities.index');
     });
