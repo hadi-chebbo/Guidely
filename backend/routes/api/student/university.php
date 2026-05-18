@@ -7,9 +7,6 @@ Route::prefix('universities')
     ->controller(UniversityController::class)
     ->group(function (): void {
         Route::get('/', 'index')->name('api.v1.universities.index');
-<<<<<<< HEAD
         Route::get('/{university:slug}', 'show');
-=======
         Route::post('/compare','compare');
->>>>>>> f2d0d65 (testcases)
     });
