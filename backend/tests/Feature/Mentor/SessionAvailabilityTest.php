@@ -13,10 +13,21 @@ it('requires authentication to list session availabilities', function () {
 
 it('allows only mentors to list session availabilities', function () {
     $student = User::factory()->student()->create();
+    $mentor = User::factory()->mentor()->create();
+    $session = $mentor->mentorSessions()->create([
+        'title' => 'College application review',
+        'description' => 'Review student applications.',
+        'type' => 'one-on-one',
+        'duration_minutes' => 60,
+        'max_capacity' => 1,
+        'price' => 50,
+        'currency' => 'USD',
+        'is_active' => true,
+    ]);
 
     Sanctum::actingAs($student);
 
-    $this->getJson('/api/v1/mentor/sessions/1/availabilities')
+    $this->getJson("/api/v1/mentor/sessions/{$session->slug}/availabilities")
         ->assertForbidden();
 });
 
@@ -69,7 +80,7 @@ it('returns ordered availability slots for an owned session', function () {
 
     Sanctum::actingAs($mentor);
 
-    $response = $this->getJson("/api/v1/mentor/sessions/{$session->id}/availabilities");
+    $response = $this->getJson("/api/v1/mentor/sessions/{$session->slug}/availabilities");
 
     $response
         ->assertOk()
@@ -113,7 +124,7 @@ it('does not allow mentors to list another mentors session availabilities', func
 
     Sanctum::actingAs($mentor);
 
-    $this->getJson("/api/v1/mentor/sessions/{$otherSession->id}/availabilities")
+    $this->getJson("/api/v1/mentor/sessions/{$otherSession->slug}/availabilities")
         ->assertNotFound()
         ->assertJsonPath('message', 'Mentor session not found');
 });
@@ -134,7 +145,7 @@ it('returns an empty list when the owned session has no availabilities', functio
 
     Sanctum::actingAs($mentor);
 
-    $this->getJson("/api/v1/mentor/sessions/{$session->id}/availabilities")
+    $this->getJson("/api/v1/mentor/sessions/{$session->slug}/availabilities")
         ->assertOk()
         ->assertJsonPath('message', 'Session availabilities retrieved successfully')
         ->assertJsonCount(0, 'data');

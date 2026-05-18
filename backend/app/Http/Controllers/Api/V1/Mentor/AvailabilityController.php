@@ -13,21 +13,14 @@ class AvailabilityController extends Controller
 {
     use ApiResponseTrait;
 
-    public function index(Request $request, int $session): JsonResponse
+    public function index(Request $request, MentorSession $session): JsonResponse
     {
-        $mentorSession = MentorSession::query()
-            ->select(['id'])
-            ->whereKey($session)
-            ->where('user_id', $request->user()->id)
-            ->first();
-
-        if (! $mentorSession) {
+        if ((int) $session->user_id !== $request->user()->id) {
             return $this->error('Mentor session not found', 404);
         }
 
-        $availabilities = $mentorSession->availabilities()
+        $availabilities = $session->availabilities()
             ->orderBy('scheduled_at')
-            ->orderBy('id')
             ->get();
 
         return $this->success(
