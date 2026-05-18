@@ -28,6 +28,16 @@ export interface University {
   updated_at: string;
 }
 
+export interface UniversityMajor {
+  id: number;
+  name?: string;
+  name_en?: string;
+  name_ar?: string | null;
+  slug: string;
+  category_id: number;
+  is_featured: boolean;
+}
+
 /**
  * Pagination link
  */

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Major;
 use App\Models\University;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -94,4 +95,48 @@ it('validates public university filters', function () {
     $response
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['type', 'per_page']);
+});
+
+it('returns a single university', function() {
+    $university = University::factory()->create();
+    $university->majors()->createMany(
+        Major::factory()->count(5)->make()->toArray()
+    );
+    $response = $this->getJson("/api/v1/universities/{$university->slug}");
+    $response
+        ->assertOk()
+        ->assertJsonCount(5, 'data.majors')
+        ->assertJsonStructure([
+                'data' => [
+                'name_en',
+                'name_ar',
+                'slug',
+                'type',
+                'location',
+                'website',
+                'logo_url',
+                'description_en',
+                'description_ar',
+                'founded_year',
+
+                'majors' => [
+                    '*' => [
+                        'name_en',
+                        'name_ar',
+                        'slug',
+                        'overview',
+                        'description',
+                        'duration_years',
+                        'difficulty_level',
+                        'salary_min',
+                        'salary_max',
+                        'local_demand',
+                        'international_demand',
+                        'is_featured',
+                        'cover_image',
+                    ]
+                ]
+            ]
+        ]);
+
 });

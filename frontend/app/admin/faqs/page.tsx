@@ -1,24 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, HelpCircle, ChevronDown } from "lucide-react";
-
+import { ChevronDown, HelpCircle, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  AdminCard,
+  AdminPageHeader,
+  AdminPageShell,
+  AdminToolbar,
+} from "@/components/admin/AdminPage";
+import { Table, TableEmpty, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
+import { createFaq, deleteFaq, getFaqs, updateFaq } from "@/services/faqsService";
 import { getMajors } from "@/services/majorsService";
-import { getFaqs, createFaq, updateFaq, deleteFaq } from "@/services/faqsService";
 import type { FAQ, MajorListItem } from "@/types/major";
 import FaqModal from "@/components/admin/faqs/FaqModal";
 
 export default function FaqsPage() {
   const queryClient = useQueryClient();
-
   const [selectedMajorId, setSelectedMajorId] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Fetch all majors for the selector (no pagination needed for dropdown)
   const { data: majorsData } = useQuery({
     queryKey: ["majors-all"],
     queryFn: () => getMajors({ per_page: 100 }),
@@ -26,11 +30,7 @@ export default function FaqsPage() {
 
   const majors: MajorListItem[] = majorsData?.data ?? [];
 
-  // Fetch FAQs for selected major
-  const {
-    data: faqs = [],
-    isLoading: faqsLoading,
-  } = useQuery({
+  const { data: faqs = [], isLoading: faqsLoading } = useQuery({
     queryKey: ["faqs", selectedMajorId],
     queryFn: () => getFaqs(selectedMajorId!),
     enabled: selectedMajorId !== null,
@@ -56,7 +56,7 @@ export default function FaqsPage() {
       setModalOpen(false);
       setEditingFaq(null);
     },
-    onError: () => toast.error("Edit not available yet — backend route pending"),
+    onError: () => toast.error("Edit is not available yet. Backend route pending."),
   });
 
   const deleteMutation = useMutation({
@@ -66,7 +66,7 @@ export default function FaqsPage() {
       toast.success("FAQ deleted");
       setDeletingId(null);
     },
-    onError: () => toast.error("Delete not available yet — backend route pending"),
+    onError: () => toast.error("Delete is not available yet. Backend route pending."),
   });
 
   const handleModalSubmit = async (data: { question: string; answer: string; sort_order: number }) => {
@@ -91,25 +91,19 @@ export default function FaqsPage() {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100 relative overflow-hidden p-6">
+    <AdminPageShell>
+      <AdminPageHeader
+        eyebrow="Support Content"
+        title="FAQs"
+        description="Curate student-facing questions and answers for each major."
+      />
 
-      {/* Background blobs */}
-      <div className="absolute -top-20 -left-20 w-72 h-72 bg-brand-200 rounded-full blur-3xl opacity-30 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-brand-300 rounded-full blur-3xl opacity-30 pointer-events-none" />
-
-      {/* Header */}
-      <div className="mb-6 relative z-20">
-        <h1 className="text-4xl font-heading text-gray-900">FAQs Management</h1>
-        <p className="text-gray-500 text-sm mt-1">Manage frequently asked questions per major</p>
-      </div>
-
-      {/* Major Selector + Add Button */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6 relative z-20">
-        <div className="relative flex-1 max-w-sm">
+      <AdminToolbar>
+        <div className="relative w-full sm:max-w-sm">
           <select
             value={selectedMajorId ?? ""}
             onChange={(e) => setSelectedMajorId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full appearance-none pl-4 pr-10 py-2.5 rounded-xl border border-brand-100 bg-white/90 backdrop-blur text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300 text-gray-700"
+            className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">Select a major...</option>
             {majors.map((m) => (
@@ -118,116 +112,104 @@ export default function FaqsPage() {
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         </div>
 
         <button
           onClick={openCreate}
           disabled={!selectedMajorId}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-medium disabled:opacity-50 hover:bg-brand-700 transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus className="h-4 w-4" />
           Add FAQ
         </button>
-      </div>
+      </AdminToolbar>
 
-      {/* Table Card */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-card border border-brand-100 overflow-hidden relative z-20">
-
-        {/* Table header info */}
-        <div className="flex items-center justify-between p-4 border-b border-brand-50">
-          <span className="text-xs text-gray-400">
+      <AdminCard>
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+          <span className="text-xs font-medium text-gray-500">
             {selectedMajor
               ? `${faqs.length} FAQ${faqs.length !== 1 ? "s" : ""} for ${selectedMajor.name_en}`
               : "Select a major to view FAQs"}
           </span>
         </div>
 
-        {/* States */}
         {!selectedMajorId ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <HelpCircle className="h-12 w-12 mb-3 opacity-30" />
+            <HelpCircle className="mb-3 h-12 w-12 opacity-30" />
             <p className="text-sm">Choose a major from the dropdown above</p>
           </div>
         ) : faqsLoading ? (
-          <div className="p-4 space-y-3">
+          <div className="space-y-3 p-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="grid grid-cols-5 p-4 border-b animate-pulse gap-4">
-                <div className="col-span-2 h-4 bg-gray-200 rounded" />
-                <div className="col-span-2 h-4 bg-gray-200 rounded" />
-                <div className="h-4 bg-gray-200 rounded w-20 ml-auto" />
+              <div key={i} className="grid grid-cols-5 gap-4 border-b border-gray-100 p-4 animate-pulse">
+                <div className="col-span-2 h-4 rounded bg-gray-200" />
+                <div className="col-span-2 h-4 rounded bg-gray-200" />
+                <div className="ml-auto h-4 w-20 rounded bg-gray-200" />
               </div>
             ))}
           </div>
-        ) : faqs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <HelpCircle className="h-12 w-12 mb-3 opacity-30" />
-            <p className="text-sm">No FAQs yet for this major</p>
-            <button
-              onClick={openCreate}
-              className="mt-3 text-sm text-brand-600 hover:underline font-medium"
-            >
-              Add the first one
-            </button>
-          </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-brand-50/60 text-gray-600">
-              <tr>
-                <th className="p-4 text-left w-8">#</th>
-                <th className="p-4 text-left">Question</th>
-                <th className="p-4 text-left">Answer</th>
-                <th className="p-4 text-center w-24">Order</th>
-                <th className="p-4 text-right w-28">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {faqs.map((faq, i) => (
-                <tr key={faq.id} className="border-t hover:bg-brand-50/40 transition">
-                  <td className="p-4 text-gray-400 text-xs">{i + 1}</td>
-                  <td className="p-4 font-medium text-gray-800 max-w-xs">
-                    <span className="line-clamp-2">{faq.question}</span>
-                  </td>
-                  <td className="p-4 text-gray-500 max-w-sm">
-                    <span className="line-clamp-2">{faq.answer}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-brand-50 text-brand-700 text-xs font-semibold">
-                      {faq.sort_order}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex justify-end items-center gap-1">
-                      <button
-                        onClick={() => openEdit(faq)}
-                        title="Edit FAQ"
-                        className="p-2 rounded-lg hover:bg-brand-50 text-gray-500 hover:text-brand-600 transition-colors"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm("Delete this FAQ?")) {
-                            setDeletingId(faq.id);
-                            deleteMutation.mutate(faq.id);
-                          }
-                        }}
-                        disabled={deleteMutation.isPending && deletingId === faq.id}
-                        title="Delete FAQ"
-                        className="p-2 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table>
+            <THead className="bg-gray-50 text-gray-600">
+              <TR>
+                <TH className="w-8">#</TH>
+                <TH>Question</TH>
+                <TH>Answer</TH>
+                <TH className="w-24 text-center">Order</TH>
+                <TH className="w-28 text-right">Actions</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {faqs.length === 0 ? (
+                <TableEmpty colSpan={5}>No FAQs yet for this major.</TableEmpty>
+              ) : (
+                faqs.map((faq, i) => (
+                  <TR key={faq.id} className="hover:bg-brand-50/40">
+                    <TD className="text-xs text-gray-400">{i + 1}</TD>
+                    <TD className="max-w-xs font-medium text-gray-900">
+                      <span className="line-clamp-2">{faq.question}</span>
+                    </TD>
+                    <TD className="max-w-sm text-gray-500">
+                      <span className="line-clamp-2">{faq.answer}</span>
+                    </TD>
+                    <TD className="text-center">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700">
+                        {faq.sort_order}
+                      </span>
+                    </TD>
+                    <TD>
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => openEdit(faq)}
+                          title="Edit FAQ"
+                          className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-brand-50 hover:text-brand-700"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm("Delete this FAQ?")) {
+                              setDeletingId(faq.id);
+                              deleteMutation.mutate(faq.id);
+                            }
+                          }}
+                          disabled={deleteMutation.isPending && deletingId === faq.id}
+                          title="Delete FAQ"
+                          className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </TD>
+                  </TR>
+                ))
+              )}
+            </TBody>
+          </Table>
         )}
-      </div>
+      </AdminCard>
 
-      {/* Modal */}
       <FaqModal
         open={modalOpen}
         faq={editingFaq}
@@ -238,6 +220,6 @@ export default function FaqsPage() {
         onSubmit={handleModalSubmit}
         isSubmitting={isSubmitting}
       />
-    </div>
+    </AdminPageShell>
   );
 }

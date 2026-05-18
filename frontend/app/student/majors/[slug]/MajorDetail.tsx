@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPublicMajor } from "@/services/studentService";
 import {
   Clock,
@@ -16,8 +16,16 @@ import {
   Building2,
   MapPin,
   RefreshCw,
+  Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  getFavoriteMajors,
+  getPublicMajorId,
+  syncFavoriteMajorFromToggle,
+  toggleFavoriteMajor,
+} from "@/services/studentService";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 /* ── Types ── */
 interface MajorPoint { type: string; content: string }
@@ -73,7 +81,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 /* ── Skeleton — mirrors real layout ── */
 function SkeletonDetail() {
   return (
-    <div className="min-h-screen bg-[#f5f5f7] animate-pulse">
+    <div className="min-h-screen animate-pulse bg-gradient-to-br from-brand-50 via-white to-slate-100">
       {/* Hero skeleton */}
       <div className="bg-brand-950 px-6 py-12">
         <div className="mx-auto max-w-4xl space-y-3">
@@ -148,12 +156,22 @@ interface Props {
 }
 
 export default function MajorDetail({ slug, initialData, error: initialError }: Props) {
+  const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+  const [pendingFavorite, setPendingFavorite] = useState(false);
+
   const { data: major, isLoading, isError, refetch } = useQuery({
     queryKey: ["public-major", slug],
     queryFn: () => getPublicMajor(slug),
-    initialData: initialData ?? undefined,
+    initialData: (initialData ?? undefined) as never,
     enabled: !initialData && !initialError,
     retry: false,
+  });
+
+  const { data: favorites = [], refetch: refetchFavorites } = useQuery({
+    queryKey: ["student-favorite-majors"],
+    queryFn: getFavoriteMajors,
+    enabled: isAuthenticated,
   });
 
   if (isLoading) return <SkeletonDetail />;
@@ -172,9 +190,49 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
   const faqs = (major.faqs as Faq[] ?? []).sort((a, b) => a.sort_order - b.sort_order);
   const universities = major.universities as University[] ?? [];
   const companies = major.hiring_companies as HiringCompany[] ?? [];
+  const majorId = typeof major.id === "number" ? major.id : null;
+  const isFavorite = majorId
+    ? favorites.some((favorite) => getPublicMajorId(favorite) === majorId)
+    : false;
+
+  const handleToggleFavorite = async () => {
+    if (!majorId) return;
+
+    setPendingFavorite(true);
+    await queryClient.cancelQueries({ queryKey: ["student-favorite-majors"] });
+
+    const previousFavorites =
+      queryClient.getQueryData<typeof favorites>(["student-favorite-majors"]) ??
+      favorites;
+
+    try {
+      const result = await toggleFavoriteMajor(majorId);
+      const nextFavorites = await syncFavoriteMajorFromToggle(
+        major,
+        result.is_favorite,
+      );
+
+      queryClient.setQueryData<typeof favorites>(
+        ["student-favorite-majors"],
+        nextFavorites,
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: ["student-favorite-majors"],
+      });
+      await refetchFavorites();
+    } catch {
+      queryClient.setQueryData(
+        ["student-favorite-majors"],
+        previousFavorites,
+      );
+    } finally {
+      setPendingFavorite(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7]">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-slate-100">
       {/* Hero */}
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-6 py-12">
         <div
@@ -194,6 +252,23 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
             <p className="mt-3 max-w-2xl text-white/70 text-base leading-relaxed">{String(major.description)}</p>
           )}
           <div className="mt-6 flex flex-wrap items-center gap-3">
+            {majorId && (
+              <button
+                type="button"
+                onClick={handleToggleFavorite}
+                disabled={pendingFavorite}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 transition-all",
+                  isFavorite
+                    ? "bg-rose-50 text-rose-600 ring-rose-200"
+                    : "bg-white/10 text-white/75 ring-white/20 hover:bg-white/15",
+                  pendingFavorite && "cursor-not-allowed opacity-60",
+                )}
+              >
+                <Heart className={cn("h-3.5 w-3.5", isFavorite && "fill-current")} />
+                {isFavorite ? "Favorited" : "Save"}
+              </button>
+            )}
             <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", demand.className)}>
               {demand.label}
             </span>
@@ -332,6 +407,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
                   {universities.map((u) => (
                     <div key={u.slug} className="flex items-center gap-3">
                       {u.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img src={u.logo} alt={u.name_en} className="h-8 w-8 rounded-lg object-contain border border-gray-100" />
                       ) : (
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100">
@@ -358,6 +434,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
                   {companies.map((c) => (
                     <div key={c.slug} className="flex items-center gap-3">
                       {c.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img src={c.logo} alt={c.name} className="h-8 w-8 rounded-lg object-contain border border-gray-100" />
                       ) : (
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100">

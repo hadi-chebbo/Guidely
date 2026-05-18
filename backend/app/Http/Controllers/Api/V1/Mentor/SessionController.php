@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api\V1\Mentor;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mentor\StoreMentorSessionRequest;
+use App\Http\Requests\Mentor\UpdateMentorSessionRequest;
 use App\Http\Resources\Mentor\SessionResource;
 use App\Models\MentorSession;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SessionController extends Controller
 {
@@ -18,19 +20,6 @@ class SessionController extends Controller
     {
         $sessions = $request->user()
             ->mentorSessions()
-            ->select([
-                'id',
-                'title',
-                'description',
-                'type',
-                'duration_minutes',
-                'max_capacity',
-                'price',
-                'currency',
-                'is_active',
-                'created_at',
-                'updated_at',
-            ])
             ->withCount('availabilities')
             ->latest()
             ->get();
@@ -49,5 +38,17 @@ class SessionController extends Controller
         );
 
         return $this->success(new SessionResource($session),'Session created successfully.',201);
+    }
+
+    public function update(UpdateMentorSessionRequest $request, MentorSession $session)
+    {
+        $data = $request->validated();
+
+        if (isset($data['title'])) {
+            $data['slug'] = Str::slug($data['title']) . '-' . Str::random(6);
+        }
+
+        $session->update($data);
+        return $this->success(new SessionResource($session->fresh()), "Session updated successfully", 200);
     }
 }

@@ -62,6 +62,18 @@ export interface HiringCompany {
   is_local: boolean;
 }
 
+export interface MajorUniversity {
+  slug: string;
+  name_en: string;
+  name_ar: string | null;
+  location: string | null;
+  type: string | null;
+  logo: string | null;
+  total_credits: number | null;
+  credit_price_usd: string | number | null;
+  language_of_instruction: string | null;
+}
+
 export interface FAQ {
   id: number;
   major_id: number;
@@ -96,6 +108,7 @@ export interface Major {
   jobs?: JobOpportunity[];
   companies?: HiringCompany[];
   faqs?: FAQ[];
+  universities?: MajorUniversity[];
 }
 
 /** Slimmer shape returned by the admin list endpoint. */

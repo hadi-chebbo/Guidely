@@ -23,7 +23,6 @@ export default function ProsConsSection() {
       <PointGroup
         title="Pros"
         type="pro"
-        fields={fields}
         register={register}
         errors={errors}
         append={append}
@@ -34,7 +33,6 @@ export default function ProsConsSection() {
       <PointGroup
         title="Cons"
         type="con"
-        fields={fields}
         register={register}
         errors={errors}
         append={append}
@@ -49,7 +47,6 @@ export default function ProsConsSection() {
 interface PointGroupProps {
   title: string;
   type: "pro" | "con";
-  fields: ReturnType<typeof useFieldArray<MajorFormData, "points">>["fields"];
   register: ReturnType<typeof useFormContext<MajorFormData>>["register"];
   errors: ReturnType<typeof useFormContext<MajorFormData>>["formState"]["errors"];
   append: ReturnType<typeof useFieldArray<MajorFormData, "points">>["append"];
@@ -58,7 +55,7 @@ interface PointGroupProps {
   filteredFields: Array<{ id: string; originalIndex: number; type: string }>;
 }
 
-function PointGroup({ title, type, fields, register, errors, append, remove, move, filteredFields }: PointGroupProps) {
+function PointGroup({ title, type, register, errors, append, remove, move, filteredFields }: PointGroupProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">

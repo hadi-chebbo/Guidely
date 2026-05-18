@@ -2,25 +2,29 @@
 
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { AdminCard, AdminPageHeader, AdminPageShell } from "@/components/admin/AdminPage";
 import MajorForm from "@/components/admin/majors/MajorForm";
 
 export default function CreateMajorPage() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/admin/majors"
-          className="text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-gray-900">Add Major</h1>
-          <p className="text-sm text-gray-500">Fill in the details to create a new major</p>
-        </div>
-      </div>
-
-      <MajorForm mode="create" />
-    </div>
+    <AdminPageShell>
+      <AdminPageHeader
+        eyebrow="Content"
+        title="Add Major"
+        description="Create a new academic path using the same admin workflow as the rest of the console."
+        actions={
+          <Link
+            href="/admin/majors"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Majors
+          </Link>
+        }
+      />
+      <AdminCard className="p-6">
+        <MajorForm mode="create" />
+      </AdminCard>
+    </AdminPageShell>
   );
 }

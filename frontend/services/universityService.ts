@@ -4,6 +4,7 @@ import type {
   CreateUniversityDTO,
   UpdateUniversityDTO,
   UniversitiesApiResponse,
+  UniversityMajor,
 } from "@/types/university";
 
 export const universityService = {
@@ -35,6 +36,16 @@ export const universityService = {
     );
 
     return data.data;
+  },
+
+  getMajors: async (id: number): Promise<UniversityMajor[]> => {
+    const { data } = await api.get(`/admin/universities/${id}/majors`);
+    const payload = data.data;
+
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+
+    return [];
   },
 
  

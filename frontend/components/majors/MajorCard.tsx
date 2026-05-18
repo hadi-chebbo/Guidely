@@ -9,6 +9,7 @@ import {
   Stethoscope,
   BookOpen,
   GraduationCap,
+  Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Major } from "@/types/major";
@@ -16,6 +17,9 @@ import type { Major } from "@/types/major";
 type Props = {
   major: Major;
   view?: "grid" | "list";
+  isFavorite?: boolean;
+  favoriteDisabled?: boolean;
+  onToggleFavorite?: (majorId: number) => void;
 };
 
 const demandConfig: Record<string, { label: string; className: string }> = {
@@ -55,19 +59,50 @@ function DifficultyBar({ level }: { level: string }) {
   );
 }
 
-export default function MajorCard({ major, view = "grid" }: Props) {
+export default function MajorCard({
+  major,
+  view = "grid",
+  isFavorite = false,
+  favoriteDisabled = false,
+  onToggleFavorite,
+}: Props) {
   const demand = demandConfig[major.local_demand] ?? demandConfig.medium;
   const slug = major.category?.slug ?? "";
   const theme = cardTheme;
   const Icon = CategoryIcon[slug] ?? BookOpen;
   const salaryK = major.salary_max ? `$${Math.round(major.salary_max / 1000)}k` : null;
+  const durationYears =
+    major.duration_years ?? (major as unknown as { duration_year?: number }).duration_year ?? 0;
+  const favoriteButton = onToggleFavorite ? (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onToggleFavorite(major.id);
+      }}
+      disabled={favoriteDisabled}
+      aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+      className={cn(
+        "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 transition-all",
+        isFavorite
+          ? "bg-rose-50 text-rose-600 ring-rose-200"
+          : "bg-white/90 text-gray-400 ring-gray-200 hover:text-rose-500",
+        favoriteDisabled && "cursor-not-allowed opacity-60",
+      )}
+    >
+      <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
+    </button>
+  ) : null;
 
   /* ── List view ────────────────────────────────────────────────── */
   if (view === "list") {
     return (
+      <div className="relative">
+        {favoriteButton}
       <Link
-        href={`/majors/${major.slug}`}
-        className="group flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:border-brand-200 hover:shadow-card"
+        href={`/student/majors/${major.slug}`}
+        className="group flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 pr-14 shadow-sm transition-all hover:border-brand-200 hover:shadow-card"
       >
         {/* Icon pill */}
         <div className={cn("flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl", theme.bg)}>
@@ -102,7 +137,7 @@ export default function MajorCard({ major, view = "grid" }: Props) {
           <div className="mt-2 flex items-center gap-4">
             <span className="flex items-center gap-1 text-xs text-gray-400">
               <Clock className="h-3 w-3" />
-              {major.duration_years}yr
+              {durationYears}yr
             </span>
             <DifficultyBar level={major.difficulty_level} />
             {salaryK && (
@@ -116,13 +151,16 @@ export default function MajorCard({ major, view = "grid" }: Props) {
 
         <ArrowRight className="h-4 w-4 flex-shrink-0 text-gray-300 group-hover:text-brand-500 transition-colors" />
       </Link>
+      </div>
     );
   }
 
   /* ── Grid card ────────────────────────────────────────────────── */
   return (
+    <div className="relative">
+      {favoriteButton}
     <Link
-      href={`/majors/${major.slug}`}
+      href={`/student/majors/${major.slug}`}
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-card"
     >
       {/* Colored header — icon + title */}
@@ -183,7 +221,7 @@ export default function MajorCard({ major, view = "grid" }: Props) {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1 text-xs text-gray-400">
               <Clock className="h-3 w-3" />
-              {major.duration_years} yr
+              {durationYears} yr
             </span>
             <DifficultyBar level={major.difficulty_level} />
           </div>
@@ -201,5 +239,6 @@ export default function MajorCard({ major, view = "grid" }: Props) {
         <ArrowRight className="h-3.5 w-3.5 text-brand-600" />
       </div>
     </Link>
+    </div>
   );
 }

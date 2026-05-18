@@ -10,14 +10,14 @@ export function middleware(request: NextRequest) {
   const role = request.cookies.get(ROLE_COOKIE)?.value;
 
   const isAdminRoute = pathname.startsWith("/admin");
-  const isMajorsRoute = pathname.startsWith("/majors");
+  const isStudentRoute = pathname.startsWith("/student");
 
   /* ─────────────────────────────
      1. NOT LOGGED IN → BLOCK PROTECTED ROUTES
   ───────────────────────────── */
 
   if (!token) {
-    if (isAdminRoute || isMajorsRoute) {
+    if (isAdminRoute || isStudentRoute) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }
@@ -27,7 +27,11 @@ export function middleware(request: NextRequest) {
   ───────────────────────────── */
 
   if (token && isAdminRoute && role !== "admin") {
-    return NextResponse.redirect(new URL("/majors", request.url));
+    return NextResponse.redirect(new URL("/student/dashboard", request.url));
+  }
+
+  if (token && isStudentRoute && role === "admin") {
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   /* ───────────────────────────── */
@@ -38,5 +42,8 @@ export function middleware(request: NextRequest) {
 /* ───────────────────────────── */
 
 export const config = {
-  matcher: ["/admin/:path*", "/majors/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/student/:path*",
+  ],
 };
