@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Mentor;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Mentor\MentorApplicationRequest;
 use App\Http\Requests\Mentor\UpdateMentorRequest;
 use App\Http\Resources\Mentor\MentorResource;
 use App\Models\Major;

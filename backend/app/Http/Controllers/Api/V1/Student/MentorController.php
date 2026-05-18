@@ -10,7 +10,6 @@ use App\Http\Resources\Student\PublicMentorResource;
 use App\Models\Major;
 use App\Models\User;
 use App\Traits\ApiResponseTrait;
-use Illuminate\Http\Request;
 
 class MentorController extends Controller
 {

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Student;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class MentorApplicationRequest extends FormRequest
