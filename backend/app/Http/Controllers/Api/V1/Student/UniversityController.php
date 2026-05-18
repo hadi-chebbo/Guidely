@@ -74,7 +74,7 @@ class UniversityController extends Controller
 
     public function compare(
         CompareUniversitiesRequest $request
-    ): JsonResponse {
+    ) {
         $slugs = $request->input('universities');
 
         $result = $this->comparisonService->compare(
