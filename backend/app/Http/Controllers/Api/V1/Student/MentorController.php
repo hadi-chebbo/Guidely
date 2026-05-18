@@ -62,6 +62,7 @@ class MentorController extends Controller
         $perPage  = (int) ($filters['per_page'] ?? 15);
 
         $recommended = collect();
+        $recommended_ids = [];
         $user = $request->user();
 
         if($user){
@@ -84,11 +85,14 @@ class MentorController extends Controller
                 ->with(['mentorProfile.major'])
                 ->limit(6)
                 ->get();
+
+                $recommended_ids = $recommended->pluck('id')->toArray();
             }
         }
 
         $mentors = User::query()
         ->where('role', 'mentor')
+        ->whereNotIN('id', $recommended_ids)
         ->whereHas('mentorProfile', fn ($q) => $q
             ->where('status', 'approved')
             ->when(
