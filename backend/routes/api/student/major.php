@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Student\MajorController;
+use App\Http\Controllers\Api\V1\Student\MentorController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('user/favorites')
@@ -8,6 +9,12 @@ Route::prefix('user/favorites')
     ->group(function (): void {
         Route::get('/', [MajorController::class, 'favorites'])
             ->name('api.v1.user.favorites.index');
+    });
+
+Route::prefix('majors')
+    ->group(function (): void {
+        Route::get('/{major:slug}/mentors', [MentorController::class, 'indexByMajor'])
+            ->name('api.v1.majors.mentors.index');
     });
 
 Route::prefix('majors')
