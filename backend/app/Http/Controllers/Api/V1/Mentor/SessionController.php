@@ -55,11 +55,7 @@ class SessionController extends Controller
     {
         $user = $request->user();
 
-        $session = $user->mentorSessions()
-            ->whereKey($session->id)
-            ->first();
-
-        if (! $session) {
+        if ($user->id !== $session->user_id) {
             return $this->error('Session not found or unauthorized.', 404);
         }
 
