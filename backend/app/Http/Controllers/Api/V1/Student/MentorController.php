@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\IndexMajorMentorRequest;
+use App\Http\Resources\Student\AvailableSessionResource;
 use App\Http\Resources\Student\PublicMentorResource;
 use App\Models\Major;
 use App\Models\User;
@@ -32,6 +33,38 @@ class MentorController extends Controller
         return $this->success(
             PublicMentorResource::collection($mentors),
             'Major mentors retrieved successfully',
+            200
+        );
+    }
+
+    public function availableSessions(User $user)
+    {
+        $user->load('mentorProfile');
+
+        if (
+            $user->role !== 'mentor' ||
+            !$user->mentorProfile ||
+            $user->mentorProfile->status !== 'approved'
+        ) {
+            return $this->error('Mentor not found.', 404);
+        }
+
+        $sessions = $user->mentorSessions()
+            ->where('is_active', true)
+            ->whereHas('availabilities', fn ($query) => $query
+                ->where('status', 'open')
+                ->where('scheduled_at', '>=', now()))
+            ->with(['availabilities' => fn ($query) => $query
+                ->where('status', 'open')
+                ->where('scheduled_at', '>=', now())
+                ->orderBy('scheduled_at')])
+            ->orderBy('price')
+            ->orderBy('slug')
+            ->get();
+
+        return $this->success(
+            AvailableSessionResource::collection($sessions),
+            'Available mentor sessions retrieved successfully',
             200
         );
     }
