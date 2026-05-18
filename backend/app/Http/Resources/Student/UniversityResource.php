@@ -25,6 +25,10 @@ class UniversityResource extends JsonResource
             'description_en' => $this->description_en,
             'description_ar' => $this->description_ar,
             'founded_year' => $this->founded_year,
+
+            'majors' => MajorResource::collection(
+                $this->whenLoaded('majors')
+            ),
         ];
     }
 }
