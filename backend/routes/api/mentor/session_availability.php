@@ -10,4 +10,5 @@ Route::prefix('mentor/sessions/{session:slug}/availabilities')
         Route::get('/', 'index')
             ->name('api.v1.mentor.sessions.availabilities.index');
         Route::delete('/{availability}', 'destroy');
+        Route::post('/availabilities', 'store')->name('api.v1.mentor.sessionavailabilities.index');
     });
