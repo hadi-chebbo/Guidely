@@ -10,4 +10,5 @@ Route::prefix('mentor/sessions')
         Route::get('/', 'index')->name('api.v1.mentor.sessions.index');
         Route::post('/','store')->name('api.v1.mentor.sessions.index');
         Route::put('/{session:slug}', 'update');
+        Route::delete('/{session:slug}','destroy');
     });
