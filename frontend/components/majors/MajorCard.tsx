@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  ArrowRightLeft,
   Clock,
   TrendingUp,
   Monitor,
@@ -73,6 +74,8 @@ export default function MajorCard({
   const salaryK = major.salary_max ? `$${Math.round(major.salary_max / 1000)}k` : null;
   const durationYears =
     major.duration_years ?? (major as unknown as { duration_year?: number }).duration_year ?? 0;
+  const detailsHref = `/student/majors/${major.slug}`;
+  const compareHref = "/student/compare";
   const favoriteButton = onToggleFavorite ? (
     <button
       type="button"
@@ -100,8 +103,7 @@ export default function MajorCard({
     return (
       <div className="relative">
         {favoriteButton}
-      <Link
-        href={`/student/majors/${major.slug}`}
+      <article
         className="group flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 pr-14 shadow-sm transition-all hover:border-brand-200 hover:shadow-card"
       >
         {/* Icon pill */}
@@ -149,8 +151,23 @@ export default function MajorCard({
           </div>
         </div>
 
-        <ArrowRight className="h-4 w-4 flex-shrink-0 text-gray-300 group-hover:text-brand-500 transition-colors" />
-      </Link>
+        <div className="flex flex-shrink-0 flex-col items-end gap-2">
+          <Link
+            href={detailsHref}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-brand-800"
+          >
+            View details
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+          <Link
+            href={compareHref}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900"
+          >
+            Compare
+            <ArrowRightLeft className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </article>
       </div>
     );
   }
@@ -159,9 +176,8 @@ export default function MajorCard({
   return (
     <div className="relative">
       {favoriteButton}
-    <Link
-      href={`/student/majors/${major.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-card"
+    <article
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-card"
     >
       {/* Colored header — icon + title */}
       <div className={cn("relative px-5 pt-5 pb-4", theme.bg)}>
@@ -232,13 +248,30 @@ export default function MajorCard({
             </span>
           )}
         </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3">
+          <Link
+            href={detailsHref}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-brand-800"
+          >
+            View details
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+          <Link
+            href={compareHref}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-gray-900"
+          >
+            Compare
+            <ArrowRightLeft className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* Hover arrow */}
       <div className="absolute bottom-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-brand-50 opacity-0 transition-all group-hover:opacity-100 group-hover:bg-brand-100">
         <ArrowRight className="h-3.5 w-3.5 text-brand-600" />
       </div>
-    </Link>
+    </article>
     </div>
   );
 }

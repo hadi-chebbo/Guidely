@@ -76,7 +76,7 @@ export default function Modal({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          "relative w-full rounded-2xl bg-white shadow-card outline-none animate-slide-up",
+          "relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-card outline-none animate-slide-up",
           sizeClasses[size]
         )}
       >
@@ -106,7 +106,7 @@ export default function Modal({
           </div>
         )}
 
-        <div className="px-6 py-5">{children}</div>
+        <div className="overflow-y-auto px-6 py-5">{children}</div>
 
         {footer && (
           <div className="flex items-center justify-end gap-2 border-t border-gray-100 px-6 py-4">

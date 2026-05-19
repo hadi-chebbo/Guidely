@@ -17,10 +17,10 @@ import { cn } from "@/lib/utils";
 const sidebarLinks = [
   { href: "/student/dashboard", label: "Dashboard",        icon: LayoutDashboard },
   { href: "/student/majors",    label: "Explore Majors",   icon: BookOpen },
-  { href: "/compare",       label: "Compare",          icon: GitCompare },
-  { href: "/universities",  label: "Universities",     icon: Building2 },
+  { href: "/student/compare",       label: "Compare",          icon: GitCompare },
+  { href: "/student/universities",  label: "Universities",     icon: Building2 },
   { href: "/student/quiz",  label: "Personality Test", icon: BrainCircuit },
-  { href: "/mentors",       label: "Mentors",          icon: Users },
+  { href: "/student/mentors",       label: "Mentors",          icon: Users },
   { href: "/market",        label: "Market Research",  icon: TrendingUp },
   { href: "/student/favorites", label: "Saved Majors",     icon: Heart },
 ];
