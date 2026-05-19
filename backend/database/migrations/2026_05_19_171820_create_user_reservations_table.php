@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('session_availability_id')->constrained()->cascadeOnDelete();
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
-            $table->text('notes')->nullable();
             $table->timestamps();
 
             $table->unique(['user_id', 'session_availability_id']);

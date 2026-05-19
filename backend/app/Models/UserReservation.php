@@ -11,7 +11,6 @@ use Override;
 #[Fillable([
     'session_availability_id',
     'status',
-    'notes',
 ])]
 
 class UserReservation extends Model

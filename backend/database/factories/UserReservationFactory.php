@@ -21,7 +21,6 @@ class UserReservationFactory extends Factory
         return [
             'uuid' => Str::uuid(),
             'status' => fake()->randomElement(['pending', 'confirmed', 'completed', 'cancelled']),
-            'notes' => fake()->optional()->sentence(),
         ];
     }
 }
