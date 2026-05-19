@@ -24,4 +24,20 @@ it('returns validation error when email is missing', function () {
         ->assertJsonValidationErrors(['email']);
 });
 
+it('limits forgot password requests', function () {
+
+    $payload = [
+        'email' => 'test@example.com',
+    ];
+
+    // Allowed attempts
+    for ($i = 0; $i < 3; $i++) {
+        $this->postJson('/api/v1/auth/forgot-password', $payload)
+            ->assertStatus(200);
+    }
+
+    // 4th attempt should be blocked
+    $this->postJson('/api/v1/auth/forgot-password', $payload)
+        ->assertStatus(429);
+});
 

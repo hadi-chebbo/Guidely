@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('hiring_companies', function (Blueprint $table) {
             $table->id();
             $table->foreignId('major_id')->constrained()->cascadeOnDelete();
+            $table->string('slug')->unique();
             $table->string('company_name');
             $table->string('industry')->nullable();
             $table->string('location');

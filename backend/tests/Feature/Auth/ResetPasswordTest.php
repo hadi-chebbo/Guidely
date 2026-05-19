@@ -72,3 +72,21 @@ it('fails if email does not exist', function () {
 
     $response->assertStatus(400);
 });
+
+it('throttles reset password requests after 5 attempts', function () {
+    $payload = [
+        'email' => 'test@example.com',
+        'token' => 'fake-token',
+        'password' => 'new-password123',
+        'password_confirmation' => 'new-password123',
+    ];
+
+    for ($i = 0; $i < 5; $i++) {
+        $response = $this->postJson('/api/v1/auth/reset-password', $payload);
+        $response->assertStatus(400);
+    }
+
+    $response = $this->postJson('/api/v1/auth/reset-password', $payload);
+
+    $response->assertStatus(429);
+});

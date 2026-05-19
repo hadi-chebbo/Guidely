@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Mail\VerifyEmailMail;
 use App\Models\User;
-use App\Http\Resources\UserResource;
+use App\Http\Resources\Admin\UserResource;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

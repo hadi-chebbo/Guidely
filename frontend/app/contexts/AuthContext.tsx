@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
 } from "react";
 
 import * as authService from "@/services/authService";
@@ -19,12 +20,21 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<authService.User>;
+  login: (
+    email: string,
+    password: string,
+    rememberMe?: boolean
+  ) => Promise<authService.User>;
+
   logout: () => Promise<void>;
   register: (data: authService.RegisterFormData) => Promise<void>;
   refreshAuth: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
-  verifyEmail: (id: string, hash: string) => Promise<void>;
+  verifyEmail: (
+    id: string,
+    hash: string,
+    signatureParams: { expires: string; signature: string }
+  ) => Promise<authService.User | null>;
   resendVerificationEmail: (email: string) => Promise<void>;
 }
 
@@ -53,13 +63,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   /* ───────────────────────────── SET AUTH ───────────────────────────── */
 
-  const setAuth = (user: authService.User | null) => {
+  const setAuth = useCallback((user: authService.User | null) => {
     setState({
       user,
       isAuthenticated: !!user,
       loading: false,
     });
-  };
+  }, []);
 
   /* ───────────────────────────── INIT ───────────────────────────── */
 
@@ -74,24 +84,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     init();
-  }, []);
+  }, [setAuth]);
 
   /* ───────────────────────────── LOGIN ───────────────────────────── */
 
-  const login = async (email: string, password: string) => {
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe: boolean = false
+  ) => {
     setState((p) => ({ ...p, loading: true }));
 
     try {
-      const user = await authService.login(email, password);
+      const user = await authService.login({
+        email,
+        password,
+        rememberMe,
+      });
 
       setAuth(user);
 
-      router.push("/dashboard");
+      router.push(
+        user.role === "admin"
+          ? "/admin"
+          : user.role === "mentor"
+            ? "/mentor"
+            : "/student/dashboard"
+      );
 
       return user;
     } catch (err) {
       setAuth(null);
       throw err;
+    } finally {
+      setState((p) => ({ ...p, loading: false }));
     }
   };
 
@@ -113,15 +139,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const register = async (data: authService.RegisterFormData) => {
     setState((p) => ({ ...p, loading: true }));
 
-    await authService.register(data);
+    try {
+      await authService.register(data);
 
-    setState({
-      user: null,
-      isAuthenticated: false,
-      loading: false,
-    });
-
-    router.push("/verify-email");
+      setAuth(null);
+    } finally {
+      setState((p) => ({ ...p, loading: false }));
+    }
   };
 
   /* ───────────────────────────── REFRESH ───────────────────────────── */
@@ -140,17 +164,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   /* ───────────────────────────── PASSWORD ───────────────────────────── */
 
   const forgotPassword = async (email: string) => {
-    await authService.forgotPassword(email);
+    return authService.forgotPassword(email);
   };
 
   /* ───────────────────────────── EMAIL ───────────────────────────── */
 
-  const verifyEmail = async (id: string, hash: string) => {
-    await authService.verifyEmail(id, hash);
-  };
+  const verifyEmail = useCallback(async (
+    id: string,
+    hash: string,
+    signatureParams: { expires: string; signature: string }
+  ) => {
+    const verifiedUser = await authService.verifyEmail(id, hash, signatureParams);
+    if (verifiedUser) setAuth(verifiedUser);
+    return verifiedUser;
+  }, [setAuth]);
 
   const resendVerificationEmail = async (email: string) => {
-    await authService.resendVerificationEmail(email);
+    return authService.resendVerificationEmail(email);
   };
 
   /* ───────────────────────────── PROVIDER ───────────────────────────── */

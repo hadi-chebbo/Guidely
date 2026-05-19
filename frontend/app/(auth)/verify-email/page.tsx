@@ -1,49 +1,65 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, AlertCircle, Inbox } from "lucide-react";
 
 import { useAuth } from "@/app/contexts/AuthContext";
 import Button from "@/components/ui/Button";
 import FormMessage from "@/components/ui/FormMessage";
+import { getPendingVerificationEmail, type User } from "@/services/authService";
 
 /* ───────────────────────────── TYPES ───────────────────────────── */
 
-type State = "loading" | "success" | "error";
+type State = "sent" | "loading" | "success" | "error";
 
 /* ───────────────────────────── PAGE ───────────────────────────── */
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const { verifyEmail, resendVerificationEmail, user } = useAuth();
 
-  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const id = params?.id as string;
-  const hash = params?.hash as string;
+  const id = searchParams.get("id") || "";
+  const hash = searchParams.get("hash") || "";
+  const expires = searchParams.get("expires") || "";
+  const signature = searchParams.get("signature") || "";
 
-  const email = user?.email || "";
+  const email = user?.email || getPendingVerificationEmail();
 
-  const [state, setState] = useState<State>("loading");
+  const [state, setState] = useState<State>("sent");
   const [msg, setMsg] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
 
   /* ───────────────────────────── VERIFY ───────────────────────────── */
 
   useEffect(() => {
+    const dashboardPath = (verifiedUser: User): string =>
+      verifiedUser.role === "admin"
+        ? "/admin"
+        : verifiedUser.role === "mentor"
+          ? "/mentor"
+          : "/student/dashboard";
+
     const run = async () => {
       try {
-        await verifyEmail(id, hash);
+        setState("loading");
+        const verifiedUser = await verifyEmail(id, hash, { expires, signature });
         setState("success");
+
+        if (verifiedUser) {
+          router.replace(dashboardPath(verifiedUser));
+        }
       } catch {
         setState("error");
       }
     };
 
-    if (id && hash) run();
-    else setState("error");
-  }, [id, hash]);
+    if (id && hash && expires && signature) run();
+    else setState("sent");
+  }, [id, hash, expires, signature, verifyEmail, router]);
 
   /* ───────────────────────────── RESEND ───────────────────────────── */
 
@@ -52,6 +68,11 @@ export default function VerifyEmailPage() {
     setMsg(null);
 
     try {
+      if (!email) {
+        setMsg("Please login and request a new verification email.");
+        return;
+      }
+
       await resendVerificationEmail(email);
       setMsg("Verification email sent!");
     } catch {
@@ -67,6 +88,20 @@ export default function VerifyEmailPage() {
     <div className="text-center space-y-6 py-10">
 
       {msg && <FormMessage type="success" message={msg} />}
+
+      {/* SENT */}
+      {state === "sent" && (
+        <>
+          <Inbox className="mx-auto w-10 h-10 text-brand-600" />
+          <h2 className="text-xl font-bold">Check your inbox</h2>
+          <p className="text-sm text-gray-500">
+            We sent you a verification link. Open it from your email to continue.
+          </p>
+          <Button onClick={handleResend} isLoading={resending}>
+            Resend verification email
+          </Button>
+        </>
+      )}
 
       {/* LOADING */}
       {state === "loading" && (
@@ -86,15 +121,8 @@ export default function VerifyEmailPage() {
           <h2 className="text-2xl font-bold">Email verified!</h2>
 
           <p className="text-sm text-gray-500">
-            You can now login to your account.
+            You are signed in. Taking you to your dashboard...
           </p>
-
-          <Link
-            href="/login"
-            className="inline-block bg-brand-600 text-white px-6 py-3 rounded-xl"
-          >
-            Go to login
-          </Link>
         </>
       )}
 
@@ -121,5 +149,20 @@ export default function VerifyEmailPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="text-center space-y-6 py-10">
+          <Inbox className="mx-auto w-10 h-10 text-brand-600" />
+          <h2 className="text-xl font-bold">Verifying email...</h2>
+        </div>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

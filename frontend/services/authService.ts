@@ -23,6 +23,7 @@ export type UserRole = "student" | "mentor" | "admin";
 export interface User {
   id: number;
   name: string;
+  username?: string;
   email: string;
   role: UserRole;
 }
@@ -30,6 +31,7 @@ export interface User {
 export interface RegisterFormData {
   firstName: string;
   lastName: string;
+  username: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -38,13 +40,10 @@ export interface RegisterFormData {
   preferredLanguage?: string;
 }
 
-/* ─────────────────────────────
-   API RESPONSE TYPES
-───────────────────────────── */
-
 interface ApiUser {
   id: number;
   name: string;
+  username?: string;
   email: string;
   role?: UserRole;
 }
@@ -53,9 +52,13 @@ interface AuthResponse {
   data?: {
     user?: ApiUser;
     token?: string;
+    access_token?: string;
+    plainTextToken?: string;
   };
   user?: ApiUser;
   token?: string;
+  access_token?: string;
+  plainTextToken?: string;
 }
 
 /* ─────────────────────────────
@@ -65,27 +68,105 @@ interface AuthResponse {
 const normalizeUser = (user: ApiUser): User => ({
   id: user.id,
   name: user.name,
+  username: user.username,
   email: user.email,
   role: user.role ?? "student",
 });
 
-const setAuthCookie = (token: string): void => {
-  document.cookie = `auth_token=${token}; path=/; max-age=86400`;
+/* ─────────────────────────────
+   COOKIE HELPERS
+───────────────────────────── */
+
+const setAuthCookies = (
+  token: string,
+  role: UserRole,
+  maxAge: number
+): void => {
+  const encodedToken = encodeURIComponent(token);
+  document.cookie = `auth_token=${encodedToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  document.cookie = `user_role=${role}; path=/; max-age=${maxAge}`;
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("auth_token", token);
+  }
 };
 
-const clearAuthCookie = (): void => {
-  document.cookie = `auth_token=; path=/; max-age=0`;
+const getCookie = (name: string): string | null => {
+  if (typeof document === "undefined") return null;
+
+  return (
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(`${name}=`))
+      ?.split("=")[1] ?? null
+  );
 };
+
+const setCachedUser = (user: User): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("auth_user", JSON.stringify(user));
+};
+
+const setPendingVerificationEmail = (email: string): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("pending_verification_email", email);
+};
+
+export const getPendingVerificationEmail = (): string => {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem("pending_verification_email") ?? "";
+};
+
+const clearPendingVerificationEmail = (): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem("pending_verification_email");
+};
+
+const getCachedUser = (): User | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem("auth_user");
+    if (!raw) return null;
+
+    const user = JSON.parse(raw) as User;
+    if (!user || typeof user.id !== "number") return null;
+
+    return user;
+  } catch {
+    return null;
+  }
+};
+
+const clearAuthCookies = (): void => {
+  document.cookie = `auth_token=; path=/; max-age=0`;
+  document.cookie = `user_role=; path=/; max-age=0`;
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem("auth_user");
+    window.localStorage.removeItem("auth_token");
+  }
+};
+
+const extractToken = (payload: AuthResponse): string | undefined =>
+  payload.data?.token ??
+  payload.data?.access_token ??
+  payload.data?.plainTextToken ??
+  payload.token ??
+  payload.access_token ??
+  payload.plainTextToken;
 
 /* ─────────────────────────────
    LOGIN
 ───────────────────────────── */
 
-export const login = async (
-  email: string,
-  password: string,
-  rememberMe = false
-): Promise<User> => {
+export const login = async ({
+  email,
+  password,
+  rememberMe = false,
+}: {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}): Promise<User> => {
   try {
     const res = await api.post<AuthResponse>("/auth/login", {
       email,
@@ -93,28 +174,26 @@ export const login = async (
     });
 
     const userData = res.data.data?.user ?? res.data.user;
-    const token = res.data.data?.token ?? res.data.token;
+    const token = extractToken(res.data);
 
-    if (!userData) {
+    if (!userData || !token) {
       throw new Error("Invalid login response");
     }
 
     const user = normalizeUser(userData);
 
-    if (token) {
-      const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
-      document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}`;
-    }
+    const maxAge = rememberMe
+      ? 60 * 60 * 24 * 30 // 30 days
+      : 60 * 60 * 24;     // 1 day
+
+    setAuthCookies(token, user.role, maxAge);
+    setCachedUser(user);
 
     return user;
   } catch (err: unknown) {
     if (typeof err === "object" && err !== null && "response" in err) {
       const error = err as {
-        response?: {
-          data?: {
-            message?: string;
-          };
-        };
+        response?: { data?: { message?: string } };
       };
 
       const message = error.response?.data?.message;
@@ -139,6 +218,7 @@ export const register = async (data: RegisterFormData): Promise<void> => {
 
   await api.post("/auth/register", {
     name: `${data.firstName} ${data.lastName}`,
+    username: data.username,
     email: data.email,
     password: data.password,
     password_confirmation: data.confirmPassword,
@@ -146,6 +226,8 @@ export const register = async (data: RegisterFormData): Promise<void> => {
     grade: data.grade,
     preferred_language: data.preferredLanguage,
   });
+
+  setPendingVerificationEmail(data.email);
 };
 
 /* ─────────────────────────────
@@ -156,7 +238,7 @@ export const logout = async (): Promise<void> => {
   try {
     await api.post("/auth/logout");
   } finally {
-    clearAuthCookie();
+    clearAuthCookies();
   }
 };
 
@@ -165,17 +247,22 @@ export const logout = async (): Promise<void> => {
 ───────────────────────────── */
 
 export const checkAuth = async (): Promise<User | null> => {
-  try {
-    const res = await api.get("/auth/user");
+  const token = getCookie("auth_token") ?? (
+    typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null
+  );
+  if (!token) return null;
 
-    const user = res.data?.data?.user ?? res.data?.user;
+  const cachedUser = getCachedUser();
+  if (cachedUser) return cachedUser;
 
-    if (!user || typeof user.id !== "number") return null;
-
-    return normalizeUser(user);
-  } catch {
-    return null;
-  }
+  const role = (getCookie("user_role") as UserRole | null) ?? "student";
+  return {
+    id: 0,
+    name: role === "admin" ? "Admin" : role === "mentor" ? "Mentor" : "Student",
+    username: undefined,
+    email: "",
+    role,
+  };
 };
 
 /* ─────────────────────────────
@@ -201,13 +288,28 @@ export const resetPassword = async (data: {
 
 export const verifyEmail = async (
   id: string,
-  hash: string
-): Promise<void> => {
-  await api.get(`/email/verify/${id}/${hash}`);
+  hash: string,
+  signatureParams: { expires: string; signature: string }
+): Promise<User | null> => {
+  const res = await api.get<AuthResponse>(`/auth/v1/email/verify/${id}/${hash}`, {
+    params: signatureParams,
+  });
+
+  const userData = res.data.data?.user ?? res.data.user;
+  const token = extractToken(res.data);
+
+  if (!userData || !token) return null;
+
+  const user = normalizeUser(userData);
+  setAuthCookies(token, user.role, 60 * 60 * 24);
+  setCachedUser(user);
+  clearPendingVerificationEmail();
+
+  return user;
 };
 
 export const resendVerificationEmail = async (
   email: string
 ): Promise<void> => {
-  await api.post("/email/resend", { email });
+  await api.post("/auth/v1/email/resend", { email });
 };

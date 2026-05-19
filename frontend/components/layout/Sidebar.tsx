@@ -15,14 +15,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
-  { href: "/dashboard",     label: "Dashboard",        icon: LayoutDashboard },
-  { href: "/majors",        label: "Explore Majors",   icon: BookOpen },
-  { href: "/compare",       label: "Compare",          icon: GitCompare },
-  { href: "/universities",  label: "Universities",     icon: Building2 },
-  { href: "/quiz",          label: "Personality Test", icon: BrainCircuit },
-  { href: "/mentors",       label: "Mentors",          icon: Users },
+  { href: "/student/dashboard", label: "Dashboard",        icon: LayoutDashboard },
+  { href: "/student/majors",    label: "Explore Majors",   icon: BookOpen },
+  { href: "/student/compare",       label: "Compare",          icon: GitCompare },
+  { href: "/student/universities",  label: "Universities",     icon: Building2 },
+  { href: "/student/quiz",  label: "Personality Test", icon: BrainCircuit },
+  { href: "/student/mentors",       label: "Mentors",          icon: Users },
   { href: "/market",        label: "Market Research",  icon: TrendingUp },
-  { href: "/saved",         label: "Saved Majors",     icon: Heart },
+  { href: "/student/favorites", label: "Saved Majors",     icon: Heart },
 ];
 
 interface SidebarProps {

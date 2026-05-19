@@ -62,4 +62,15 @@ class Major extends Model
     public function skills(){
         return $this->belongsToMany(Skill::class);
     }
+
+    public function favoritedByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_favorites')
+            ->withTimestamps();
+    }
+
+    public function mentorProfiles(): HasMany
+    {
+        return $this->hasMany(MentorProfile::class);
+    }
 }

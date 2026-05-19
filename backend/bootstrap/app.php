@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
          $middleware->alias([
         'role' => \App\Http\Middleware\RoleMiddleware::class,
+        'not_blocked' => \App\Http\Middleware\EnsureUserIsNotBlocked::class,
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

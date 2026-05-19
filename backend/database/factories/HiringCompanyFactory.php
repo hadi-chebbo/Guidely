@@ -9,7 +9,7 @@ class HiringCompanyFactory extends Factory
 {
     public function definition(): array
     {
-        $companyName = fake()->randomElement([
+        $companyName = fake()->unique()->randomElement([
             'Murex',
             'Bank Audi',
             'Byblos Bank',
@@ -29,6 +29,7 @@ class HiringCompanyFactory extends Factory
 
         return [
             'major_id' => 1,
+            'slug' => Str::slug($companyName),
             'company_name' => $companyName,
             'industry' => fake()->randomElement([
                 'Technology',

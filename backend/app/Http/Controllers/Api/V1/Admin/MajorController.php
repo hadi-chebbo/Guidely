@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Major;
-use App\Http\Resources\MajorResource;
+use App\Http\Resources\Admin\MajorResource;
 use App\Traits\ApiResponseTrait;
 use App\Http\Requests\Admin\Major\StoreMajorRequest;
 use App\Http\Requests\Admin\Major\IndexMajorRequest;
@@ -120,5 +120,18 @@ class MajorController extends Controller
         });
 
         return $this->success(new MajorResource($major->load(['category','skills'])),"Major Updated Successfully",200);
+    }
+
+    public function toggleFeatured(Major $major)
+    {
+        $major->update([
+            'is_featured' => $major->is_featured ? false : true,
+        ]);
+
+        return $this->success(
+            new MajorResource($major),
+            $major->is_featured ? 'Major marked as featured' : 'Major marked as unfeatured',
+            200
+        );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Category;
 use App\Models\Major;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -22,6 +23,7 @@ class MajorFactory extends Factory
         $name = $this->faker->unique()->jobTitle();
 
         return [
+            'category_id' => Category::factory(),
             'name_en' => $name,
             'name_ar' => 'تخصص ' . $name,
             'slug' => Str::slug($name),

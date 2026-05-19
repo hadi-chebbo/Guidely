@@ -30,6 +30,21 @@ test('only admin can get users', function () {
     $response->assertStatus(403);
 });
 
+test('admin can get users by role', function() {
+    $mentors = User::factory(5)->mentor()->create();
+
+    $admin = User::factory()->admin()->create();
+
+    Sanctum::actingAs($admin);
+    $response = $this->getJson('/api/v1/admin/users?role=mentor');
+
+    $response->assertStatus(200)
+             ->assertJsonCount(5,'data')
+             ->assertJsonFragment([
+                'role' => 'mentor'
+             ]);
+});
+
 test('users index returns paginated response structure', function () {
     $admin = User::factory()->admin()->create();
 
@@ -81,4 +96,68 @@ test('users index returns paginated response structure', function () {
     $this->assertCount(15, $response->json('data'));
     $this->assertEquals(15, $response->json('meta.per_page'));
     $this->assertEquals('Users Fetched Successfully', $response->json('message'));
+});
+
+test('admin can toggle block user', function() {
+    $admin = User::factory()->admin()->create();
+    Sanctum::actingAs($admin);
+
+    $user1 = User::factory()->student()->create([
+        'is_blocked' => false,
+    ]);
+
+    $response1 = $this->patchJson("/api/v1/admin/users/{$user1->id}/toggleBlock");
+
+    $response1->assertStatus(200);
+
+    expect($user1->fresh()->is_blocked)->toBeTrue();
+
+    $user2 = User::factory()->student()->create([
+        'is_blocked' => true,
+    ]);
+
+    $response2 = $this->patchJson("/api/v1/admin/users/{$user2->id}/toggleBlock");
+
+    $response2->assertStatus(200);
+
+    expect($user2->fresh()->is_blocked)->toBeFalse();
+});
+
+test('only admin can block user', function() {
+    $user = User::factory()->student()->create();
+    $mentor = User::factory()->mentor()->create();
+
+    $userToBeBlocked = User::factory()->student()->create([
+        'is_blocked' => false,
+    ]);
+    Sanctum::actingAs($user);
+
+    $response1 = $this->patchJson("/api/v1/admin/users/{$userToBeBlocked->id}/toggleBlock");
+
+    $response1->assertStatus(403);
+
+    Sanctum::actingAs($mentor);
+
+    $response2 = $this->patchJson("/api/v1/admin/users/{$userToBeBlocked->id}/toggleBlock");
+
+    $response2->assertStatus(403);
+
+    expect($userToBeBlocked->fresh()->is_blocked)->toBeFalse();
+});
+
+test('admin can search user by username', function() {
+    $admin = User::factory()->admin()->create();
+
+    $user = User::factory()->student()->create([
+        'username' => 'test_username'
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $response = $this->getJson("/api/v1/admin/users/search?username={$user->username}");
+
+    $response->assertStatus(200);
+
+    $response->assertJsonPath('data.0.username', $user->username);
+
 });

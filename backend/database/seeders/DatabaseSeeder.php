@@ -15,22 +15,21 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            CategorySeeder::class,
+            MajorSeeder::class,
             UserSeeder::class,
             UniversitySeeder::class,
             UniversityMajorSeeder::class,
             JobOpportunitySeeder::class,
             HiringCompanySeeder::class,
             MarketTrendSeeder::class,
-        ]);
-
-        $this->call([
-            CategorySeeder::class,
-            MajorSeeder::class,
             MajorPointSeeder::class,
             SkillSeeder::class,
             MajorSkillSeeder::class,
             FaqSeeder::class,
+            QuestionSeeder::class,
+            MentorSessionSeeder::class,
+            SessionAvailabilitySeeder::class,
         ]);
-    
     }
 }

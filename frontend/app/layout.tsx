@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { Poppins, Inter } from "next/font/google";
+
 import QueryProvider from "@/components/providers/QueryProvider";
 import { AuthProvider } from "./contexts/AuthContext";
+
+import { Toaster } from "sonner";
+
 import "./globals.css";
 
 const poppins = Poppins({
@@ -36,7 +40,12 @@ export default function RootLayout({
     <html lang="en" className={`${poppins.variable} ${inter.variable}`}>
       <body className="font-body antialiased">
         <AuthProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            {children}
+
+            {/* ✅ Toast system (IMPORTANT) */}
+            <Toaster position="top-right" />
+          </QueryProvider>
         </AuthProvider>
       </body>
     </html>

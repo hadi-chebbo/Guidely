@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('google_id')->nullable()->unique();
             $table->string('name');
+            $table->string('username')->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -24,6 +26,7 @@ return new class extends Migration
             $table->string('grade')->nullable();
             $table->enum('preferred_language', ['en', 'fr', 'ar'])->default('en');
             $table->boolean('is_premium')->default(false);
+            $table->boolean('is_blocked')->default(false);
             $table->datetime('premium_expires_at')->nullable();
             $table->json('onboarding_data')->nullable();
             $table->rememberToken();

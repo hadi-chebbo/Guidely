@@ -60,3 +60,21 @@ it('validates login request payload', function () {
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email', 'password']);
 });
+
+it('blocks login after multiple failed attempts', function () {
+
+    $payload = [
+        'email' => 'test@example.com',
+        'password' => 'wrong-password',
+    ];
+
+    // First 5 attempts should pass validation (even if credentials are wrong)
+    for ($i = 0; $i < 5; $i++) {
+        $this->postJson('/api/v1/auth/login', $payload)
+            ->assertStatus(401); // unauthorized (wrong credentials)
+    }
+
+    // 6th attempt should trigger rate limiter
+    $this->postJson('/api/v1/auth/login', $payload)
+        ->assertStatus(429);
+});
