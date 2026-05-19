@@ -58,6 +58,92 @@ export interface ToggleFavoriteResponse {
   is_favorite: boolean;
 }
 
+export interface PublicUniversityItem {
+  id?: number;
+  name_en: string;
+  name_ar?: string | null;
+  slug: string;
+  location: string;
+  type: "public" | "private" | string;
+  website?: string | null;
+  logo?: string | null;
+  logo_url?: string | null;
+  description_en?: string | null;
+  description_ar?: string | null;
+  founded_year?: number | null;
+  accreditation?: string | null;
+  total_credits?: number | null;
+  credit_price_usd?: number | string | null;
+  language_of_instruction?: string | null;
+  majors?: PublicMajorItem[];
+}
+
+export interface PublicUniversitiesResponse {
+  data: PublicUniversityItem[];
+  meta: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
+export interface MajorComparisonResponse {
+  comparison?: {
+    A?: Record<string, unknown>;
+    B?: Record<string, unknown>;
+  };
+  analysis?: Record<string, unknown>;
+  major_1?: Record<string, unknown>;
+  major_2?: Record<string, unknown>;
+}
+
+export interface UniversityComparisonResponse {
+  university_a?: Record<string, unknown>;
+  university_b?: Record<string, unknown>;
+  university_1?: Record<string, unknown>;
+  university_2?: Record<string, unknown>;
+  comparison?: Record<string, unknown>;
+}
+
+export interface PublicMentorProfile {
+  bio?: string | null;
+  degree?: string | null;
+  university_name?: string | null;
+  graduation_year?: number | null;
+  years_experience?: number | null;
+  languages?: string[] | string | null;
+  is_accepting_students?: boolean;
+  major?: {
+    name?: string | null;
+    name_en?: string | null;
+    slug?: string | null;
+  } | null;
+  social_links?: {
+    linkedin?: string | null;
+    website?: string | null;
+  };
+}
+
+export interface PublicMentorItem {
+  name: string;
+  username: string;
+  avatar_url?: string | null;
+  school?: string | null;
+  preferred_language?: string | null;
+  profile?: PublicMentorProfile | null;
+}
+
+export interface PublicMentorsResponse {
+  data: PublicMentorItem[];
+  meta: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
 const toNumberOrNull = (value: unknown): number | null => {
   const numberValue =
     typeof value === "number"
@@ -109,6 +195,49 @@ const normalizeMajor = (major: PublicMajorItem): PublicMajorItem => {
 
 const normalizeMajorList = (items: PublicMajorItem[] = []) =>
   items.map(normalizeMajor);
+
+const normalizeUniversity = (
+  university: PublicUniversityItem,
+): PublicUniversityItem => ({
+  ...university,
+  logo: university.logo ?? university.logo_url ?? null,
+  logo_url: university.logo_url ?? university.logo ?? null,
+  website: university.website ?? null,
+  description_en: university.description_en ?? null,
+  description_ar: university.description_ar ?? null,
+  founded_year: university.founded_year ?? null,
+  accreditation: university.accreditation ?? null,
+  total_credits: university.total_credits ?? null,
+  credit_price_usd: university.credit_price_usd ?? null,
+  language_of_instruction: university.language_of_instruction ?? null,
+  majors: university.majors ? normalizeMajorList(university.majors) : [],
+});
+
+const normalizeUniversityList = (items: PublicUniversityItem[] = []) =>
+  items.map(normalizeUniversity);
+
+const normalizeMentor = (mentor: PublicMentorItem): PublicMentorItem => ({
+  ...mentor,
+  avatar_url: mentor.avatar_url ?? null,
+  school: mentor.school ?? null,
+  preferred_language: mentor.preferred_language ?? null,
+  profile: mentor.profile
+    ? {
+        ...mentor.profile,
+        bio: mentor.profile.bio ?? null,
+        degree: mentor.profile.degree ?? null,
+        university_name: mentor.profile.university_name ?? null,
+        graduation_year: mentor.profile.graduation_year ?? null,
+        years_experience: mentor.profile.years_experience ?? null,
+        languages: mentor.profile.languages ?? null,
+        is_accepting_students: Boolean(mentor.profile.is_accepting_students),
+        social_links: mentor.profile.social_links ?? {},
+      }
+    : null,
+});
+
+const normalizeMentorList = (items: PublicMentorItem[] = []) =>
+  items.map(normalizeMentor);
 
 const PUBLIC_MAJORS_CACHE_KEY = "guidely_public_majors_cache";
 const USE_PUBLIC_MAJORS_CACHE_KEY = "guidely_use_public_majors_cache";
@@ -332,6 +461,95 @@ export const getPublicMajors = async (params: { per_page?: number; page?: number
   ]);
 
   return getCachedPublicMajorsResponse(params) ?? mergedData;
+};
+
+// POST /majors/compare
+export const comparePublicMajors = async (
+  slugs: [string, string],
+): Promise<MajorComparisonResponse> => {
+  const res = await api.post("/majors/compare", { slugs });
+  return unwrap<MajorComparisonResponse>(res.data);
+};
+
+// GET /universities
+export const getPublicUniversities = async (
+  params: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    type?: "public" | "private";
+    location?: string;
+  } = {},
+): Promise<PublicUniversitiesResponse> => {
+  const res = await api.get("/universities", { params });
+  const payload = res.data;
+  const collection = payload.data;
+  const items = Array.isArray(collection)
+    ? collection
+    : collection?.data ?? [];
+  const meta = payload.meta ?? collection?.meta ?? {};
+  const perPage = meta.per_page ?? params.per_page ?? 10;
+  const total = meta.total ?? items.length;
+
+  return {
+    data: normalizeUniversityList(items),
+    meta: {
+      current_page: meta.current_page ?? params.page ?? 1,
+      per_page: perPage,
+      total,
+      last_page: meta.last_page ?? Math.max(1, Math.ceil(total / perPage)),
+    },
+  };
+};
+
+// GET /universities/{slug}
+export const getPublicUniversity = async (
+  slug: string,
+): Promise<PublicUniversityItem> => {
+  const res = await api.get(`/universities/${slug}`);
+  return normalizeUniversity(unwrap<PublicUniversityItem>(res.data));
+};
+
+// POST /universities/compare
+export const comparePublicUniversities = async (
+  slugs: [string, string],
+): Promise<UniversityComparisonResponse> => {
+  const res = await api.post("/universities/compare", { universities: slugs });
+  return unwrap<UniversityComparisonResponse>(res.data);
+};
+
+// GET /majors/{slug}/mentors
+export const getMajorMentors = async (
+  slug: string,
+  params: { page?: number; per_page?: number } = {},
+): Promise<PublicMentorsResponse> => {
+  const res = await api.get(`/majors/${slug}/mentors`, { params });
+  const payload = res.data;
+  const collection = payload.data;
+  const items = Array.isArray(collection)
+    ? collection
+    : collection?.data ?? [];
+  const meta = payload.meta ?? collection?.meta ?? {};
+  const perPage = meta.per_page ?? params.per_page ?? 10;
+  const total = meta.total ?? items.length;
+
+  return {
+    data: normalizeMentorList(items),
+    meta: {
+      current_page: meta.current_page ?? params.page ?? 1,
+      per_page: perPage,
+      total,
+      last_page: meta.last_page ?? Math.max(1, Math.ceil(total / perPage)),
+    },
+  };
+};
+
+// GET /mentors/{username}
+export const getPublicMentor = async (
+  username: string,
+): Promise<PublicMentorItem> => {
+  const res = await api.get(`/mentors/${username}`);
+  return normalizeMentor(unwrap<PublicMentorItem>(res.data));
 };
 
 // GET /majors/{slug}/show

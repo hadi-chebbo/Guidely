@@ -12,10 +12,10 @@ const navLinks = [
   { href: "/student/dashboard", label: "Dashboard" },
   { href: "/student/majors",    label: "Explore Majors" },
   { href: "/student/favorites", label: "Favorites" },
-  { href: "/compare",     label: "Compare" },
-  { href: "/universities",label: "Universities" },
+  { href: "/student/compare",     label: "Compare" },
+  { href: "/student/universities",label: "Universities" },
   { href: "/student/quiz",      label: "Personality Test" },
-  { href: "/mentors",     label: "Mentors" },
+  { href: "/student/mentors",     label: "Mentors" },
 ];
 
 export default function Navbar() {

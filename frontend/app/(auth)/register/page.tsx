@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -426,7 +426,21 @@ function Step3({
 }
 
 /* ── SUCCESS STATE ───────────────────────────────────────────── */
-function SuccessState({ email }: { email: string }) {
+function SuccessState({
+  email,
+  onResend,
+  isResending,
+  message,
+  onCheckNow,
+  isChecking,
+}: {
+  email: string;
+  onResend: () => void;
+  isResending: boolean;
+  message: string | null;
+  onCheckNow: () => void;
+  isChecking: boolean;
+}) {
   return (
     <div className="text-center space-y-4 animate-fade-in py-4">
       <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 ring-8 ring-brand-50">
@@ -440,17 +454,29 @@ function SuccessState({ email }: { email: string }) {
           Please check your inbox to activate your account.
         </p>
       </div>
-      <Link
-        href="/verify-email"
-        className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors shadow-brand"
+
+      {message && <FormMessage type="success" message={message} />}
+
+      <Button
+        type="button"
+        onClick={onResend}
+        isLoading={isResending}
+        leftIcon={<Mail className="w-4 h-4" />}
       >
-        Go to verification <ArrowRight className="w-4 h-4" />
-      </Link>
+        Resend verification email
+      </Button>
+
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={onCheckNow}
+        isLoading={isChecking}
+      >
+        I verified, continue
+      </Button>
+
       <p className="text-xs text-gray-400">
-        Already verified?{" "}
-        <Link href="/login" className="text-brand-600 hover:underline font-medium">
-          Sign in
-        </Link>
+        Keep this page open. Once your email is verified, we&apos;ll sign you in automatically.
       </p>
     </div>
   );
@@ -461,9 +487,12 @@ export default function RegisterPage() {
   const [step,        setStep]        = useState(1);
   const [accumulated, setAccumulated] = useState<AllFormData>({} as AllFormData);
   const [isSubmitting,setIsSubmitting]= useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [isCheckingVerification, setIsCheckingVerification] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [success,     setSuccess]     = useState(false);
-  const { register } = useAuth();
+  const { login, register, resendVerificationEmail } = useAuth();
 
   const headings = [
     { title: "Create your account",     subtitle: "Start your guided academic journey today" },
@@ -500,6 +529,7 @@ export default function RegisterPage() {
         preferredLanguage: finalData.preferredLanguage,
       });
 
+      setSuccessMessage("Verification email sent. Keep this page open and check your inbox.");
       setSuccess(true);
     } catch (err: unknown) {
       let message = "Registration failed. Please try again.";
@@ -513,8 +543,61 @@ export default function RegisterPage() {
       setIsSubmitting(false);
     }
   };
+
+  const handleResendVerification = async () => {
+    const email = accumulated.email ?? "";
+    if (!email) return;
+
+    setIsResending(true);
+    setSuccessMessage(null);
+
+    try {
+      await resendVerificationEmail(email);
+      setSuccessMessage("Verification email sent again. Check your inbox.");
+    } catch {
+      setSuccessMessage("Could not resend the email. Please try again.");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const checkVerificationAndLogin = useCallback(async () => {
+    const email = accumulated.email ?? "";
+    const password = accumulated.password ?? "";
+    if (!email || !password || isCheckingVerification) return;
+
+    setIsCheckingVerification(true);
+
+    try {
+      await login(email, password);
+    } catch {
+      setSuccessMessage("Still waiting for email verification. We'll keep checking automatically.");
+    } finally {
+      setIsCheckingVerification(false);
+    }
+  }, [accumulated.email, accumulated.password, isCheckingVerification, login]);
+
+  useEffect(() => {
+    if (!success) return;
+
+    const interval = window.setInterval(() => {
+      void checkVerificationAndLogin();
+    }, 15000);
+
+    return () => window.clearInterval(interval);
+  }, [success, checkVerificationAndLogin]);
+
   if (success) {
-    return <SuccessState email={accumulated.email ?? ""} />;
+    return (
+      <SuccessState
+        email={accumulated.email ?? ""}
+        onResend={handleResendVerification}
+        isResending={isResending}
+        message={successMessage}
+        onCheckNow={checkVerificationAndLogin}
+        isChecking={isCheckingVerification}
+      />
+    );
   }
 
   const { title, subtitle } = headings[step - 1];

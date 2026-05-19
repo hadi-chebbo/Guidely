@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
 } from "react";
 
 import * as authService from "@/services/authService";
@@ -29,7 +30,11 @@ interface AuthContextType extends AuthState {
   register: (data: authService.RegisterFormData) => Promise<void>;
   refreshAuth: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
-  verifyEmail: (id: string, hash: string) => Promise<void>;
+  verifyEmail: (
+    id: string,
+    hash: string,
+    signatureParams: { expires: string; signature: string }
+  ) => Promise<authService.User | null>;
   resendVerificationEmail: (email: string) => Promise<void>;
 }
 
@@ -58,13 +63,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   /* ───────────────────────────── SET AUTH ───────────────────────────── */
 
-  const setAuth = (user: authService.User | null) => {
+  const setAuth = useCallback((user: authService.User | null) => {
     setState({
       user,
       isAuthenticated: !!user,
       loading: false,
     });
-  };
+  }, []);
 
   /* ───────────────────────────── INIT ───────────────────────────── */
 
@@ -79,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     init();
-  }, []);
+  }, [setAuth]);
 
   /* ───────────────────────────── LOGIN ───────────────────────────── */
 
@@ -99,7 +104,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setAuth(user);
 
-      router.push(user.role === "admin" ? "/admin" : "/student/dashboard");
+      router.push(
+        user.role === "admin"
+          ? "/admin"
+          : user.role === "mentor"
+            ? "/mentor"
+            : "/student/dashboard"
+      );
 
       return user;
     } catch (err) {
@@ -132,8 +143,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await authService.register(data);
 
       setAuth(null);
-
-      router.push("/verify-email");
     } finally {
       setState((p) => ({ ...p, loading: false }));
     }
@@ -160,9 +169,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   /* ───────────────────────────── EMAIL ───────────────────────────── */
 
-  const verifyEmail = async (id: string, hash: string) => {
-    return authService.verifyEmail(id, hash);
-  };
+  const verifyEmail = useCallback(async (
+    id: string,
+    hash: string,
+    signatureParams: { expires: string; signature: string }
+  ) => {
+    const verifiedUser = await authService.verifyEmail(id, hash, signatureParams);
+    if (verifiedUser) setAuth(verifiedUser);
+    return verifiedUser;
+  }, [setAuth]);
 
   const resendVerificationEmail = async (email: string) => {
     return authService.resendVerificationEmail(email);
