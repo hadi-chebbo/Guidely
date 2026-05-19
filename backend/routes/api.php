@@ -16,4 +16,5 @@ Route::prefix('v1')->group(function (): void {
     require __DIR__.'/api/admin/user.php';
     require __DIR__.'/api/student/mentor.php';
     require __DIR__.'/api/student/quiz.php';
+    require __DIR__.'/api/admin/mentor.php';
 });
