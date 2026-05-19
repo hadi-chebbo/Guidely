@@ -37,8 +37,13 @@ class SessionAvailability extends Model
         return $this->belongsTo(MentorSession::class , 'mentor_session_id');
     }
 
+    public function reservations()
+    {
+        return $this->hasMany(UserReservation::class);
+    }
+
     #[Override]
-    public function getRouteKeyName()
+    public function getRouteKeyName(): string
     {
         return 'uuid';
     }
