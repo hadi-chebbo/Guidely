@@ -31,7 +31,7 @@ describe('POST /api/v1/mentors/apply', function () {
 
     it('fails when graduation year is in the future', function () use ($payload) {
         Major::factory()->create(['slug' => 'computer-science']);
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/mentors/apply', [
@@ -43,7 +43,7 @@ describe('POST /api/v1/mentors/apply', function () {
 
     it('sets status to pending on creation', function () use ($payload) {
         Major::factory()->create(['slug' => 'computer-science']);
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/mentors/apply', $payload)
@@ -54,7 +54,7 @@ describe('POST /api/v1/mentors/apply', function () {
 
     it('blocks duplicate application when status is approved', function () use ($payload) {
         Major::factory()->create(['slug' => 'computer-science']);
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         MentorProfile::factory()->for($user)->create(['status' => 'approved']);
         Sanctum::actingAs($user);
 
@@ -65,7 +65,7 @@ describe('POST /api/v1/mentors/apply', function () {
 
     it('allows reapplication when status is rejected', function () use ($payload) {
         Major::factory()->create(['slug' => 'computer-science']);
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         MentorProfile::factory()->for($user)->create(['status' => 'rejected']);
         Sanctum::actingAs($user);
 
@@ -78,7 +78,7 @@ describe('POST /api/v1/mentors/apply', function () {
 
     it('does not create a new profile on reapplication', function () use ($payload) {
         Major::factory()->create(['slug' => 'computer-science']);
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         MentorProfile::factory()->for($user)->create(['status' => 'rejected']);
         Sanctum::actingAs($user);
 
@@ -89,7 +89,7 @@ describe('POST /api/v1/mentors/apply', function () {
 
     it('resolves major by slug correctly', function () use ($payload) {
         $major = Major::factory()->create(['slug' => 'computer-science']);
-        $user  = User::factory()->create();
+        $user  = User::factory()->student()->create();
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/mentors/apply', $payload)
@@ -99,7 +99,7 @@ describe('POST /api/v1/mentors/apply', function () {
     });
 
     it('fails with invalid major slug', function () use ($payload) {
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/mentors/apply', [
@@ -110,7 +110,7 @@ describe('POST /api/v1/mentors/apply', function () {
     });
 
     it('fails validation when required fields are missing', function () {
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/mentors/apply', [])
@@ -127,7 +127,7 @@ describe('POST /api/v1/mentors/apply', function () {
     });
 
     it('fails when bio is too short', function () use ($payload) {
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/mentors/apply', [
@@ -140,7 +140,7 @@ describe('POST /api/v1/mentors/apply', function () {
 
     it('accepts nullable social links', function () use ($payload) {
         Major::factory()->create(['slug' => 'computer-science']);
-        $user = User::factory()->create();
+        $user = User::factory()->student()->create();
         Sanctum::actingAs($user);
 
         $this->postJson('/api/v1/mentors/apply', [

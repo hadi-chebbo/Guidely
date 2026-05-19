@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\MentorSession;
+use App\Models\SessionAvailability;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -225,5 +226,85 @@ it('updates the mentor session successfully and regenerates the slug when the ti
     $this->assertDatabaseHas('mentor_sessions', [
         'id'    => $session->id,
         'title' => 'Advanced Laravel APIs',
+    ]);
+});
+
+//DeleteSessionTests
+
+it('allows mentor to delete their own session', function () {
+
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->create([
+        'user_id' => $mentor->id,
+    ]);
+
+    SessionAvailability::factory()->count(2)->create([
+        'mentor_session_id' => $session->id,
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $this->deleteJson("/api/v1/mentor/sessions/{$session->slug}")
+        ->assertOk()
+        ->assertJsonPath('message', 'Session deleted successfully.');
+
+    $this->assertDatabaseMissing('mentor_sessions', [
+        'id' => $session->id,
+    ]);
+
+    $this->assertDatabaseMissing('session_availabilities', [
+        'mentor_session_id' => $session->id,
+    ]);
+});
+it('deletes session availabilities when mentor session is deleted', function () {
+
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->create([
+        'user_id' => $mentor->id,
+    ]);
+
+    $availability1 = SessionAvailability::factory()->create([
+        'mentor_session_id' => $session->id,
+    ]);
+
+    $availability2 = SessionAvailability::factory()->create([
+        'mentor_session_id' => $session->id,
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $this->deleteJson("/api/v1/mentor/sessions/{$session->slug}")
+        ->assertOk();
+
+    $this->assertDatabaseMissing('mentor_sessions', [
+        'id' => $session->id,
+    ]);
+
+    $this->assertDatabaseMissing('session_availabilities', [
+        'id' => $availability1->id,
+    ]);
+
+    $this->assertDatabaseMissing('session_availabilities', [
+        'id' => $availability2->id,
+    ]);
+});
+it('prevents mentor from deleting another mentor session', function () {
+
+    $mentor = User::factory()->mentor()->create();
+    $other  = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->create([
+        'user_id' => $other->id,
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $this->deleteJson("/api/v1/mentor/sessions/{$session->slug}")
+        ->assertNotFound();
+
+    $this->assertDatabaseHas('mentor_sessions', [
+        'id' => $session->id,
     ]);
 });
