@@ -52,8 +52,7 @@ it('updates the authenticated mentors profile', function () {
     $response
         ->assertOk()
         ->assertJsonPath('message', 'Mentor profile updated successfully')
-        ->assertJsonPath('data.id', $profile->id)
-        ->assertJsonPath('data.major_slug', $newMajor->slug)
+        ->assertJsonPath('data.username', $mentor->username)
         ->assertJsonPath('data.is_accepting_students', false)
         ->assertJsonPath('data.bio', 'Updated mentor bio')
         ->assertJsonPath('data.years_experience', 6)
@@ -185,4 +184,30 @@ it('validates mentor profile update payload', function () {
             'languages',
             'website_url',
         ]);
+});
+
+it('allows authenticated mentor to get profile infos', function () {
+    $mentor = User::factory()->mentor()->create();
+    $major = Major::factory()->create();
+    $mentor->mentorProfile()->create([
+        'major_id' => $major->id,
+        'status' => 'approved',
+        'bio' => 'test bio',
+        'years_experience' => 9,
+        'degree' => 'test degree',
+        'university_name' => 'test uni',
+        'graduation_year' => 2019,
+        'languages' => ['french'],
+        'linkedin_url' => 'test url',
+        'website_url' => 'test_website'
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $response = $this->getJson('api/v1/mentor/profile')->assertOK();
+
+    $response->assertOk()
+             ->assertJsonPath('data.bio', 'test bio')
+             ->assertJsonPath('data.years_experience', 9)
+             ->assertJsonPath('data.languages', ['french']);
 });

@@ -51,6 +51,8 @@ class AvailabilityController extends Controller
     private function authorizeSession(Request $request, MentorSession $session): bool
     {
         return (int) $session->user_id === $request->user()->id;
+    }
+    
     public function store(
         StoreSessionAvailabilityRequest $request,
         MentorSession $session,

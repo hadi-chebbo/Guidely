@@ -192,7 +192,7 @@ it('prevents unauthenticated users from deleting an availability', function () {
     $response = $this->deleteJson("api/v1/mentor/sessions/{$session->slug}/availabilities/$availability->uuid");
 
     $response->assertUnauthorized();
-
+});
 
 /*
 |--------------------------------------------------------------------------
