@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Mentor;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mentor\StoreSessionAvailabilityRequest;
+use App\Http\Requests\Mentor\UpdateSessionAvailabilityRequest;
 use App\Http\Resources\Mentor\AvailabilityResource;
 use App\Models\MentorSession;
 use App\Models\SessionAvailability;
@@ -52,7 +53,7 @@ class AvailabilityController extends Controller
     {
         return (int) $session->user_id === $request->user()->id;
     }
-    
+
     public function store(
         StoreSessionAvailabilityRequest $request,
         MentorSession $session,
@@ -86,5 +87,49 @@ class AvailabilityController extends Controller
             'Availability slots created successfully.',
             201
         );
+    }
+
+    public function update(
+        UpdateSessionAvailabilityRequest $request,
+        MentorSession $session,
+        SessionAvailability $availability,
+        SessionAvailabilityService $service
+    ): JsonResponse {
+        if (!$this->authorizeSession($request, $session)) {
+            return $this->error('Mentor session not found', 404);
+        }
+
+        if ((int) $availability->mentor_session_id !== $session->id) {
+            return $this->error('Availability not found', 404);
+        }
+
+        $data = $request->validated();
+
+        if ($this->updatesTimeRange($data)) {
+            $slot = [
+                'scheduled_at' => $data['scheduled_at'] ?? $availability->scheduled_at,
+                'ends_at' => $data['ends_at'] ?? $availability->ends_at,
+            ];
+
+            if ($service->hasConflict($session, $slot, $availability->id)) {
+                return $this->error(
+                    'Availability overlaps with existing availabilities.',
+                    422
+                );
+            }
+        }
+
+        $availability->update($data);
+
+        return $this->success(
+            new AvailabilityResource($availability->refresh()),
+            'Availability updated successfully',
+            200
+        );
+    }
+
+    private function updatesTimeRange(array $data): bool
+    {
+        return array_key_exists('scheduled_at', $data) || array_key_exists('ends_at', $data);
     }
 }
