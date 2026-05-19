@@ -123,7 +123,8 @@ class MentorController extends Controller
                 'mentors' => PublicMentorResource::collection($mentors)
             ],
             "Mentors Retreived Successfully",
-            200
+            200);
+    }
     public function apply(MentorApplicationRequest $request)
     {
         $user = $request->user();
