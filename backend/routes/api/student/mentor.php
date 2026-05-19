@@ -8,6 +8,7 @@ Route::prefix('mentors')
     ->group(function (): void {
         Route::get('/{user:username}', 'show');
         Route::get('/' , 'index');
-    });
         Route::post('/apply','apply');
     });
+
+    
