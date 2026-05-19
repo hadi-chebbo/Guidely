@@ -9,5 +9,5 @@ Route::prefix('mentor/sessions/{session:slug}/availabilities')
     ->group(function (): void {
         Route::get('/', 'index')
             ->name('api.v1.mentor.sessions.availabilities.index');
-        Route::delete('/{availability:uuid}', 'destroy');
+        Route::delete('/{availability}', 'destroy');
     });
