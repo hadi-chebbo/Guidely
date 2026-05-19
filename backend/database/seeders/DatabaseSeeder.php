@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             QuestionSeeder::class,
             MentorSessionSeeder::class,
             SessionAvailabilitySeeder::class,
+            UserReservationSeeder::class,
         ]);
     }
 }

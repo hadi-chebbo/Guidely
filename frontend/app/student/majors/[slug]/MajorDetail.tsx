@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getPublicMajor } from "@/services/studentService";
+import { getMajorMentors, getPublicMajor } from "@/services/studentService";
 import {
   Clock,
   TrendingUp,
@@ -17,6 +17,8 @@ import {
   MapPin,
   RefreshCw,
   Heart,
+  Users,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +28,9 @@ import {
   toggleFavoriteMajor,
 } from "@/services/studentService";
 import { useAuth } from "@/app/contexts/AuthContext";
+import MentorProfileModal, {
+  MentorCard,
+} from "@/components/mentors/MentorProfileModal";
 
 /* ── Types ── */
 interface MajorPoint { type: string; content: string }
@@ -75,6 +80,61 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="mb-4 font-heading text-lg font-bold text-gray-900">{title}</h2>
       {children}
     </div>
+  );
+}
+
+function MajorMentorsSection({
+  slug,
+  onViewMentor,
+}: {
+  slug: string;
+  onViewMentor: (username: string) => void;
+}) {
+  const { data, isFetching, isError } = useQuery({
+    queryKey: ["major-detail-mentors", slug],
+    queryFn: () => getMajorMentors(slug, { per_page: 3 }),
+    retry: false,
+  });
+
+  if (isFetching) {
+    return (
+      <Section title="Mentors">
+        <div className="flex items-center justify-center py-8 text-sm text-gray-500">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin text-brand-600" />
+          Loading mentors...
+        </div>
+      </Section>
+    );
+  }
+
+  if (isError || !data?.data.length) {
+    return (
+      <Section title="Mentors">
+        <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
+          <Users className="mx-auto h-8 w-8 text-gray-300" />
+          <p className="mt-2 text-sm font-semibold text-gray-900">
+            No mentors available yet
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Approved mentors for this major will appear here.
+          </p>
+        </div>
+      </Section>
+    );
+  }
+
+  return (
+    <Section title="Mentors">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {data.data.map((mentor) => (
+          <MentorCard
+            key={mentor.username}
+            mentor={mentor}
+            onView={onViewMentor}
+          />
+        ))}
+      </div>
+    </Section>
   );
 }
 
@@ -159,6 +219,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [pendingFavorite, setPendingFavorite] = useState(false);
+  const [selectedMentor, setSelectedMentor] = useState<string | null>(null);
 
   const { data: major, isLoading, isError, refetch } = useQuery({
     queryKey: ["public-major", slug],
@@ -302,6 +363,11 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
                 <p className="text-sm text-gray-600 leading-relaxed">{String(major.overview)}</p>
               </Section>
             )}
+
+            <MajorMentorsSection
+              slug={slug}
+              onViewMentor={setSelectedMentor}
+            />
 
             {(pros.length > 0 || cons.length > 0) && (
               <Section title="Pros & Cons">
@@ -453,6 +519,11 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
           </div>
         </div>
       </div>
+
+      <MentorProfileModal
+        username={selectedMentor}
+        onClose={() => setSelectedMentor(null)}
+      />
     </div>
   );
 }

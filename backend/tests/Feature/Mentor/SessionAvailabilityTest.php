@@ -194,6 +194,128 @@ it('prevents unauthenticated users from deleting an availability', function () {
     $response->assertUnauthorized();
 });
 
+it('allows mentors to update a session availability they own', function () {
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->for($mentor, 'mentor')->create();
+
+    $availability = SessionAvailability::factory()->for($session, 'session')->create([
+        'scheduled_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+        'ends_at' => now()->addDays(3)->addHour()->format('Y-m-d H:i:s'),
+        'status' => 'open',
+        'timezone' => 'UTC',
+    ]);
+
+    $scheduledAt = now()->addDays(5)->format('Y-m-d H:i:s');
+    $endsAt = now()->addDays(5)->addHour()->format('Y-m-d H:i:s');
+
+    Sanctum::actingAs($mentor);
+
+    $this->patchJson("api/v1/mentor/sessions/{$session->slug}/availabilities/{$availability->uuid}", [
+        'scheduled_at' => $scheduledAt,
+        'ends_at' => $endsAt,
+        'timezone' => 'Asia/Beirut',
+    ])
+        ->assertOk()
+        ->assertJsonPath('message', 'Availability updated successfully')
+        ->assertJsonPath('data.uuid', (string) $availability->uuid)
+        ->assertJsonPath('data.timezone', 'Asia/Beirut');
+
+    $this->assertDatabaseHas('session_availabilities', [
+        'id' => $availability->id,
+        'scheduled_at' => $scheduledAt,
+        'ends_at' => $endsAt,
+        'timezone' => 'Asia/Beirut',
+    ]);
+});
+
+it('allows partial updates to availability status', function () {
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->for($mentor, 'mentor')->create();
+
+    $availability = SessionAvailability::factory()->for($session, 'session')->create([
+        'scheduled_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+        'ends_at' => now()->addDays(3)->addHour()->format('Y-m-d H:i:s'),
+        'status' => 'open',
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $this->patchJson("api/v1/mentor/sessions/{$session->slug}/availabilities/{$availability->uuid}", [
+        'status' => 'cancelled',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.status', 'cancelled');
+
+    $this->assertDatabaseHas('session_availabilities', [
+        'id' => $availability->id,
+        'status' => 'cancelled',
+    ]);
+});
+
+it('prevents a mentor from updating another mentors availability', function () {
+    $mentor = User::factory()->mentor()->create();
+    $another = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->for($another, 'mentor')->create();
+    $availability = SessionAvailability::factory()->for($session, 'session')->create([
+        'scheduled_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+        'ends_at' => now()->addDays(3)->addHour()->format('Y-m-d H:i:s'),
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $this->patchJson("api/v1/mentor/sessions/{$session->slug}/availabilities/{$availability->uuid}", [
+        'status' => 'cancelled',
+    ])->assertNotFound();
+});
+
+it('prevents updating an availability from another session', function () {
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->for($mentor, 'mentor')->create();
+    $anotherSession = MentorSession::factory()->for($mentor, 'mentor')->create();
+    $availability = SessionAvailability::factory()->for($anotherSession, 'session')->create([
+        'scheduled_at' => now()->addDays(3)->format('Y-m-d H:i:s'),
+        'ends_at' => now()->addDays(3)->addHour()->format('Y-m-d H:i:s'),
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $this->patchJson("api/v1/mentor/sessions/{$session->slug}/availabilities/{$availability->uuid}", [
+        'status' => 'cancelled',
+    ])->assertNotFound();
+});
+
+it('rejects update when availability overlaps another slot', function () {
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->for($mentor, 'mentor')->create();
+
+    SessionAvailability::factory()->for($session, 'session')->create([
+        'scheduled_at' => now()->addDays(5)->format('Y-m-d H:i:s'),
+        'ends_at' => now()->addDays(5)->addHour()->format('Y-m-d H:i:s'),
+        'status' => 'open',
+    ]);
+
+    $availability = SessionAvailability::factory()->for($session, 'session')->create([
+        'scheduled_at' => now()->addDays(7)->format('Y-m-d H:i:s'),
+        'ends_at' => now()->addDays(7)->addHour()->format('Y-m-d H:i:s'),
+        'status' => 'open',
+    ]);
+
+    Sanctum::actingAs($mentor);
+
+    $this->patchJson("api/v1/mentor/sessions/{$session->slug}/availabilities/{$availability->uuid}", [
+        'scheduled_at' => now()->addDays(5)->addMinutes(30)->format('Y-m-d H:i:s'),
+        'ends_at' => now()->addDays(5)->addMinutes(90)->format('Y-m-d H:i:s'),
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'Availability overlaps with existing availabilities.');
+});
+
+
 /*
 |--------------------------------------------------------------------------
 | Store Tests

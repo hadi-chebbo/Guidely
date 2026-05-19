@@ -23,6 +23,7 @@ export type UserRole = "student" | "mentor" | "admin";
 export interface User {
   id: number;
   name: string;
+  username?: string;
   email: string;
   role: UserRole;
 }
@@ -42,6 +43,7 @@ export interface RegisterFormData {
 interface ApiUser {
   id: number;
   name: string;
+  username?: string;
   email: string;
   role?: UserRole;
 }
@@ -66,6 +68,7 @@ interface AuthResponse {
 const normalizeUser = (user: ApiUser): User => ({
   id: user.id,
   name: user.name,
+  username: user.username,
   email: user.email,
   role: user.role ?? "student",
 });
@@ -101,6 +104,21 @@ const getCookie = (name: string): string | null => {
 const setCachedUser = (user: User): void => {
   if (typeof window === "undefined") return;
   window.localStorage.setItem("auth_user", JSON.stringify(user));
+};
+
+const setPendingVerificationEmail = (email: string): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("pending_verification_email", email);
+};
+
+export const getPendingVerificationEmail = (): string => {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem("pending_verification_email") ?? "";
+};
+
+const clearPendingVerificationEmail = (): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem("pending_verification_email");
 };
 
 const getCachedUser = (): User | null => {
@@ -208,6 +226,8 @@ export const register = async (data: RegisterFormData): Promise<void> => {
     grade: data.grade,
     preferred_language: data.preferredLanguage,
   });
+
+  setPendingVerificationEmail(data.email);
 };
 
 /* ─────────────────────────────
@@ -238,7 +258,8 @@ export const checkAuth = async (): Promise<User | null> => {
   const role = (getCookie("user_role") as UserRole | null) ?? "student";
   return {
     id: 0,
-    name: role === "admin" ? "Admin" : "Student",
+    name: role === "admin" ? "Admin" : role === "mentor" ? "Mentor" : "Student",
+    username: undefined,
     email: "",
     role,
   };
@@ -267,13 +288,28 @@ export const resetPassword = async (data: {
 
 export const verifyEmail = async (
   id: string,
-  hash: string
-): Promise<void> => {
-  await api.get(`/email/verify/${id}/${hash}`);
+  hash: string,
+  signatureParams: { expires: string; signature: string }
+): Promise<User | null> => {
+  const res = await api.get<AuthResponse>(`/auth/v1/email/verify/${id}/${hash}`, {
+    params: signatureParams,
+  });
+
+  const userData = res.data.data?.user ?? res.data.user;
+  const token = extractToken(res.data);
+
+  if (!userData || !token) return null;
+
+  const user = normalizeUser(userData);
+  setAuthCookies(token, user.role, 60 * 60 * 24);
+  setCachedUser(user);
+  clearPendingVerificationEmail();
+
+  return user;
 };
 
 export const resendVerificationEmail = async (
   email: string
 ): Promise<void> => {
-  await api.post("/email/resend", { email });
+  await api.post("/auth/v1/email/resend", { email });
 };

@@ -336,64 +336,20 @@ function MajorsContent() {
       {/* Hero header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-600 to-indigo-700 px-6 pb-8 pt-10">
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.04]" />
-        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-10 left-1/3 h-48 w-48 rounded-full bg-brand-400/20 blur-3xl" />
-
-        <div className="relative mx-auto max-w-4xl text-center">
+        <div className="relative mx-auto max-w-7xl">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-white/70 ring-1 ring-white/20 backdrop-blur-sm">
             <GraduationCap className="h-3.5 w-3.5" />
-            Guidely — Major Explorer
+            Major explorer
           </span>
 
-          <h1 className="mt-4 font-heading text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-            Find Your Perfect Major
+          <h1 className="mt-4 max-w-3xl font-heading text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+            Find the major that fits your future
           </h1>
-          <p className="mt-3 text-base text-white/60 sm:text-lg">
-            Browse programs across every field — filter by demand, difficulty, and more.
+          <p className="mt-3 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
+            Browse programs across every field, then filter by demand,
+            difficulty, category, and career signals.
           </p>
 
-          <div className="mx-auto mt-7 max-w-2xl">
-            <div className="relative flex items-center rounded-2xl bg-white shadow-[0_8px_40px_rgba(0,0,0,0.18)] ring-1 ring-white/20">
-              <Search className="pointer-events-none absolute left-4 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by name, category, or keyword…"
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="h-14 w-full rounded-2xl bg-transparent pl-12 pr-14 text-base text-gray-900 placeholder-gray-400 focus:outline-none"
-              />
-              {search ? (
-                <button
-                  type="button"
-                  onClick={() => handleSearch("")}
-                  className="absolute right-4 flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-all"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              ) : (
-                <kbd className="absolute right-4 hidden rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-400 sm:block">
-                  ⌘K
-                </kbd>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
-            {[
-              { label: "Majors", value: totalMajors || "—" },
-              {
-                label: "High-demand fields",
-                value: allMajors.filter(
-                  (m) => m.local_demand === "very_high" || m.local_demand === "high",
-                ).length || "—",
-              },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center gap-2 text-white/70">
-                <span className="text-xl font-bold text-white">{s.value}</span>
-                <span className="text-sm">{s.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -520,7 +476,50 @@ function MajorsContent() {
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-7xl px-6 py-6">
+      <div className="mx-auto max-w-7xl space-y-6 px-6 py-6">
+        <section className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto_auto] lg:items-center">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, category, or keyword"
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="h-12 w-full rounded-lg border border-gray-200 bg-white pl-11 pr-11 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => handleSearch("")}
+                  className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex h-12 items-center gap-2 rounded-lg bg-gray-50 px-4 text-sm font-semibold text-gray-600">
+              <span className="text-gray-900">{totalMajors || 0}</span>
+              Majors
+            </div>
+
+            <div className="flex h-12 items-center gap-2 rounded-lg bg-gray-50 px-4 text-sm font-semibold text-gray-600">
+              <span className="text-gray-900">
+                {
+                  allMajors.filter(
+                    (m) =>
+                      m.local_demand === "very_high" ||
+                      m.local_demand === "high",
+                  ).length
+                }
+              </span>
+              High demand
+            </div>
+          </div>
+        </section>
+
         <div className="flex gap-6">
           <div className="hidden w-56 flex-shrink-0 md:block">
             <div className="sticky top-[57px]">
