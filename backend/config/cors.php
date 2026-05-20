@@ -22,6 +22,7 @@ return [
     'allowed_origins' => [
         'https://www.guidely.store',
         'https://guidely.store',
+        'http://localhost:3000',
     ],
 
     'allowed_origins_patterns' => [],
