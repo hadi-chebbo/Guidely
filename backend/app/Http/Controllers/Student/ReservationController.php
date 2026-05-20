@@ -7,14 +7,15 @@ use App\Http\Resources\Student\SessionReservationResource;
 use App\Models\UserReservation;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReservationController extends Controller
 {
     //
     use ApiResponseTrait;
-    public function cancel(Request $request, UserReservation $reservation)
+    public function cancel(UserReservation $reservation)
     {
-        $user = $request->user();
+        $user = auth()->user();
 
         if ($reservation->user_id !== $user->id) {
             return $this->error('You are not authorized to cancel this reservation.',403);
