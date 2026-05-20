@@ -24,7 +24,7 @@ class GoogleAuthController extends Controller
         try{
             $googleUser = Socialite::driver('google')->stateless()->user();
         }catch (Exception $e){
-            return $this->error("Google Authentication Failed " , 401);
+            return redirect('https://www.guidely.store/login?error=google_auth_failed');
         }
 
         $user = User::where('google_id', $googleUser->getId())
@@ -39,7 +39,7 @@ class GoogleAuthController extends Controller
                 ]);
             }
         }
-        else{
+        else {
             $user = User::create([
                 'name'              => $googleUser->getName(),
                 'username'          => $this->generateUsername($googleUser->getName()),
@@ -52,15 +52,12 @@ class GoogleAuthController extends Controller
         }
 
         if ($user->is_blocked) {
-            return $this->error('Your account has been blocked', 403);
+            return redirect('https://www.guidely.store/login?error=blocked');
         }
 
         $token = $user->createToken('google-auth')->plainTextToken;
 
-        return $this->success([
-            'token' => $token,
-            'user'  => new UserResource($user),
-        ], 'Logged in with Google successfully',200);
+        return redirect("https://www.guidely.store/auth/google/callback?token={$token}");
 
     }
 
