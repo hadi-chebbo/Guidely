@@ -15,20 +15,21 @@ class SessionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'slug' => $this->slug,
             'title' => $this->title,
             'description' => $this->description,
-            'type'=>$this->type,
-            'duration_minutes'=>$this->duration_minutes,
-            'max_capacity'=>$this->max_capacity,
-            'price'=>$this->price,
-            'currency'=>$this->currency,
-            'is_active'=>$this->active,
-            'created_at'=>$this->created_at,
-            'updated_at'=>$this->updated_at,
+            'type' => $this->type,
+            'duration_minutes' => $this->duration_minutes,
+            'max_capacity' => $this->max_capacity,
+            'price' => $this->price,
+            'currency' => $this->currency,
+            'is_active' => $this->active,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
             'availabilities' => AvailabilityResource::collection(
                 $this->whenLoaded('availabilities')
             ),
+            'availabilities_count' => $this->availabilities_count ?? null,
         ];
     }
 }
