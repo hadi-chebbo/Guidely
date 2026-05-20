@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'frontend_url' => env('FRONTEND_URL', 'https://www.guidely.store'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
