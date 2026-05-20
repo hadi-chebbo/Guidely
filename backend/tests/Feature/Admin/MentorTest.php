@@ -110,3 +110,43 @@ it('returns pending mentor applications', function () {
 
     expect($response->json('data'))->toHaveCount(1);
 });
+
+it('approves a mentor application', function () {
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->student()->create();
+    $major = Major::factory()->create();
+    MentorProfile::factory()
+    ->for($user)
+    ->for($major)
+    ->create([
+        'status' => 'pending',
+    ]);
+    Sanctum::actingAs($admin);
+    $response = $this->patchJson("/api/v1/admin/mentor-applications/{$user->username}/approve");
+
+    $response
+        ->assertOk()
+        ->assertJson([
+            'message' => 'Mentor application approved successfully',
+        ]);
+
+    $this->assertDatabaseHas('mentor_profiles', [
+        'user_id' => $user->id,
+        'status' => 'approved',
+    ]);
+});
+
+it('ensures only admin can approve mentor application', function () {
+    $user = User::factory()->student()->create();
+    $otherUser = User::factory()->student()->create();
+    $major = Major::factory()->create();
+    MentorProfile::factory()
+    ->for($otherUser)
+    ->for($major)
+    ->create([
+        'status' => 'pending',
+    ]);
+    Sanctum::actingAs($user);
+    $response = $this->patchJson("/api/v1/admin/mentor-applications/{$user->username}/approve");
+    $response->assertForbidden();
+});

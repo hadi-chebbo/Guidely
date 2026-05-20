@@ -38,4 +38,22 @@ class MentorController extends Controller
             200
         );
     }
+
+    public function approve(User $user)
+    {
+        $mentorProfile = $user->mentorProfile;
+
+        if(!$mentorProfile){
+            return $this->error('User does not have a mentor profile', 404);
+        }
+
+        $mentorProfile->update([
+            'status' => 'approved',
+        ]);
+
+        $user->load('mentorProfile');
+
+        return $this->success(new MentorApplicationResource($user), "Mentor application approved successfully" , 200);
+
+    }
 }
