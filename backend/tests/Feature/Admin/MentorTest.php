@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Major;
 use App\Models\MentorProfile;
 use App\Models\User;
 use Laravel\Sanctum\Sanctum;
@@ -53,18 +54,21 @@ it('retrieves a mentor profile successfully', function () {
                     'username',
                     'email',
                 ],
-
-                'id',
-                'status',
-                'is_accepting_students',
-                'bio',
-                'years_experience',
-                'degree',
-                'university_name',
-                'graduation_year',
-                'languages',
-                'linkedin_url',
-                'website_url',
+                'mentor_profile'=>
+                [
+                    'id',
+                    'major_id',
+                    'status',
+                    'is_accepting_students',
+                    'bio',
+                    'years_experience',
+                    'degree',
+                    'university_name',
+                    'graduation_year',
+                    'languages',
+                    'linkedin_url',
+                    'website_url',
+                ]
             ],
         ]);
 });
@@ -76,4 +80,33 @@ it('returns 404 when mentor profile does not exist', function () {
     );
 
     $response->assertNotFound();
+});
+
+it('returns pending mentor applications', function () {
+
+    // 🔐 authenticate admin/user
+    $admin = User::factory()->admin()->create();
+    Sanctum::actingAs($admin);
+
+    $major = Major::factory()->create();
+
+    // ✅ pending (should appear)
+    $pending = MentorProfile::factory()->create([
+        'status' => 'pending',
+        'user_id' => User::factory()->create()->id,
+        'major_id' => $major->id,
+    ]);
+
+    // ❌ approved (should NOT appear)
+    MentorProfile::factory()->create([
+        'status' => 'approved',
+        'user_id' => User::factory()->create()->id,
+        'major_id' => $major->id,
+    ]);
+
+    $response = $this->getJson('/api/v1/admin/mentor-applications');
+
+    $response->assertOk();
+
+    expect($response->json('data'))->toHaveCount(1);
 });

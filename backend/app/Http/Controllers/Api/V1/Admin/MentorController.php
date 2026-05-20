@@ -24,4 +24,18 @@ class MentorController extends Controller
             200
         );
     }
+    public function index()
+    {
+        $users = User::whereHas('mentorProfile', function ($query) {
+            $query->where('status', 'pending');
+        })
+            ->latest()
+            ->paginate(10);
+
+        return $this->success(
+            MentorApplicationResource::collection($users),
+            'Pending mentor applications retrieved successfully.',
+            200
+        );
+    }
 }
