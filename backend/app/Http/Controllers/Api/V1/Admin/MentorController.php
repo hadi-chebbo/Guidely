@@ -29,9 +29,6 @@ class MentorController extends Controller
         $users = User::whereHas('mentorProfile', function ($query) {
             $query->where('status', 'pending');
         })
-            ->with([
-                'mentorProfile.major',
-            ])
             ->latest()
             ->paginate(10);
 
