@@ -13,6 +13,8 @@ use Override;
     'ends_at',
     'status',
     'timezone',
+    'meeting_platform',
+    'meeting_link'
 ])]
 
 class SessionAvailability extends Model

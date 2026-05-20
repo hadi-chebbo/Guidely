@@ -25,10 +25,12 @@ class StoreSessionAvailabilityRequest extends FormRequest
     {
         return [
             //
-            'slots'                => ['required', 'array', 'min:1'],
-            'slots.*.scheduled_at' => ['required', 'date_format:Y-m-d H:i:s', 'after:now'],
-            'slots.*.ends_at'      => ['required', 'date_format:Y-m-d H:i:s', 'after:slots.*.scheduled_at'],
-            'slots.*.timezone'     => ['sometimes', 'string', 'timezone'],
+            'slots'                    => ['required', 'array', 'min:1'],
+            'slots.*.scheduled_at'     => ['required', 'date_format:Y-m-d H:i:s', 'after:now'],
+            'slots.*.ends_at'          => ['sometimes', 'date_format:Y-m-d H:i:s', 'after:slots.*.scheduled_at'],
+            'slots.*.timezone'         => ['sometimes', 'string', 'timezone'],
+            'slots.*.meeting_platform' => ['required', 'string', 'max:124'],
+            'slots.*.meeting_link'     => ['required', 'url'],
         ];
     }
 }
