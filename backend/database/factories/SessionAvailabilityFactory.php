@@ -25,6 +25,8 @@ class SessionAvailabilityFactory extends Factory
             'uuid' => Str::uuid(),
             'scheduled_at' => $start,
             'status' => fake()->randomElement(['open', 'full', 'cancelled', 'completed']),
+            'meeting_platform' => fake()->randomElement(['zoom', 'google_meet', 'teams']),
+            'meeting_link'     => fake()->url(),
         ];
     }
 }

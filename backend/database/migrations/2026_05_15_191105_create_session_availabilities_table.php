@@ -18,6 +18,8 @@ return new class extends Migration
             $table->dateTime('scheduled_at');
             $table->dateTime('ends_at')->nullable();
             $table->enum('status', ['open', 'full', 'cancelled', 'completed'])->default('open');
+            $table->string('meeting_platform');
+            $table->string('meeting_link');
             $table->string('timezone')->default('UTC');
             $table->timestamps();
         });

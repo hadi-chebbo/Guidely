@@ -20,6 +20,8 @@ class UpdateSessionAvailabilityRequest extends FormRequest
             'ends_at' => ['sometimes', 'required', 'date_format:Y-m-d H:i:s'],
             'status' => ['sometimes', 'required', 'string', 'in:open,full,cancelled,completed'],
             'timezone' => ['sometimes', 'required', 'string', 'timezone'],
+            'meeting_platform' => ['sometimes', 'string', 'max:124'],
+            'meeting_link' => ['sometimes', 'url'],
         ];
     }
 
