@@ -9,4 +9,5 @@ Route::prefix('admin/mentor-applications')
     ->group(function () {
         Route::get('/{user:username}','show');
         Route::get('/', 'index');
+        Route::patch('/{user:username}/approve', 'approve');
     });
