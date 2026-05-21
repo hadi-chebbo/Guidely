@@ -19,6 +19,8 @@ class AvailabilityResource extends JsonResource
             'scheduled_at' => $this->scheduled_at,
             'ends_at' => $this->ends_at,
             'status' => $this->status,
+            'meeting_platform' => $this->meeting_platform,
+            'meeting_link' => $this->meeting_link,
             'timezone' => $this->timezone,
         ];
     }

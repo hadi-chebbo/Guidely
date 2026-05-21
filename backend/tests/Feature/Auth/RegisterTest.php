@@ -11,8 +11,8 @@ it('allows a user to register successfully', function () {
         'name' => 'Fatima Janoun',
         'username' => 'fatimajanoun',
         'email' => 'fatima@test.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'Password_123',
+        'password_confirmation' => 'Password_123',
         'phone' => '71234567',
         'school' => 'Lebanese University',
         'grade' => 'Senior',
@@ -45,8 +45,8 @@ it('fails when email already exists', function () {
     $this->postJson('/api/v1/auth/register', [
         'name' => 'New User',
         'email' => 'existing@test.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'Password_123',
+        'password_confirmation' => 'Password_123',
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email']);
@@ -64,8 +64,8 @@ it('fails when username already exists', function () {
         'name' => 'New User',
         'username' => 'existingusername',
         'email' => 'newuser@test.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'Password_123',
+        'password_confirmation' => 'Password_123',
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['username']);
@@ -92,8 +92,8 @@ it('throttles register requests after 5 attempts for same email and ip', functio
         'name' => 'Test User',
         'username' => 'testuser',
         'email' => 'test@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'Password_123',
+        'password_confirmation' => 'Password_123',
     ];
 
 
