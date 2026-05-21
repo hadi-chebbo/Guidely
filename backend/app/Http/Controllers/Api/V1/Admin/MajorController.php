@@ -24,43 +24,43 @@ class MajorController extends Controller
         $majors = Major::query()
             ->when(
                 $request->filled('name_en'),
-                fn ($query) => $query->where('name_en', 'like', '%' . $filters['name_en'] . '%')
+                fn($query) => $query->where('name_en', 'like', '%' . $filters['name_en'] . '%')
             )
             ->when(
                 $request->filled('name_ar'),
-                fn ($query) => $query->where('name_ar', 'like', '%' . $filters['name_ar'] . '%')
+                fn($query) => $query->where('name_ar', 'like', '%' . $filters['name_ar'] . '%')
             )
             ->when(
                 $request->filled('category_id'),
-                fn ($query) => $query->where('category_id', $filters['category_id'])
+                fn($query) => $query->where('category_id', $filters['category_id'])
             )
             ->when(
                 $request->filled('duration_years'),
-                fn ($query) => $query->where('duration_years', $filters['duration_years'])
+                fn($query) => $query->where('duration_years', $filters['duration_years'])
             )
             ->when(
                 $request->filled('difficulty_level'),
-                fn ($query) => $query->where('difficulty_level', $filters['difficulty_level'])
+                fn($query) => $query->where('difficulty_level', $filters['difficulty_level'])
             )
             ->when(
                 $request->filled('salary_min'),
-                fn ($query) => $query->where('salary_min', '>=', $filters['salary_min'])
+                fn($query) => $query->where('salary_min', '>=', $filters['salary_min'])
             )
             ->when(
                 $request->filled('salary_max'),
-                fn ($query) => $query->where('salary_max', '<=', $filters['salary_max'])
+                fn($query) => $query->where('salary_max', '<=', $filters['salary_max'])
             )
             ->when(
                 $request->filled('local_demand'),
-                fn ($query) => $query->where('local_demand', $filters['local_demand'])
+                fn($query) => $query->where('local_demand', $filters['local_demand'])
             )
             ->when(
                 $request->filled('international_demand'),
-                fn ($query) => $query->where('international_demand', $filters['international_demand'])
+                fn($query) => $query->where('international_demand', $filters['international_demand'])
             )
             ->when(
                 $request->filled('is_featured'),
-                fn ($query) => $query->where('is_featured', $filters['is_featured'])
+                fn($query) => $query->where('is_featured', $filters['is_featured'])
             )
             ->latest()
             ->paginate(15)
@@ -80,15 +80,11 @@ class MajorController extends Controller
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
-        $major = DB::transaction(function () use ($validated, $skills) {
-            $major = Major::create($validated);
+        $major = Major::create($validated);
 
-            if (! empty($skills)) {
-                $major->skills()->sync($skills);
-            }
-
-            return $major;
-        });
+        if (!empty($skills)) {
+            $major->skills()->sync($skills);
+        }
 
         return $this->success(
             new MajorResource($major->load(['category', 'skills'])),
@@ -99,27 +95,23 @@ class MajorController extends Controller
 
     public function show(Major $major)
     {
-        return $this->success(new MajorResource($major),"Major Fetched Successfully",200);
+        return $this->success(new MajorResource($major), "Major Fetched Successfully", 200);
     }
 
-    public function update(UpdateMajorRequest $request,Major $major)
+    public function update(UpdateMajorRequest $request, Major $major)
     {
         $validated = $request->validated();
 
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
-        $major = DB::transaction(function () use ($major, $validated, $skills) {
-            $major->update($validated);
+        $major->update($validated);
 
-            if (! empty($skills)) {
-                $major->skills()->sync($skills);
-            }
+        if (! empty($skills)) {
+            $major->skills()->sync($skills);
+        }
 
-            return $major;
-        });
-
-        return $this->success(new MajorResource($major->load(['category','skills'])),"Major Updated Successfully",200);
+        return $this->success(new MajorResource($major->load(['category', 'skills'])), "Major Updated Successfully", 200);
     }
 
     public function toggleFeatured(Major $major)
