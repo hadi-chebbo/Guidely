@@ -11,9 +11,9 @@ use Illuminate\Http\Request;
 class SessionController extends Controller
 {
     use ApiResponseTrait;
-    public function index(Request $request)
+    public function index()
     {
-        $user = $request->user();
+        $user = auth()->user();
 
         $recommended = collect();
         $recommendedIds = [];
