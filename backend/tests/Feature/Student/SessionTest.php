@@ -57,3 +57,61 @@ it('returns sessions feed successfully', function () {
         ]
     ]);
 });
+
+it('returns mentor sessions by username with availabilities and pagination', function () {
+
+    $mentor = User::factory()->create([
+        'username' => 'mentor-test',
+    ]);
+
+    $sessions = MentorSession::factory()
+        ->count(3)
+        ->create([
+            'user_id' => $mentor->id,
+        ]);
+
+    SessionAvailability::factory()->create([
+        'mentor_session_id' => $sessions[0]->id,
+        'scheduled_at' => now()->addDays(2),
+    ]);
+
+    SessionAvailability::factory()->create([
+        'mentor_session_id' => $sessions[0]->id,
+        'scheduled_at' => now()->subDays(2),
+    ]);
+
+    $response = $this->getJson("/api/v1/sessions/mentor-test");
+
+    $response->assertOk()
+        ->assertJsonStructure([
+            'message',
+            'data' => [
+                'sessions' => [
+                    'data' => [
+                        '*' => [
+                            'slug',
+                            'title',
+                            'description',
+                            'type',
+                            'duration_minutes',
+                            'max_capacity',
+                            'price',
+                            'currency',
+                            'is_active',
+                            'availabilities',
+                            'availabilities_count',
+                        ]
+                    ],
+                    'pagination' => [
+                        'current_page',
+                        'last_page',
+                        'per_page',
+                        'total',
+                    ],
+                ],
+            ],
+        ]);
+
+    expect($response['data']['sessions']['data'])
+        ->toHaveCount(3);
+});
