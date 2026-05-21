@@ -108,17 +108,7 @@ class SessionController extends Controller
             ->paginate(10);
 
         return $this->success(
-            [
-                'sessions' => [
-                    'data' => SessionResource::collection($sessions->items()),
-                    'pagination' => [
-                        'current_page' => $sessions->currentPage(),
-                        'last_page' => $sessions->lastPage(),
-                        'per_page' => $sessions->perPage(),
-                        'total' => $sessions->total(),
-                    ]
-                ],
-            ],
+            SessionResource::collection($sessions),
             'Mentor Sessions Retrieved Successfully',
             200
         );
