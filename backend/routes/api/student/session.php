@@ -7,6 +7,7 @@ Route::prefix('sessions')
     ->controller(SessionController::class)
     ->group(function (): void {
         Route::get('/' , 'index');
+        Route::get('/{user:username}' , 'show');
     });
 
     

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Student\SessionResource;
 use App\Models\MentorSession;
+use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 
@@ -88,6 +89,30 @@ class SessionController extends Controller
                 ],
             ],
             'Sessions Retrieved Successfully',
+            200
+        );
+    }
+
+    public function show(User $user)
+    {
+        if ($user->role !== 'mentor') {
+            return $this->error('This user is not a mentor.', 403);
+        }
+        $sessions = $user->mentorSessions()
+            ->withCount('availabilities')
+            ->with([
+                'mentor',
+                'availabilities' => function ($q) {
+                    $q->where('scheduled_at', '>=', now())
+                        ->orderBy('scheduled_at');
+                }
+            ])
+            ->latest()
+            ->paginate(10);
+
+        return $this->success(
+            SessionResource::collection($sessions),
+            'Mentor Sessions Retrieved Successfully',
             200
         );
     }
