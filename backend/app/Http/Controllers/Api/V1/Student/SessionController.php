@@ -41,15 +41,7 @@ class SessionController extends Controller
                     ->whereHas('availabilities', function ($q) {
                         $q->where('scheduled_at', '>=', now());
                     })
-                    ->where(function ($query) use ($topCategories, $topSkills) {
-
-                        // assuming mentor_sessions table contains:
-                        // - category column
-                        // - skill column
-
-                        $query->whereIn('category', $topCategories)
-                            ->orWhereIn('skill', $topSkills);
-                    })
+                    ->withCount('availabilities')
                     ->with([
                         'mentor',
                         'availabilities' => function ($q) {
@@ -57,6 +49,7 @@ class SessionController extends Controller
                                 ->orderBy('scheduled_at');
                         }
                     ])
+                    ->latest()
                     ->limit(6)
                     ->get();
 
@@ -64,13 +57,13 @@ class SessionController extends Controller
             }
         }
 
-
         $sessions = MentorSession::query()
             ->whereHas('mentor')
             ->whereNotIn('id', $recommendedIds)
             ->whereHas('availabilities', function ($q) {
                 $q->where('scheduled_at', '>=', now());
             })
+            ->withCount('availabilities')
             ->with([
                 'mentor',
                 'availabilities' => function ($q) {
@@ -81,11 +74,18 @@ class SessionController extends Controller
             ->latest()
             ->paginate(10);
 
- 
         return $this->success(
             [
                 'recommended' => SessionResource::collection($recommended),
-                'sessions' => SessionResource::collection($sessions),
+                'sessions' => [
+                    'data' => SessionResource::collection($sessions->items()),
+                    'pagination' => [
+                        'current_page' => $sessions->currentPage(),
+                        'last_page' => $sessions->lastPage(),
+                        'per_page' => $sessions->perPage(),
+                        'total' => $sessions->total(),
+                    ]
+                ],
             ],
             'Sessions Retrieved Successfully',
             200

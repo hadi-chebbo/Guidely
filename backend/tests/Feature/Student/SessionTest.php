@@ -26,11 +26,20 @@ it('returns sessions feed successfully', function () {
     $response = $this->actingAs($user)
         ->getJson('api/v1/sessions');
 
-    $response->assertOk()
-        ->assertJsonStructure([
-            'message',
-            'data' => [
-                'recommended' => [
+   $response->assertOk()
+    ->assertJsonStructure([
+        'message',
+        'data' => [
+            'recommended' => [
+                '*' => [
+                    'slug',
+                    'title',
+                    'description',
+                    'availabilities',
+                ]
+            ],
+            'sessions' => [
+                'data' => [
                     '*' => [
                         'slug',
                         'title',
@@ -38,14 +47,13 @@ it('returns sessions feed successfully', function () {
                         'availabilities',
                     ]
                 ],
-                'sessions' => [
-                    '*' => [
-                        'slug',
-                        'title',
-                        'description',
-                        'availabilities',
-                    ]
+                'pagination' => [
+                    'current_page',
+                    'last_page',
+                    'per_page',
+                    'total',
                 ],
-            ]
-        ]);
+            ],
+        ]
+    ]);
 });
