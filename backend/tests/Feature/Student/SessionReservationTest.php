@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\MentorSession;
+use App\Models\SessionAvailability;
 use App\Models\User;
 use App\Models\UserReservation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -130,4 +132,70 @@ it('prevents cancelling a completed reservation', function () {
     $response = $this->patchJson("api/v1/reservations/{$reservation->uuid}/cancel");
 
     $response->assertStatus(422);
+});
+
+it('returns authenticated student reservations with full structure', function () {
+
+    $student = User::factory()->student()->create();
+
+    Sanctum::actingAs($student);
+
+    // create mentor + session
+    $mentor = User::factory()->mentor()->create();
+
+    $session = MentorSession::factory()->create([
+        'user_id' => $mentor->id,
+    ]);
+
+    // availability
+    $availability = SessionAvailability::factory()->create([
+        'mentor_session_id' => $session->id,
+        'scheduled_at' => now()->addDays(5),
+        'status' => 'open',
+    ]);
+
+    // reservation
+    $reservation = UserReservation::factory()->create([
+        'user_id' => $student->id,
+        'session_availability_id' => $availability->id,
+        'status' => 'confirmed',
+    ]);
+
+    $response = $this->getJson('/api/v1/reservations');
+
+    $response->assertOk()
+        ->assertJsonStructure([
+            'message',
+                'data' => [
+                    '*' => [
+                        'uuid',
+                        'status',
+                        'created_at',
+                        'updated_at',
+                        'availability' => [
+                            'uuid',
+                            'scheduled_at',
+                            'ends_at',
+                            'status',
+                            'session' => [
+                                'slug',
+                                'title',
+                                'description',
+                                'type',
+                                'duration_minutes',
+                                'price',
+                                'currency',
+                                'mentor' => [
+                                    'name',
+                                    'username',
+                                    'avatar_url',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'links',
+                'meta',
+            ],
+        );
 });
