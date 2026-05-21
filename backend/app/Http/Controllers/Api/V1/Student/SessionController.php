@@ -95,6 +95,9 @@ class SessionController extends Controller
 
     public function show(User $user)
     {
+        if ($user->role !== 'mentor') {
+            return $this->error('This user is not a mentor.', 403);
+        }
         $sessions = $user->mentorSessions()
             ->withCount('availabilities')
             ->with([

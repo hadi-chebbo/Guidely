@@ -26,20 +26,11 @@ it('returns sessions feed successfully', function () {
     $response = $this->actingAs($user)
         ->getJson('api/v1/sessions');
 
-   $response->assertOk()
-    ->assertJsonStructure([
-        'message',
-        'data' => [
-            'recommended' => [
-                '*' => [
-                    'slug',
-                    'title',
-                    'description',
-                    'availabilities',
-                ]
-            ],
-            'sessions' => [
-                'data' => [
+    $response->assertOk()
+        ->assertJsonStructure([
+            'message',
+            'data' => [
+                'recommended' => [
                     '*' => [
                         'slug',
                         'title',
@@ -47,20 +38,29 @@ it('returns sessions feed successfully', function () {
                         'availabilities',
                     ]
                 ],
-                'pagination' => [
-                    'current_page',
-                    'last_page',
-                    'per_page',
-                    'total',
+                'sessions' => [
+                    'data' => [
+                        '*' => [
+                            'slug',
+                            'title',
+                            'description',
+                            'availabilities',
+                        ]
+                    ],
+                    'pagination' => [
+                        'current_page',
+                        'last_page',
+                        'per_page',
+                        'total',
+                    ],
                 ],
-            ],
-        ]
-    ]);
+            ]
+        ]);
 });
 
 it('returns mentor sessions by username with availabilities and pagination', function () {
 
-    $mentor = User::factory()->create([
+    $mentor = User::factory()->mentor()->create([
         'username' => 'mentor-test',
     ]);
 
@@ -85,8 +85,6 @@ it('returns mentor sessions by username with availabilities and pagination', fun
     $response->assertOk()
         ->assertJsonStructure([
             'message',
-            'data' => [
-                'sessions' => [
                     'data' => [
                         '*' => [
                             'slug',
@@ -102,16 +100,7 @@ it('returns mentor sessions by username with availabilities and pagination', fun
                             'availabilities_count',
                         ]
                     ],
-                    'pagination' => [
-                        'current_page',
-                        'last_page',
-                        'per_page',
-                        'total',
-                    ],
-                ],
-            ],
+                    'links',
+                    'meta',
         ]);
-
-    expect($response['data']['sessions']['data'])
-        ->toHaveCount(3);
 });
