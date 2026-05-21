@@ -41,10 +41,10 @@ class MentorController extends Controller
 
     public function approve(User $user)
     {
-        $mentorProfile = $user->mentorProfile;
+        $mentorProfile = $user->mentorProfile()->where('status', 'pending')->first();
 
         if(!$mentorProfile){
-            return $this->error('User does not have a mentor profile', 404);
+            return $this->error('User does not have a pending mentor profile', 404);
         }
 
         $mentorProfile->update([
@@ -55,5 +55,22 @@ class MentorController extends Controller
 
         return $this->success(new MentorApplicationResource($user), "Mentor application approved successfully" , 200);
 
+    }
+
+    public function reject(User $user)
+    {
+        $mentorProfile = $user->mentorProfile()->where('status', 'pending')->first();
+
+        if(!$mentorProfile){
+            return $this->error('User does not have a pending mentor profile', 404);
+        }
+
+        $mentorProfile->update([
+            'status' => 'rejected',
+        ]);
+
+        $user->load('mentorProfile');
+
+        return $this->success(new MentorApplicationResource($user), "Mentor application rejected successfully", 200);
     }
 }

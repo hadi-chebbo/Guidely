@@ -10,4 +10,5 @@ Route::prefix('admin/mentor-applications')
         Route::get('/{user:username}','show');
         Route::get('/', 'index');
         Route::patch('/{user:username}/approve', 'approve');
+        Route::patch('/{user:username}/reject', 'reject');
     });
