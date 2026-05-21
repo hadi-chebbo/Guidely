@@ -9,4 +9,5 @@ Route::prefix('reservations')
     ->group(function (): void {
         Route::patch('/{reservation}/cancel','cancel');
         Route::get('/','index');
+        Route::post('/availability/{availability:uuid}/book','book');
     });
