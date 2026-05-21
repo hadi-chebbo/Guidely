@@ -47,8 +47,20 @@ class MentorController extends Controller
             return $this->error('User does not have a mentor profile', 404);
         }
 
+        if($mentorProfile->status === 'approved'){
+            return $this->error('Mentor already approved', 400);
+        }
+
+        if ($mentorProfile->status === 'rejected') {
+            return $this->error('Rejected mentor applications cannot be approved', 400);
+        }
+
         $mentorProfile->update([
             'status' => 'approved',
+        ]);
+
+        $user->update([
+            'role' => 'mentor'
         ]);
 
         $user->load('mentorProfile');
