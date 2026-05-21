@@ -1,13 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Student;
+namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Student\SessionReservationResource;
 use App\Models\UserReservation;
 use App\Traits\ApiResponseTrait;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ReservationController extends Controller
 {
@@ -18,11 +16,11 @@ class ReservationController extends Controller
         $user = auth()->user();
 
         if ($reservation->user_id !== $user->id) {
-            return $this->error('You are not authorized to cancel this reservation.',403);
+            return $this->error('You are not authorized to cancel this reservation.', 403);
         }
 
         if (in_array($reservation->status, ['cancelled', 'completed'])) {
-            return $this->error("Cannot cancel a {$reservation->status} reservation.",422);
+            return $this->error("Cannot cancel a {$reservation->status} reservation.", 422);
         }
 
         $reservation->update([
@@ -38,6 +36,24 @@ class ReservationController extends Controller
         }
 
         // 5. Return updated model
-        return $this->success(new SessionReservationResource($reservation->fresh()),'Reservation cancelled successfully',200);
+        return $this->success(new SessionReservationResource($reservation->fresh()), 'Reservation cancelled successfully', 200);
+    }
+
+    public function index()
+    {
+        $user = auth()->user();
+
+        $reservations = $user->reservations()
+            ->with([
+                'sessionAvailability.session.mentor'
+            ])
+            ->latest()
+            ->paginate(10);
+
+        return $this->success(
+            SessionReservationResource::collection($reservations),
+            'Reservations Retrieved Successfully',
+            200
+        );
     }
 }
