@@ -144,9 +144,9 @@ function MajorFormModal({
 }) {
   return (
     <AdminModalFrame className="max-h-[92vh] max-w-4xl overflow-hidden p-0">
-      <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+      <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-4 py-5 sm:gap-4 sm:px-6">
+        <div className="min-w-0">
+          <h2 className="break-words text-xl font-semibold text-gray-900">{title}</h2>
           <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
         </div>
         <button
@@ -158,7 +158,7 @@ function MajorFormModal({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="max-h-[calc(92vh-88px)] overflow-y-auto p-6">{children}</div>
+      <div className="max-h-[calc(92vh-88px)] overflow-y-auto p-4 sm:p-6">{children}</div>
     </AdminModalFrame>
   );
 }

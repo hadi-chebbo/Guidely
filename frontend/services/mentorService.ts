@@ -3,6 +3,7 @@ import api from "@/lib/api";
 type ApiResponse<T> = {
   data?: T;
   message?: string;
+  application?: T;
 };
 
 export type MentorSessionType = "one-on-one" | "group";
@@ -49,7 +50,24 @@ type PublicMentorProfilePayload = {
   avatar_url?: string | null;
   school?: string | null;
   preferred_language?: string | null;
+  id?: number;
+  user_id?: number;
+  status?: string;
+  is_accepting_students?: boolean;
+  bio?: string | null;
+  years_experience?: number | null;
+  degree?: string | null;
+  university_name?: string | null;
+  graduation_year?: number | null;
+  languages?: string[] | string | null;
+  linkedin_url?: string | null;
+  website_url?: string | null;
+  major_slug?: string | null;
+  major?: { name?: string | null; name_en?: string | null; name_ar?: string | null; slug?: string | null } | null;
   profile?: {
+    id?: number;
+    user_id?: number;
+    status?: string;
     bio?: string | null;
     degree?: string | null;
     university_name?: string | null;
@@ -81,6 +99,19 @@ export interface MentorSession {
   updated_at?: string;
 }
 
+export type MentorAvailabilityStatus = "open" | "full" | "cancelled" | "completed";
+
+export interface MentorAvailability {
+  uuid: string;
+  id?: number | string;
+  scheduled_at: string;
+  ends_at: string;
+  status: MentorAvailabilityStatus | string;
+  timezone?: string | null;
+  meeting_platform: string;
+  meeting_link: string;
+}
+
 export interface MentorSessionPayload {
   title: string;
   description: string;
@@ -92,11 +123,24 @@ export interface MentorSessionPayload {
   is_active: boolean;
 }
 
+export interface MentorAvailabilityPayload {
+  scheduled_at: string;
+  ends_at: string;
+  timezone?: string;
+  status?: MentorAvailabilityStatus;
+  meeting_platform: string;
+  meeting_link: string;
+}
+
 export type MentorProfilePayload = Omit<MentorProfile, "id" | "user_id" | "status" | "major" | "updated_at">;
 
 const unwrap = <T>(payload: ApiResponse<T> | T): T => {
   if (payload && typeof payload === "object" && "data" in payload) {
     return (payload as ApiResponse<T>).data as T;
+  }
+
+  if (payload && typeof payload === "object" && "application" in payload) {
+    return (payload as ApiResponse<T>).application as T;
   }
 
   return payload as T;
@@ -136,7 +180,7 @@ const normalizeProfile = (profile: Partial<MentorProfile>): MentorProfile => ({
 });
 
 const normalizePublicProfile = (payload: PublicMentorProfilePayload): MentorProfile => {
-  const profile = (payload.mentor ?? payload.profile ?? {}) as Partial<MentorProfile> & {
+  const profile = (payload.mentor ?? payload.profile ?? payload) as Partial<MentorProfile> & {
     major?: { name?: string | null; name_en?: string | null; slug?: string | null } | null;
     social_links?: {
       linkedin?: string | null;
@@ -149,6 +193,9 @@ const normalizePublicProfile = (payload: PublicMentorProfilePayload): MentorProf
       : undefined;
 
   return normalizeProfile({
+    id: profile.id,
+    user_id: profile.user_id,
+    status: profile.status,
     major_slug: profile.major_slug ?? profile.major?.slug ?? "",
     is_accepting_students: Boolean(profile.is_accepting_students),
     bio: profile.bio ?? "",
@@ -184,6 +231,32 @@ const normalizeSession = (session: Partial<MentorSession>): MentorSession => ({
   updated_at: session.updated_at,
 });
 
+const normalizeAvailability = (availability: Partial<MentorAvailability>): MentorAvailability => ({
+  uuid: availability.uuid ?? String(availability.id ?? ""),
+  id: availability.id,
+  scheduled_at: availability.scheduled_at ?? "",
+  ends_at: availability.ends_at ?? "",
+  status: availability.status ?? "open",
+  timezone: availability.timezone ?? "UTC",
+  meeting_platform: availability.meeting_platform ?? "",
+  meeting_link: availability.meeting_link ?? "",
+});
+
+const normalizeCreatedAvailability = (payload: unknown): MentorAvailability => {
+  const data = unwrap(payload as ApiResponse<unknown> | unknown);
+
+  if (data && typeof data === "object" && "availability" in data) {
+    return normalizeAvailability((data as { availability?: Partial<MentorAvailability> }).availability ?? {});
+  }
+
+  if (data && typeof data === "object" && "availabilities" in data) {
+    const created = (data as { availabilities?: Partial<MentorAvailability>[] }).availabilities;
+    return normalizeAvailability(Array.isArray(created) ? created[0] ?? {} : {});
+  }
+
+  return normalizeAvailability((data ?? {}) as Partial<MentorAvailability>);
+};
+
 export const mentorService = {
   async getProfileByUsername(username: string): Promise<MentorProfile> {
     const res = await api.get<ApiResponse<PublicMentorProfilePayload>>(`/mentors/${username}`);
@@ -214,5 +287,42 @@ export const mentorService = {
   async updateSession(slug: string, payload: Partial<MentorSessionPayload>): Promise<MentorSession> {
     const res = await api.put<ApiResponse<MentorSession>>(`/mentor/sessions/${slug}`, payload);
     return normalizeSession(unwrap(res.data));
+  },
+
+  async getAvailabilities(sessionSlug: string): Promise<MentorAvailability[]> {
+    const res = await api.get<ApiResponse<MentorAvailability[]> | MentorAvailability[]>(
+      `/mentor/sessions/${sessionSlug}/availabilities`
+    );
+    const data = unwrap<MentorAvailability[]>(res.data);
+    return Array.isArray(data) ? data.map(normalizeAvailability) : [];
+  },
+
+  async createAvailability(
+    sessionSlug: string,
+    payload: MentorAvailabilityPayload
+  ): Promise<MentorAvailability> {
+    const res = await api.post<ApiResponse<{ availabilities?: MentorAvailability[] }> | MentorAvailability>(
+      `/mentor/sessions/${sessionSlug}/availabilities`,
+      { slots: [payload] }
+    );
+
+    return normalizeCreatedAvailability(res.data);
+  },
+
+  async updateAvailability(
+    sessionSlug: string,
+    availability: string | number,
+    payload: Partial<MentorAvailabilityPayload>
+  ): Promise<MentorAvailability> {
+    const res = await api.patch<ApiResponse<MentorAvailability>>(
+      `/mentor/sessions/${sessionSlug}/availabilities/${availability}`,
+      payload
+    );
+
+    return normalizeAvailability(unwrap(res.data));
+  },
+
+  async deleteAvailability(sessionSlug: string, availability: string | number): Promise<void> {
+    await api.delete(`/mentor/sessions/${sessionSlug}/availabilities/${availability}`);
   },
 };

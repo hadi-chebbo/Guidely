@@ -221,7 +221,7 @@ export default function UniversitiesPage() {
           />
         )}
 
-        <div className="flex items-center justify-between border-t border-gray-200 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 p-4">
           <button
             onClick={handlePrev}
             disabled={pageLoading || page <= 1 || hasLocalFilters}
@@ -243,7 +243,7 @@ export default function UniversitiesPage() {
       </AdminCard>
 
       {open && (
-        <AdminModalFrame className="max-w-xl p-6">
+        <AdminModalFrame className="max-w-xl p-4 sm:p-6">
           <h2 className="mb-4 text-xl font-semibold text-gray-900">
             {selected ? "Edit University" : "Create University"}
           </h2>
@@ -259,14 +259,14 @@ export default function UniversitiesPage() {
       )}
 
       {viewOpen && viewUniversity && (
-        <AdminModalFrame className="max-w-2xl p-6">
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <div>
+        <AdminModalFrame className="max-w-2xl p-4 sm:p-6">
+          <div className="mb-5 flex items-start justify-between gap-3 sm:gap-4">
+            <div className="min-w-0">
               <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
                 <BookOpen className="h-3.5 w-3.5" />
                 University majors
               </p>
-              <h2 className="text-2xl font-semibold text-gray-900">{viewUniversity.name_en}</h2>
+              <h2 className="break-words text-xl font-semibold text-gray-900 sm:text-2xl">{viewUniversity.name_en}</h2>
               <p className="mt-1 text-sm text-gray-500">{viewUniversity.location}</p>
             </div>
             <button
@@ -297,8 +297,8 @@ export default function UniversitiesPage() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {universityMajors.map((major) => (
-                  <div key={major.id} className="flex items-center justify-between gap-4 bg-white p-4">
-                    <div>
+                  <div key={major.id} className="flex flex-col gap-3 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <div className="min-w-0">
                       <p className="font-medium text-gray-900">{major.name ?? major.name_en ?? "-"}</p>
                       <p className="mt-1 text-xs text-gray-400">{major.slug}</p>
                     </div>

@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { Search, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import Switch from "@/components/ui/Switch";
+import Select from "@/components/ui/Select";
+import SearchableDropdown, {
+  type SearchableDropdownOption,
+} from "@/components/ui/SearchableDropdown";
 import { AdminToolbar } from "@/components/admin/AdminPage";
-import { mockCategories } from "@/lib/mocks/majors";
-import { getCategories } from "@/services/studentService";
+import type { StudentCategory } from "@/services/studentService";
+import { loadCategoryOptions } from "@/services/dropdownOptions";
 
 export interface MajorFilters {
   search: string;
@@ -34,25 +38,12 @@ const difficultyOptions = [
   { value: "very_hard", label: "Very Hard" },
 ];
 
-const filterSelect =
-  "rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-8 text-sm text-gray-700 shadow-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-300";
-
 export default function MajorsFilters({ filters, onChange }: MajorsFiltersProps) {
-  const { data: categories } = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-  });
+  const [categoryOption, setCategoryOption] =
+    useState<SearchableDropdownOption<StudentCategory> | null>(null);
 
   const set = <K extends keyof MajorFilters>(key: K, value: MajorFilters[K]) =>
     onChange({ ...filters, [key]: value });
-
-  const categoryOptions = [
-    { value: "", label: "All categories" },
-    ...(categories?.length ? categories : mockCategories).map((category) => ({
-      value: String(category.id),
-      label: category.name_en,
-    })),
-  ];
 
   return (
     <AdminToolbar>
@@ -77,40 +68,34 @@ export default function MajorsFilters({ filters, onChange }: MajorsFiltersProps)
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <select
+        <div className="w-full sm:w-48">
+          <SearchableDropdown<StudentCategory>
             value={filters.category}
-            onChange={(event) => set("category", event.target.value)}
-            className={filterSelect}
-            aria-label="Filter by category"
-          >
-            {categoryOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
-            v
-          </span>
+            onChange={(value, option) => {
+              setCategoryOption(option ?? null);
+              set("category", value);
+            }}
+            placeholder="All categories"
+            searchPlaceholder="Search categories..."
+            emptyMessage="No categories found."
+            clearable
+            selectedOption={
+              categoryOption ??
+              (filters.category
+                ? { value: filters.category, label: `Category #${filters.category}` }
+                : null)
+            }
+            loadOptions={loadCategoryOptions}
+          />
         </div>
 
-        <div className="relative">
-          <select
+        <div className="w-full sm:w-48">
+          <Select
             value={filters.difficulty}
             onChange={(event) => set("difficulty", event.target.value)}
-            className={filterSelect}
             aria-label="Filter by difficulty"
-          >
-            {difficultyOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
-            v
-          </span>
+            options={difficultyOptions}
+          />
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm">

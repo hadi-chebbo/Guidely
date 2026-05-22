@@ -25,7 +25,7 @@ const footerLinks = {
 export default function Footer() {
   return (
     <footer className="border-t border-gray-100 bg-white w-full">
-      <div className="max-w-7xl mx-auto px-6 py-5">
+      <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6">
         
         {/* TOP */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
@@ -54,7 +54,7 @@ export default function Footer() {
           </div>
 
           {/* LINKS */}
-          <div className="grid grid-cols-3 gap-x-12 gap-y-4 text-sm">
+          <div className="grid w-full grid-cols-2 gap-x-8 gap-y-6 text-sm sm:w-auto sm:grid-cols-3 lg:gap-x-12">
             {Object.entries(footerLinks).map(([group, links]) => (
               <div key={group}>
                 <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">

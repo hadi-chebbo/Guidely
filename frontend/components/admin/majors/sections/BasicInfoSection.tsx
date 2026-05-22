@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { useQuery } from "@tanstack/react-query";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import SearchableDropdown, {
+  type SearchableDropdownOption,
+} from "@/components/ui/SearchableDropdown";
 import Switch from "@/components/ui/Switch";
 import Textarea from "@/components/ui/Textarea";
-import { getCategories } from "@/services/studentService";
+import type { StudentCategory } from "@/services/studentService";
+import { loadCategoryOptions } from "@/services/dropdownOptions";
 import {
   DEMAND_LEVELS,
   DIFFICULTY_LEVELS,
@@ -24,10 +27,8 @@ function toSlug(value: string) {
 }
 
 export default function BasicInfoSection() {
-  const { data: categories, isLoading: categoriesLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-  });
+  const [selectedCategoryOption, setSelectedCategoryOption] =
+    useState<SearchableDropdownOption<StudentCategory> | null>(null);
 
   const {
     register,
@@ -40,10 +41,6 @@ export default function BasicInfoSection() {
 
   const nameEn = watch("name_en");
   const previousGeneratedSlug = useRef("");
-  const categoryOptions = (categories ?? []).map((category) => ({
-    value: String(category.id),
-    label: category.name_en,
-  }));
   const difficultyOptions = DIFFICULTY_LEVELS.map((level) => ({
     value: level,
     label: level.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
@@ -93,13 +90,24 @@ export default function BasicInfoSection() {
         name="category_id"
         control={control}
         render={({ field }) => (
-          <Select
+          <SearchableDropdown<StudentCategory>
             label="Category"
-            placeholder={categoriesLoading ? "Loading categories..." : "Select category"}
-            options={categoryOptions}
+            placeholder="Select category"
             value={field.value ? String(field.value) : ""}
-            onChange={(event) => field.onChange(Number(event.target.value))}
-            disabled={categoriesLoading || categoryOptions.length === 0}
+            selectedOption={
+              selectedCategoryOption ??
+              (field.value
+                ? {
+                    value: String(field.value),
+                    label: `Category #${field.value}`,
+                  }
+                : null)
+            }
+            loadOptions={loadCategoryOptions}
+            onChange={(value, option) => {
+              setSelectedCategoryOption(option ?? null);
+              field.onChange(Number(value));
+            }}
             error={errors.category_id?.message}
           />
         )}

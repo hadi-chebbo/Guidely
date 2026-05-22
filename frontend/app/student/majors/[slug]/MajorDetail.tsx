@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMajorMentors, getPublicMajor } from "@/services/studentService";
 import {
@@ -28,9 +29,7 @@ import {
   toggleFavoriteMajor,
 } from "@/services/studentService";
 import { useAuth } from "@/app/contexts/AuthContext";
-import MentorProfileModal, {
-  MentorCard,
-} from "@/components/mentors/MentorProfileModal";
+import { MentorCard } from "@/components/mentors/MentorProfileModal";
 
 /* ── Types ── */
 interface MajorPoint { type: string; content: string }
@@ -143,7 +142,7 @@ function SkeletonDetail() {
   return (
     <div className="min-h-screen animate-pulse bg-gradient-to-br from-brand-50 via-white to-slate-100">
       {/* Hero skeleton */}
-      <div className="bg-brand-950 px-6 py-12">
+      <div className="bg-brand-950 px-4 py-10 sm:px-6 sm:py-12">
         <div className="mx-auto max-w-4xl space-y-3">
           <div className="h-5 w-24 rounded-full bg-white/20" />
           <div className="h-10 w-2/3 rounded-xl bg-white/20" />
@@ -158,7 +157,7 @@ function SkeletonDetail() {
         </div>
       </div>
       {/* Body skeleton */}
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
             {[160, 120, 200, 140].map((h, i) => (
@@ -216,10 +215,10 @@ interface Props {
 }
 
 export default function MajorDetail({ slug, initialData, error: initialError }: Props) {
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [pendingFavorite, setPendingFavorite] = useState(false);
-  const [selectedMentor, setSelectedMentor] = useState<string | null>(null);
 
   const { data: major, isLoading, isError, refetch } = useQuery({
     queryKey: ["public-major", slug],
@@ -295,7 +294,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-slate-100">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-6 py-12">
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-4 py-10 sm:px-6 sm:py-12">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "18px 18px" }}
@@ -307,7 +306,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
               {category.name_en ?? category.name}
             </span>
           )}
-          <h1 className="mt-3 font-heading text-4xl font-extrabold text-white">{String(major.name_en)}</h1>
+          <h1 className="mt-3 font-heading text-3xl font-extrabold text-white sm:text-4xl">{String(major.name_en)}</h1>
           {major.name_ar && <p className="mt-1 text-white/50 text-sm">{String(major.name_ar)}</p>}
           {major.description && (
             <p className="mt-3 max-w-2xl text-white/70 text-base leading-relaxed">{String(major.description)}</p>
@@ -354,7 +353,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-4xl px-6 py-8 space-y-6">
+      <div className="mx-auto max-w-4xl px-4 py-6 space-y-6 sm:px-6 sm:py-8">
         <div className="grid gap-6 md:grid-cols-3">
           {/* Main column */}
           <div className="md:col-span-2 space-y-6">
@@ -366,7 +365,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
 
             <MajorMentorsSection
               slug={slug}
-              onViewMentor={setSelectedMentor}
+              onViewMentor={(username) => router.push(`/student/mentors/${username}`)}
             />
 
             {(pros.length > 0 || cons.length > 0) && (
@@ -400,7 +399,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
 
             {jobs.length > 0 && (
               <Section title="Job Opportunities">
-                <div className="overflow-hidden rounded-xl border border-gray-100">
+                <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
                       <tr>
@@ -519,11 +518,6 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
           </div>
         </div>
       </div>
-
-      <MentorProfileModal
-        username={selectedMentor}
-        onClose={() => setSelectedMentor(null)}
-      />
     </div>
   );
 }

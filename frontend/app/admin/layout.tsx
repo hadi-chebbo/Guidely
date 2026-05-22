@@ -31,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="flex min-h-screen bg-gray-50">
         <div className="hidden w-72 border-r border-gray-200 bg-white lg:flex" />
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <div className="h-16 border-b border-gray-200 bg-white" />
           <main className="flex-1 space-y-4 p-4 sm:p-6 lg:p-8">
             <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />

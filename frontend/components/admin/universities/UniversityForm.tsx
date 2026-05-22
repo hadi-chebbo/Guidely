@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { University } from "@/types/university";
+import Select from "@/components/ui/Select";
 
 type FormState = {
   name_en: string;
@@ -213,16 +214,16 @@ export default function UniversityForm({
       </div>
 
       {/* TYPE */}
-      <select
+      <Select
         value={form.type}
         onChange={(e) =>
           handle("type", e.target.value as "public" | "private")
         }
-        className="input"
-      >
-        <option value="private">Private</option>
-        <option value="public">Public</option>
-      </select>
+        options={[
+          { value: "private", label: "Private" },
+          { value: "public", label: "Public" },
+        ]}
+      />
 
       {/* DESCRIPTION */}
       <textarea
