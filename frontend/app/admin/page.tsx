@@ -13,11 +13,13 @@ import {
   GraduationCap,
   Plus,
   ShieldCheck,
+  UserCheck,
   Users,
 } from "lucide-react";
 import { AdminCard, AdminPageHeader, AdminPageShell } from "@/components/admin/AdminPage";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { getMajors } from "@/services/majorsService";
+import { mentorApplicationService } from "@/services/mentorApplicationService";
 import { universityService } from "@/services/universityService";
 import { userService } from "@/services/userService";
 
@@ -37,6 +39,16 @@ const quickActions = [
     href: "/admin/users",
     icon: Users,
   },
+  {
+    label: "Manage Mentors",
+    href: "/admin/mentors",
+    icon: UserCheck,
+  },
+  {
+    label: "Review Applications",
+    href: "/admin/mentor-applications",
+    icon: ClipboardList,
+  },
 ];
 
 export default function AdminOverviewPage() {
@@ -50,12 +62,12 @@ export default function AdminOverviewPage() {
         return;
       }
       if (user.role !== "admin") {
-        router.push("/");
+        router.push(user.role === "mentor" ? "/mentor" : "/student/dashboard");
       }
     }
   }, [isAuthenticated, user, loading, router]);
 
-  const [majorsQuery, unisQuery, usersQuery] = useQueries({
+  const [majorsQuery, unisQuery, usersQuery, mentorsQuery, applicationsQuery] = useQueries({
     queries: [
       {
         queryKey: ["admin-overview-majors"],
@@ -70,6 +82,16 @@ export default function AdminOverviewPage() {
       {
         queryKey: ["admin-overview-users"],
         queryFn: () => userService.getAll(1),
+        enabled: isAuthenticated && user?.role === "admin",
+      },
+      {
+        queryKey: ["admin-overview-mentors"],
+        queryFn: () => userService.getAll(1, "mentor"),
+        enabled: isAuthenticated && user?.role === "admin",
+      },
+      {
+        queryKey: ["admin-overview-mentor-applications"],
+        queryFn: () => mentorApplicationService.getPending(1),
         enabled: isAuthenticated && user?.role === "admin",
       },
     ],
@@ -96,6 +118,20 @@ export default function AdminOverviewPage() {
       icon: Users,
       href: "/admin/users",
       value: usersQuery.isLoading ? null : (usersQuery.data?.meta?.total ?? "-"),
+    },
+    {
+      label: "Mentors",
+      helper: "Approved mentor accounts",
+      icon: UserCheck,
+      href: "/admin/mentors",
+      value: mentorsQuery.isLoading ? null : (mentorsQuery.data?.meta?.total ?? "-"),
+    },
+    {
+      label: "Applications",
+      helper: "Pending mentor reviews",
+      icon: ClipboardList,
+      href: "/admin/mentor-applications",
+      value: applicationsQuery.isLoading ? null : (applicationsQuery.data?.meta?.total ?? "-"),
     },
     {
       label: "Questions",
@@ -161,7 +197,7 @@ export default function AdminOverviewPage() {
         </div>
       </AdminCard>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {statsConfig.map(({ label, helper, value, icon: Icon, href }) => (
           <Link
             key={label}
@@ -197,7 +233,7 @@ export default function AdminOverviewPage() {
             <GraduationCap className="h-5 w-5 text-brand-600" />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {quickActions.map(({ label, href, icon: Icon }) => (
               <Link
                 key={label}
