@@ -16,6 +16,7 @@ const navLinks = [
   { href: "/student/universities",label: "Universities" },
   { href: "/student/quiz",      label: "Personality Test" },
   { href: "/student/mentors",     label: "Mentors" },
+  { href: "/student/sessions", label: "Sessions" },
 ];
 
 export default function Navbar() {
@@ -58,7 +59,7 @@ export default function Navbar() {
 </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden xl:flex items-center gap-1">
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}
@@ -76,7 +77,7 @@ export default function Navbar() {
         </nav>
 
         {/* Desktop CTA - Auth Aware */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden xl:flex items-center gap-3">
           {isAuthenticated && user ? (
             <>
               {user.role === "admin" && (
@@ -135,7 +136,7 @@ export default function Navbar() {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+          className="xl:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
           onClick={() => setMobileOpen((o) => !o)}
           aria-label="Toggle menu"
         >
@@ -145,7 +146,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 pb-4 pt-2 space-y-1">
+        <div className="xl:hidden border-t border-gray-100 bg-white px-4 pb-4 pt-2 space-y-1">
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}

@@ -28,6 +28,7 @@ import { cn }        from "@/lib/utils";
 import Input         from "@/components/ui/Input";
 import Button        from "@/components/ui/Button";
 import FormMessage   from "@/components/ui/FormMessage";
+import Select        from "@/components/ui/Select";
 
 /* ── Types ───────────────────────────────────────────────────── */
 type AllFormData = RegisterStep1Data &
@@ -239,6 +240,8 @@ function Step2({
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterStep2Data>({
     resolver: zodResolver(registerStep2Schema),
@@ -258,7 +261,15 @@ function Step2({
       />
 
       {/* Grade select */}
-      <div>
+      <Select
+        label="Current grade / level"
+        placeholder="Select your grade..."
+        options={GRADE_OPTIONS.map(({ value, label }) => ({ value, label }))}
+        value={watch("grade") ?? ""}
+        onChange={(event) => setValue("grade", event.target.value, { shouldDirty: true, shouldValidate: true })}
+        error={errors.grade?.message}
+      />
+      <div className="hidden">
         <label className="form-label" htmlFor="grade">
           Current grade / level
         </label>

@@ -39,6 +39,7 @@ const navSections: Array<{ title: string; links: AdminNavLink[] }> = [
     links: [
       { href: "/admin/users", label: "Users", icon: Users },
       { href: "/admin/mentors", label: "Mentors", icon: UserCheck },
+      { href: "/admin/mentor-applications", label: "Applications", icon: ClipboardList },
     ],
   },
   {

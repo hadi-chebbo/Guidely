@@ -334,7 +334,7 @@ function MajorsContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-slate-100">
       {/* Hero header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-600 to-indigo-700 px-6 pb-8 pt-10">
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-600 to-indigo-700 px-4 pb-8 pt-10 sm:px-6">
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.04]" />
         <div className="relative mx-auto max-w-7xl">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-white/70 ring-1 ring-white/20 backdrop-blur-sm">
@@ -342,7 +342,7 @@ function MajorsContent() {
             Major explorer
           </span>
 
-          <h1 className="mt-4 max-w-3xl font-heading text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+          <h1 className="mt-4 max-w-3xl font-heading text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
             Find the major that fits your future
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
@@ -354,7 +354,7 @@ function MajorsContent() {
       </div>
 
       {/* Controls bar */}
-      <div className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/90 px-6 py-2.5 backdrop-blur-md">
+      <div className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/90 px-4 py-2.5 backdrop-blur-md sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2 min-w-0">
             <span className="text-sm text-gray-500 flex-shrink-0">
@@ -476,7 +476,7 @@ function MajorsContent() {
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-7xl space-y-6 px-6 py-6">
+        <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
         <section className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
           <div className="grid gap-4 lg:grid-cols-[1fr_auto_auto] lg:items-center">
             <div className="relative">

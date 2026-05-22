@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChevronDown, HelpCircle, Pencil, Plus, Trash2 } from "lucide-react";
+import { HelpCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   AdminCard,
   AdminPageHeader,
@@ -11,8 +11,11 @@ import {
   AdminToolbar,
 } from "@/components/admin/AdminPage";
 import { Table, TableEmpty, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
+import SearchableDropdown, {
+  type SearchableDropdownOption,
+} from "@/components/ui/SearchableDropdown";
 import { createFaq, deleteFaq, getFaqs, updateFaq } from "@/services/faqsService";
-import { getMajors } from "@/services/majorsService";
+import { loadAdminMajorOptions } from "@/services/dropdownOptions";
 import type { FAQ, MajorListItem } from "@/types/major";
 import FaqModal from "@/components/admin/faqs/FaqModal";
 
@@ -22,13 +25,8 @@ export default function FaqsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  const { data: majorsData } = useQuery({
-    queryKey: ["majors-all"],
-    queryFn: () => getMajors({ per_page: 100 }),
-  });
-
-  const majors: MajorListItem[] = majorsData?.data ?? [];
+  const [selectedMajorOption, setSelectedMajorOption] =
+    useState<SearchableDropdownOption<MajorListItem> | null>(null);
 
   const { data: faqs = [], isLoading: faqsLoading } = useQuery({
     queryKey: ["faqs", selectedMajorId],
@@ -87,7 +85,7 @@ export default function FaqsPage() {
     setModalOpen(true);
   };
 
-  const selectedMajor = majors.find((m) => m.id === selectedMajorId);
+  const selectedMajor = selectedMajorOption?.item;
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
@@ -99,20 +97,19 @@ export default function FaqsPage() {
       />
 
       <AdminToolbar>
-        <div className="relative w-full sm:max-w-sm">
-          <select
-            value={selectedMajorId ?? ""}
-            onChange={(e) => setSelectedMajorId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
-          >
-            <option value="">Select a major...</option>
-            {majors.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name_en}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <div className="w-full sm:max-w-sm">
+          <SearchableDropdown<MajorListItem>
+            value={selectedMajorId ? String(selectedMajorId) : ""}
+            selectedOption={selectedMajorOption}
+            onChange={(value, option) => {
+              setSelectedMajorId(value ? Number(value) : null);
+              setSelectedMajorOption(option ?? null);
+            }}
+            loadOptions={loadAdminMajorOptions}
+            placeholder="Select a major..."
+            searchPlaceholder="Search majors..."
+            emptyMessage="No majors found."
+          />
         </div>
 
         <button

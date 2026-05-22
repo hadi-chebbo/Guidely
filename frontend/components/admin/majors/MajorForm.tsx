@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, FormProvider } from "react-hook-form";
-import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
@@ -13,9 +12,14 @@ import {
   type MajorFormData,
 } from "@/lib/validations/major";
 import { createMajor, updateMajor } from "@/services/majorsService";
-import { getCategories } from "@/services/studentService";
+import type { StudentCategory } from "@/services/studentService";
+import { loadCategoryOptions } from "@/services/dropdownOptions";
 import type { Major } from "@/types/major";
 import SkillsSection from "./sections/SkillsSection";
+import Select from "@/components/ui/Select";
+import SearchableDropdown, {
+  type SearchableDropdownOption,
+} from "@/components/ui/SearchableDropdown";
 
 const DEFAULT_VALUES: Partial<MajorFormData> = {
   name_en: "",
@@ -153,10 +157,8 @@ export default function MajorForm({ initialData, mode, majorId, majorDetails, on
   const [activeStep, setActiveStep] = useState<(typeof FORM_STEPS)[number]["id"]>("basic");
   const autoSaveTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const previousGeneratedSlug = useRef("");
-  const { data: categories, isLoading: categoriesLoading } = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-  });
+  const [selectedCategoryOption, setSelectedCategoryOption] =
+    useState<SearchableDropdownOption<StudentCategory> | null>(null);
 
   const methods = useForm<MajorFormData>({
     defaultValues: { ...DEFAULT_VALUES, ...initialData },
@@ -174,6 +176,25 @@ export default function MajorForm({ initialData, mode, majorId, majorDetails, on
   } = methods;
   const initialSkillIds = getUniqueSkillIds(initialData?.skills ?? []);
   const nameEn = watch("name_en");
+  const watchedCategoryId = watch("category_id");
+  const categoryFallbackOption =
+    watchedCategoryId && !selectedCategoryOption
+      ? {
+          value: String(watchedCategoryId),
+          label:
+            majorDetails?.category?.name_en ??
+            majorDetails?.category?.name_ar ??
+            `Category #${watchedCategoryId}`,
+        }
+      : selectedCategoryOption;
+  const difficultyOptions = DIFFICULTY_LEVELS.map((level) => ({
+    value: level,
+    label: level.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
+  }));
+  const demandOptions = DEMAND_LEVELS.map((level) => ({
+    value: level,
+    label: level.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
+  }));
 
   // On create: check localStorage for saved draft and prompt resume
   useEffect(() => {
@@ -462,20 +483,19 @@ export default function MajorForm({ initialData, mode, majorId, majorDetails, on
           </div>
 
           <div>
-            <select
-              {...register("category_id", { valueAsNumber: true })}
-              disabled={categoriesLoading}
-              className={`input ${errors.category_id ? "input-error" : ""}`}
-            >
-              <option value="">
-                {categoriesLoading ? "Loading categories..." : "Select category *"}
-              </option>
-              {(categories ?? []).map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name_en}
-                </option>
-              ))}
-            </select>
+            <SearchableDropdown<StudentCategory>
+              placeholder="Select category *"
+              searchPlaceholder="Search categories..."
+              emptyMessage="No categories found."
+              selectedOption={categoryFallbackOption}
+              value={watch("category_id") ? String(watch("category_id")) : ""}
+              loadOptions={loadCategoryOptions}
+              onChange={(value, option) => {
+                setSelectedCategoryOption(option ?? null);
+                setValue("category_id", Number(value), { shouldDirty: true, shouldValidate: true });
+              }}
+              error={errors.category_id?.message}
+            />
             {errors.category_id && <p className="error">{errors.category_id.message}</p>}
           </div>
 
@@ -491,29 +511,23 @@ export default function MajorForm({ initialData, mode, majorId, majorDetails, on
             {errors.duration_years && <p className="error">{errors.duration_years.message}</p>}
           </div>
 
-          <select {...register("difficulty_level")} className="input">
-            {DIFFICULTY_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
-              </option>
-            ))}
-          </select>
+          <Select
+            options={difficultyOptions}
+            value={watch("difficulty_level") ?? "medium"}
+            onChange={(event) => setValue("difficulty_level", event.target.value as MajorFormData["difficulty_level"], { shouldDirty: true })}
+          />
 
-          <select {...register("local_demand")} className="input">
-            {DEMAND_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                Local: {level.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
-              </option>
-            ))}
-          </select>
+          <Select
+            options={demandOptions.map((option) => ({ ...option, label: `Local: ${option.label}` }))}
+            value={watch("local_demand") ?? "medium"}
+            onChange={(event) => setValue("local_demand", event.target.value as MajorFormData["local_demand"], { shouldDirty: true })}
+          />
 
-          <select {...register("international_demand")} className="input">
-            {DEMAND_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                International: {level.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
-              </option>
-            ))}
-          </select>
+          <Select
+            options={demandOptions.map((option) => ({ ...option, label: `International: ${option.label}` }))}
+            value={watch("international_demand") ?? "medium"}
+            onChange={(event) => setValue("international_demand", event.target.value as MajorFormData["international_demand"], { shouldDirty: true })}
+          />
 
           <div>
             <input

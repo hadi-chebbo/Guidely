@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
-import { useQuery } from "@tanstack/react-query";
-import { X, Plus } from "lucide-react";
+import { X } from "lucide-react";
 import { ADMIN_SKILLS, resolveAdminSkillLabel } from "@/lib/adminSkills";
 import { getAvailableSkills } from "@/services/majorsService";
 import type { MajorFormData } from "@/lib/validations/major";
+import SearchableDropdown, {
+  type SearchableDropdownOption,
+} from "@/components/ui/SearchableDropdown";
 
 interface SkillsSectionProps {
   lockedSkillIds?: number[];
@@ -15,34 +17,46 @@ interface SkillsSectionProps {
 export default function SkillsSection({ lockedSkillIds = [] }: SkillsSectionProps) {
   const { control, formState: { errors } } = useFormContext<MajorFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: "skills" });
-  const { data: availableSkills } = useQuery({
-    queryKey: ["admin-major-skill-options"],
-    queryFn: getAvailableSkills,
-  });
+  const [skillLabels, setSkillLabels] = useState<Map<number, string>>(new Map());
 
-  const [search, setSearch] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
+  const selectedIds = useMemo(() => fields.map((f) => f.skill_id), [fields]);
+  const selectedIdsKey = selectedIds.join(",");
+  const loadSkillOptions = useCallback(
+    async (search: string): Promise<SearchableDropdownOption<{ id: number; label: string }>[]> => {
+      const availableSkills = await getAvailableSkills();
+      const source = availableSkills?.length
+        ? availableSkills.map((skill) => ({
+            id: skill.id,
+            label: skill.name,
+          }))
+        : ADMIN_SKILLS;
+      const normalized = search.trim().toLowerCase();
+      const options = source
+        .filter(
+          (skill) =>
+            !selectedIds.includes(skill.id) &&
+            (normalized ? skill.label.toLowerCase().includes(normalized) : true),
+        )
+        .slice(0, search ? 10 : 3);
 
-  const selectedIds = fields.map((f) => f.skill_id);
-  const skillOptions = availableSkills?.length
-    ? availableSkills.map((skill) => ({
-        id: skill.id,
-        label: skill.name,
-        type: skill.type,
-      }))
-    : ADMIN_SKILLS;
-  const skillLabels = new Map(skillOptions.map((skill) => [skill.id, skill.label]));
+      setSkillLabels((current) => {
+        const next = new Map(current);
+        source.forEach((skill) => next.set(skill.id, skill.label));
+        return next;
+      });
 
-  const filtered = skillOptions.filter(
-    (s) =>
-      !selectedIds.includes(s.id) &&
-      s.label.toLowerCase().includes(search.toLowerCase())
+      return options.map((skill) => ({
+        value: String(skill.id),
+        label: skill.label,
+        item: skill,
+      }));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedIdsKey],
   );
 
   const addSkill = (id: number) => {
     append({ skill_id: id });
-    setSearch("");
-    setShowDropdown(false);
   };
 
   return (
@@ -85,55 +99,22 @@ export default function SkillsSection({ lockedSkillIds = [] }: SkillsSectionProp
       )}
 
       <div className="relative">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setShowDropdown(true); }}
-            onFocus={() => setShowDropdown(true)}
-            placeholder="Search or type to add skill..."
-            className="auth-input flex-1"
-          />
-          <button
-            type="button"
-            onClick={() => setShowDropdown((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-
-        {showDropdown && (
-          <div className="absolute z-10 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-lg">
-            {filtered.length === 0 ? (
-              <p className="px-4 py-3 text-sm text-gray-400 italic">
-                {search ? `No match for "${search}"` : "All skills selected"}
-              </p>
-            ) : (
-              <ul className="max-h-48 overflow-y-auto py-1">
-                {filtered.map((skill) => (
-                  <li key={skill.id}>
-                    <button
-                      type="button"
-                      onClick={() => addSkill(skill.id)}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      {skill.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-      </div>
-
-      {showDropdown && (
-        <div
-          className="fixed inset-0 z-[9]"
-          onClick={() => setShowDropdown(false)}
+        <SearchableDropdown<{ id: number; label: string }>
+          value=""
+          onChange={(value, option) => {
+            if (!value) return;
+            const id = Number(value);
+            if (option?.label) {
+              setSkillLabels((current) => new Map(current).set(id, option.label));
+            }
+            addSkill(id);
+          }}
+          loadOptions={loadSkillOptions}
+          placeholder="Search or type to add skill..."
+          searchPlaceholder="Search skills..."
+          emptyMessage="All skills selected."
         />
-      )}
+      </div>
     </div>
   );
 }

@@ -80,7 +80,7 @@ function FormPanel({ children }: { children: React.ReactNode }) {
 /* ── Root auth layout ────────────────────────────────────────── */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen min-w-0">
       <BrandPanel />
       <FormPanel>{children}</FormPanel>
     </div>

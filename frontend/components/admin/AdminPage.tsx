@@ -9,7 +9,7 @@ export function AdminPageShell({
   className?: string;
 }) {
   return (
-    <div className={cn("mx-auto flex w-full max-w-7xl flex-col gap-6", className)}>
+    <div className={cn("mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6", className)}>
       {children}
     </div>
   );
@@ -41,14 +41,14 @@ export function AdminPageHeader({
             {eyebrow}
           </div>
         )}
-        <h1 className="text-2xl font-bold tracking-normal text-gray-900 sm:text-3xl">
+        <h1 className="break-words text-2xl font-bold tracking-normal text-gray-900 sm:text-3xl">
           {title}
         </h1>
         {description && (
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">{description}</p>
         )}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">{actions}</div>}
     </div>
   );
 }
@@ -99,8 +99,8 @@ export function AdminModalFrame({
   className?: string;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-900/35 p-4 backdrop-blur-sm">
-      <div className={cn("w-full rounded-lg border border-gray-200 bg-white shadow-xl", className)}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-900/35 p-3 backdrop-blur-sm sm:p-4">
+      <div className={cn("max-h-[92vh] w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl", className)}>
         {children}
       </div>
     </div>

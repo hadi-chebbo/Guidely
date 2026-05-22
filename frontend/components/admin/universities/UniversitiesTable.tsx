@@ -32,7 +32,7 @@ export default function UniversitiesTable({
         {data.map((u) => (
           <TR key={u.id} className="hover:bg-brand-50/40">
             <TD>
-              <div className="flex min-w-64 items-center gap-3">
+              <div className="flex min-w-56 items-center gap-3">
                 <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
                   {u.logo_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
