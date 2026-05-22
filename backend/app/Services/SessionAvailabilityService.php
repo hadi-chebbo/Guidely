@@ -69,9 +69,13 @@ class SessionAvailabilityService
 
             'scheduled_at'      => $slot['scheduled_at'],
 
-            'ends_at'           => $slot['ends_at'],
+            'ends_at'           => $slot['ends_at'] ?? null,
 
             'timezone'          => $slot['timezone'] ?? 'UTC',
+
+            'meeting_platform'  => $slot['meeting_platform'],
+
+            'meeting_link'      => $slot['meeting_link'],
 
             'status'            => 'open',
 

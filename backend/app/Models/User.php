@@ -57,4 +57,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(MentorSession::class);
     }
+
+    public function reservations()
+    {
+        return $this->hasMany(UserReservation::class);
+    }
 }

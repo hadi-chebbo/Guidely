@@ -30,7 +30,7 @@ export default function Pagination({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-4 px-1 py-2 text-sm text-gray-600",
+        "flex flex-col items-stretch justify-between gap-3 px-1 py-2 text-sm text-gray-600 sm:flex-row sm:items-center sm:gap-4",
         className
       )}
     >
@@ -38,7 +38,7 @@ export default function Pagination({
         Showing {from}–{to} of {total}
       </span>
 
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
         <NavButton
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}

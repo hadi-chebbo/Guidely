@@ -216,7 +216,7 @@ export default function UsersPage() {
           </Table>
         )}
 
-        <div className="flex items-center justify-between border-t border-gray-200 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 p-4">
           <button
             onClick={handlePrev}
             disabled={page === 1 || pageLoading || search.trim().length >= 2}
@@ -238,7 +238,7 @@ export default function UsersPage() {
       </AdminCard>
 
       {openView && selected && (
-        <AdminModalFrame className="max-w-lg p-6">
+        <AdminModalFrame className="max-w-lg p-4 sm:p-6">
           <h2 className="mb-4 text-xl font-semibold text-gray-900">Student Details</h2>
           <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
             {[

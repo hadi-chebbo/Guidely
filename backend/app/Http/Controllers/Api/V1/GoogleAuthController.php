@@ -24,7 +24,7 @@ class GoogleAuthController extends Controller
         try{
             $googleUser = Socialite::driver('google')->stateless()->user();
         }catch (Exception $e){
-            return $this->error("Google Authentication Failed " , 401);
+            return redirect($this->frontendUrl('/login?error=google_auth_failed'));
         }
 
         $user = User::where('google_id', $googleUser->getId())
@@ -32,14 +32,14 @@ class GoogleAuthController extends Controller
                     ->first();
         
         if($user){
-            if(!$user->google_id){
-                $user->update([
-                    'google_id' => $googleUser->getId(),
-                    'avatar_url' => $googleUser->getAvatar(),
-                ]);
+            $updates = [];
+            if (!$user->google_id) {
+                $updates['google_id'] = $googleUser->getId();
             }
+            $updates['avatar_url'] = $googleUser->getAvatar();
+            $user->update($updates);
         }
-        else{
+        else {
             $user = User::create([
                 'name'              => $googleUser->getName(),
                 'username'          => $this->generateUsername($googleUser->getName()),
@@ -52,16 +52,20 @@ class GoogleAuthController extends Controller
         }
 
         if ($user->is_blocked) {
-            return $this->error('Your account has been blocked', 403);
+            return redirect($this->frontendUrl('/login?error=blocked'));
         }
 
         $token = $user->createToken('google-auth')->plainTextToken;
 
-        return $this->success([
-            'token' => $token,
-            'user'  => new UserResource($user),
-        ], 'Logged in with Google successfully',200);
+        return redirect($this->frontendUrl('/auth/google/callback?token=' . $token));
 
+    }
+
+    private function frontendUrl(string $path): string
+    {
+        $base = rtrim(config('app.frontend_url'), '/');
+        
+        return $base . $path;
     }
 
     private function generateUsername(string $name): string

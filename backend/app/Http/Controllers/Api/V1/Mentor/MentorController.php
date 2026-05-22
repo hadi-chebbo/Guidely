@@ -42,4 +42,15 @@ class MentorController extends Controller
             200
         );
     }
+
+    public function show()
+    {
+        $user = auth()->user();
+
+        $mentor = $user->mentorProfile()
+            ->with('major', 'user')
+            ->first();
+        
+        return $this->success(new MentorResource($mentor), 'Mentor profile details fetched successfully', 200);
+    }
 }

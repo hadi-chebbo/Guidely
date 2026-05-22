@@ -80,15 +80,11 @@ class MajorController extends Controller
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
-        $major = DB::transaction(function () use ($validated, $skills) {
             $major = Major::create($validated);
 
             if (! empty($skills)) {
                 $major->skills()->sync($skills);
             }
-
-            return $major;
-        });
 
         return $this->success(
             new MajorResource($major->load(['category', 'skills'])),
@@ -109,15 +105,11 @@ class MajorController extends Controller
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
-        $major = DB::transaction(function () use ($major, $validated, $skills) {
             $major->update($validated);
 
             if (! empty($skills)) {
                 $major->skills()->sync($skills);
             }
-
-            return $major;
-        });
 
         return $this->success(new MajorResource($major->load(['category','skills'])),"Major Updated Successfully",200);
     }

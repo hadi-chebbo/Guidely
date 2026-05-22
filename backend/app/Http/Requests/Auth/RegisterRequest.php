@@ -28,7 +28,7 @@ class RegisterRequest extends FormRequest
             'name'               => ['required', 'string', 'max:255'],
             'username'           => ['required','string','min:3','max:20','alpha_dash','unique:users,username',],
             'email'              => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password'           => ['required', 'string', 'min:8', 'confirmed'],
+            'password'           => ['required', 'string', 'min:8', 'confirmed', 'regex:/[A-Z]/', 'regex:/[0-9]/'],
             'phone'              => ['nullable', 'string', 'max:20'],
             'school'             => ['nullable', 'string', 'max:255'],
             'grade'              => ['nullable', 'string', 'max:50'],

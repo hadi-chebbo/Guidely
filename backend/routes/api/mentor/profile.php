@@ -8,4 +8,5 @@ Route::prefix('mentor/profile')
     ->controller(MentorController::class)
     ->group(function (): void {
         Route::patch('/', 'update')->name('api.v1.mentor.profile.update');
+        Route::get('/', 'show');
     });

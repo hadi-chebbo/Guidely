@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRightLeft,
@@ -21,16 +21,21 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SearchableDropdown, {
+  type SearchableDropdownOption,
+} from "@/components/ui/SearchableDropdown";
 import {
   comparePublicMajors,
   comparePublicUniversities,
-  getPublicMajors,
-  getPublicUniversities,
   type MajorComparisonResponse,
   type PublicMajorItem,
   type PublicUniversityItem,
   type UniversityComparisonResponse,
 } from "@/services/studentService";
+import {
+  loadPublicMajorOptions,
+  loadPublicUniversityOptions,
+} from "@/services/dropdownOptions";
 
 type CompareMode = "majors" | "universities";
 
@@ -233,38 +238,43 @@ function SelectField<T extends { slug: string; name_en: string }>({
   label,
   value,
   onChange,
-  options,
+  loadOptions,
+  selectedOption,
   exclude,
   placeholder,
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
-  options: T[];
+  onChange: (value: string, option?: SearchableDropdownOption<T>) => void;
+  loadOptions: (search: string) => Promise<SearchableDropdownOption<T>[]>;
+  selectedOption?: SearchableDropdownOption<T> | null;
   exclude: string;
   placeholder: string;
 }) {
+  const optionType = label.toLowerCase().includes("university")
+    ? "universities"
+    : "majors";
+
   return (
     <label className="block min-w-0">
       <span className="mb-2 block text-xs font-semibold uppercase text-gray-500">
         {label}
       </span>
-      <select
+      <SearchableDropdown<T>
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"
-      >
-        <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option
-            key={option.slug}
-            value={option.slug}
-            disabled={option.slug === exclude}
-          >
-            {option.name_en}
-          </option>
-        ))}
-      </select>
+        selectedOption={selectedOption}
+        onChange={onChange}
+        loadOptions={async (search) => {
+          const options = await loadOptions(search);
+          return options.map((option) => ({
+            ...option,
+            disabled: option.disabled || option.value === exclude,
+          }));
+        }}
+        placeholder={placeholder}
+        searchPlaceholder={`Search ${optionType}...`}
+        emptyMessage={`No ${optionType} found.`}
+      />
     </label>
   );
 }
@@ -1006,25 +1016,14 @@ function UniversityResult({
 function MajorComparePanel() {
   const [first, setFirst] = useState("");
   const [second, setSecond] = useState("");
+  const [firstOption, setFirstOption] =
+    useState<SearchableDropdownOption<PublicMajorItem> | null>(null);
+  const [secondOption, setSecondOption] =
+    useState<SearchableDropdownOption<PublicMajorItem> | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["compare-majors-source"],
-    queryFn: () => getPublicMajors({ per_page: 100, page: 1 }),
-  });
-
-  const majors = useMemo(() => {
-    if (!data) return [];
-    return [...data.recommended, ...data.featured, ...data.others.data]
-      .filter(
-        (major, index, all) =>
-          all.findIndex((item) => item.slug === major.slug) === index,
-      )
-      .sort((a, b) => a.name_en.localeCompare(b.name_en));
-  }, [data]);
-
-  const selected = [first, second]
-    .map((slug) => majors.find((major) => major.slug === slug))
-    .filter((major): major is PublicMajorItem => Boolean(major));
+  const selected = [firstOption?.item, secondOption?.item].filter(
+    (major): major is PublicMajorItem => Boolean(major),
+  );
   const canCompare = Boolean(first && second && first !== second);
 
   const {
@@ -1054,8 +1053,12 @@ function MajorComparePanel() {
           <SelectField
             label="First major"
             value={first}
-            onChange={setFirst}
-            options={majors}
+            selectedOption={firstOption}
+            onChange={(value, option) => {
+              setFirst(value);
+              setFirstOption(option ?? null);
+            }}
+            loadOptions={loadPublicMajorOptions}
             exclude={second}
             placeholder="Choose a major"
           />
@@ -1065,24 +1068,26 @@ function MajorComparePanel() {
             onClick={() => {
               setFirst(second);
               setSecond(first);
+              setFirstOption(secondOption);
+              setSecondOption(firstOption);
             }}
           />
           <SelectField
             label="Second major"
             value={second}
-            onChange={setSecond}
-            options={majors}
+            selectedOption={secondOption}
+            onChange={(value, option) => {
+              setSecond(value);
+              setSecondOption(option ?? null);
+            }}
+            loadOptions={loadPublicMajorOptions}
             exclude={first}
             placeholder="Choose a major"
           />
         </div>
       </section>
 
-      {isLoading ? (
-        <StatusPanel icon={Loader2} title="Loading majors">
-          Preparing the comparison options.
-        </StatusPanel>
-      ) : !canCompare ? (
+      {!canCompare ? (
         <StatusPanel icon={SearchX} title="Select two majors">
           Pick two different majors to compare salary range, difficulty, shared
           skills, and university availability.
@@ -1118,19 +1123,14 @@ function MajorComparePanel() {
 function UniversityComparePanel() {
   const [first, setFirst] = useState("");
   const [second, setSecond] = useState("");
+  const [firstOption, setFirstOption] =
+    useState<SearchableDropdownOption<PublicUniversityItem> | null>(null);
+  const [secondOption, setSecondOption] =
+    useState<SearchableDropdownOption<PublicUniversityItem> | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["compare-universities-source"],
-    queryFn: () => getPublicUniversities({ per_page: 50, page: 1 }),
-  });
-
-  const universities = useMemo(
-    () => [...(data?.data ?? [])].sort((a, b) => a.name_en.localeCompare(b.name_en)),
-    [data?.data],
+  const selected = [firstOption?.item, secondOption?.item].filter(
+    (university): university is PublicUniversityItem => Boolean(university),
   );
-  const selected = [first, second]
-    .map((slug) => universities.find((university) => university.slug === slug))
-    .filter((university): university is PublicUniversityItem => Boolean(university));
   const canCompare = Boolean(first && second && first !== second);
 
   const {
@@ -1163,8 +1163,12 @@ function UniversityComparePanel() {
           <SelectField
             label="First university"
             value={first}
-            onChange={setFirst}
-            options={universities}
+            selectedOption={firstOption}
+            onChange={(value, option) => {
+              setFirst(value);
+              setFirstOption(option ?? null);
+            }}
+            loadOptions={loadPublicUniversityOptions}
             exclude={second}
             placeholder="Choose a university"
           />
@@ -1174,24 +1178,26 @@ function UniversityComparePanel() {
             onClick={() => {
               setFirst(second);
               setSecond(first);
+              setFirstOption(secondOption);
+              setSecondOption(firstOption);
             }}
           />
           <SelectField
             label="Second university"
             value={second}
-            onChange={setSecond}
-            options={universities}
+            selectedOption={secondOption}
+            onChange={(value, option) => {
+              setSecond(value);
+              setSecondOption(option ?? null);
+            }}
+            loadOptions={loadPublicUniversityOptions}
             exclude={first}
             placeholder="Choose a university"
           />
         </div>
       </section>
 
-      {isLoading ? (
-        <StatusPanel icon={Loader2} title="Loading universities">
-          Preparing the comparison options.
-        </StatusPanel>
-      ) : !canCompare ? (
+      {!canCompare ? (
         <StatusPanel icon={SearchX} title="Select two universities">
           Choose two different universities to compare program overlap, tuition
           signals, and academic profile.
@@ -1228,7 +1234,7 @@ export default function StudentComparePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-slate-100">
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-6 py-12">
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-4 py-10 sm:px-6 sm:py-12">
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.05]" />
         <div className="relative mx-auto max-w-6xl">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white/70 ring-1 ring-white/20">
@@ -1237,7 +1243,7 @@ export default function StudentComparePage() {
           </span>
           <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="max-w-3xl text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+              <h1 className="max-w-3xl text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
                 Compare your strongest options
               </h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-white/70">
@@ -1250,7 +1256,7 @@ export default function StudentComparePage() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         {mode === "majors" ? <MajorComparePanel /> : <UniversityComparePanel />}
       </main>
     </div>

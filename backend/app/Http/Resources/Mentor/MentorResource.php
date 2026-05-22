@@ -15,9 +15,8 @@ class MentorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'user_id' => $this->user_id,
-            'major_slug' => $this->major?->slug,
+            'username' => $this->user?->username,
+
             'status' => $this->status,
             'is_accepting_students' => $this->is_accepting_students,
             'bio' => $this->bio,
@@ -28,11 +27,13 @@ class MentorResource extends JsonResource
             'languages' => $this->languages,
             'linkedin_url' => $this->linkedin_url,
             'website_url' => $this->website_url,
+
             'major' => $this->whenLoaded('major', fn () => $this->major ? [
                 'name_en' => $this->major->name_en,
                 'name_ar' => $this->major->name_ar,
                 'slug' => $this->major->slug,
             ] : null),
+
             'updated_at' => $this->updated_at,
         ];
     }

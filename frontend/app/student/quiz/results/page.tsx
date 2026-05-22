@@ -65,7 +65,7 @@ export default function QuizResultsPage() {
   if (!result) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-slate-100">
-        <div className="rounded-3xl border border-white/80 bg-white/85 px-10 py-8 shadow-card">
+        <div className="rounded-3xl border border-white/80 bg-white/85 px-6 py-8 shadow-card sm:px-10">
           <Loader2 className="h-10 w-10 animate-spin text-brand-600" />
         </div>
       </div>
@@ -185,7 +185,7 @@ export default function QuizResultsPage() {
                 key={major.id ?? `${name}-${index}`}
                 className="rounded-3xl border border-white/80 bg-white p-5 shadow-sm"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex min-w-0 flex-1 gap-3">
                     <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
                       <GraduationCap className="h-5 w-5" />
@@ -211,7 +211,7 @@ export default function QuizResultsPage() {
                   </div>
                   <Link
                     href={href}
-                    className="flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
+                    className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
                   >
                     {major.slug ? "View" : "Explore"}
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -233,7 +233,7 @@ export default function QuizResultsPage() {
                 key={major.id}
                 className="rounded-3xl border border-white/80 bg-white p-5 shadow-sm"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex min-w-0 flex-1 gap-3">
                     <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-500">
                       <GraduationCap className="h-5 w-5" />
@@ -254,7 +254,7 @@ export default function QuizResultsPage() {
                   </div>
                   <Link
                     href={`/student/majors/${major.slug}`}
-                    className="flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
+                    className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
                   >
                     View
                     <ArrowRight className="h-3.5 w-3.5" />
