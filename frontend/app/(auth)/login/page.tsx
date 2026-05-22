@@ -10,7 +10,11 @@ import { Mail, Lock, ArrowRight } from "lucide-react";
 
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { getGoogleRedirectUrl } from "@/services/authService";
+import {
+  getGoogleRedirectUrl,
+  getPostLoginRedirect,
+  type User,
+} from "@/services/authService";
 
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -33,6 +37,28 @@ const getLoginErrorMessage = (error: unknown): string => {
   }
 
   return "Unable to sign in. Please try again.";
+};
+
+const getRoleSafeRedirect = (user: User, redirectParam: string | null) => {
+  const defaultRedirect = getPostLoginRedirect(user);
+
+  if (!redirectParam || !redirectParam.startsWith("/") || redirectParam.startsWith("//")) {
+    return defaultRedirect;
+  }
+
+  if (redirectParam.startsWith("/admin") && user.role !== "admin") {
+    return defaultRedirect;
+  }
+
+  if (redirectParam.startsWith("/mentor") && user.role !== "mentor") {
+    return defaultRedirect;
+  }
+
+  if (redirectParam.startsWith("/student") && user.role !== "student") {
+    return defaultRedirect;
+  }
+
+  return redirectParam;
 };
 
 export default function LoginPage() {
@@ -85,19 +111,10 @@ export default function LoginPage() {
         window.location.search
       ).get("redirect");
 
-      const defaultRedirect =
-        user.role === "admin"
-          ? "/admin"
-          : user.role === "mentor"
-          ? "/mentor"
-          : "/student/dashboard";
+      const safeRedirect = getRoleSafeRedirect(user, redirectParam);
 
-      const safeRedirect =
-        redirectParam && redirectParam.startsWith("/")
-          ? redirectParam
-          : defaultRedirect;
-
-      router.push(safeRedirect);
+      router.replace(safeRedirect);
+      router.refresh();
     } catch (error) {
       setServerError(getLoginErrorMessage(error));
     }

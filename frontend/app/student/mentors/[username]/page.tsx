@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
 
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import { saveReservationClientSecret } from "@/components/sessions/reservationPaymentStorage";
 import {
   getPublicMentor,
   getPublicMentorSessions,
@@ -133,6 +134,9 @@ function InfoTile({
 }
 
 function SessionActions({ session }: { session: PublicSessionItem }) {
+  const router = useRouter();
+  const params = useParams<{ username: string }>();
+  const username = decodeURIComponent(params.username);
   const queryClient = useQueryClient();
   const availableSlot = getAvailableSlot(session);
   const [reservationUuid, setReservationUuid] = useState<string | null>(() =>
@@ -143,6 +147,7 @@ function SessionActions({ session }: { session: PublicSessionItem }) {
   const refreshSessions = async () => {
     await queryClient.invalidateQueries({ queryKey: ["student-sessions"] });
     await queryClient.invalidateQueries({ queryKey: ["public-mentor-sessions"] });
+    await queryClient.invalidateQueries({ queryKey: ["public-mentor-sessions", username] });
   };
 
   const bookMutation = useMutation({
@@ -157,12 +162,17 @@ function SessionActions({ session }: { session: PublicSessionItem }) {
       if (availableSlot?.uuid) {
         storeReservationUuid(availableSlot.uuid, response.reservation.uuid);
       }
-      toast.success(
-        response.client_secret
-          ? "Payment is required to confirm this reservation."
-          : "Reservation confirmed.",
-      );
       await refreshSessions();
+
+      if (response.client_secret) {
+        saveReservationClientSecret(response.reservation.uuid, response.client_secret);
+        toast.message("Payment is required to confirm this reservation.");
+        router.push(`/student/payment/${response.reservation.uuid}`);
+        return;
+      }
+
+      toast.success("Reservation confirmed.");
+      router.push(`/student/success?reservation=${response.reservation.uuid}`);
     },
     onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
       toast.error(
@@ -210,7 +220,7 @@ function SessionActions({ session }: { session: PublicSessionItem }) {
         onClick={() => bookMutation.mutate()}
         className="rounded-lg"
       >
-        {reservationUuid ? "Booked" : "Book Session"}
+        {reservationUuid ? "Reserved" : "Book Session"}
       </Button>
       <Button
         type="button"

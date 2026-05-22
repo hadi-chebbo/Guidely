@@ -119,11 +119,18 @@ const setAuthCookies = (
   maxAge: number
 ): void => {
   const encodedToken = encodeURIComponent(token);
+  document.cookie = `auth_token=; path=/; max-age=0`;
+  document.cookie = `user_role=; path=/; max-age=0`;
   document.cookie = `auth_token=${encodedToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
   document.cookie = `user_role=${role}; path=/; max-age=${maxAge}`;
   if (typeof window !== "undefined") {
     window.localStorage.setItem("auth_token", token);
   }
+};
+
+const setRoleCookie = (role: UserRole, maxAge = 60 * 60 * 24 * 30): void => {
+  document.cookie = `user_role=; path=/; max-age=0`;
+  document.cookie = `user_role=${role}; path=/; max-age=${maxAge}`;
 };
 
 const getCookie = (name: string): string | null => {
@@ -140,6 +147,11 @@ const getCookie = (name: string): string | null => {
 const setCachedUser = (user: User): void => {
   if (typeof window === "undefined") return;
   window.localStorage.setItem("auth_user", JSON.stringify(user));
+};
+
+const clearCachedUser = (): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem("auth_user");
 };
 
 const setPendingVerificationEmail = (email: string): void => {
@@ -261,16 +273,23 @@ export const login = async ({
       password,
     });
 
-    const userData = extractUser(res.data);
+    const responseUserData = extractUser(res.data);
     const token = extractToken(res.data);
 
-    if (!userData || !token) {
+    if (!responseUserData || !token) {
       throw new Error("Invalid login response");
     }
 
-    const user = normalizeUser(userData);
+    const maxAge = getAuthMaxAge(rememberMe);
+    const responseUser = normalizeUser(responseUserData);
 
-    setAuthCookies(token, user.role, getAuthMaxAge(rememberMe));
+    clearCachedUser();
+    setAuthCookies(token, responseUser.role, maxAge);
+
+    const currentUser = await fetchCurrentUser();
+    const user = currentUser ?? responseUser;
+
+    setAuthCookies(token, user.role, maxAge);
     setCachedUser(user);
 
     return user;
@@ -360,18 +379,34 @@ export const checkAuth = async (): Promise<User | null> => {
   );
   if (!token) return null;
 
-  const cachedUser = getCachedUser();
-  if (cachedUser) return cachedUser;
+  try {
+    const user = await fetchCurrentUser();
+    if (!user) {
+      clearAuthCookies();
+      return null;
+    }
 
-  const res = await api.get<AuthResponse>("/auth/user");
+    setRoleCookie(user.role);
+    setCachedUser(user);
+
+    return user;
+  } catch {
+    clearAuthCookies();
+    return null;
+  }
+};
+
+const fetchCurrentUser = async (): Promise<User | null> => {
+  const res = await api.get<AuthResponse>("/auth/user", {
+    headers: {
+      "Cache-Control": "no-cache",
+    },
+  });
   const userData = extractUser(res.data);
 
   if (!userData) return null;
 
-  const user = normalizeUser(userData);
-  setCachedUser(user);
-
-  return user;
+  return normalizeUser(userData);
 };
 
 /* ─────────────────────────────

@@ -10,7 +10,6 @@ import { AdminCard, AdminModalFrame, AdminPageHeader, AdminPageShell } from "@/c
 import MajorForm from "@/components/admin/majors/MajorForm";
 import MajorsTable from "@/components/admin/majors/MajorsTable";
 import MajorsFilters, { defaultMajorFilters, type MajorFilters } from "@/components/admin/majors/MajorsFilters";
-import Pagination from "@/components/ui/Pagination";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { Major, MajorListItem, Paginated } from "@/types/major";
 import type { MajorFormData } from "@/lib/validations/major";
@@ -87,17 +86,29 @@ export default function AdminMajorsPage() {
           onEdit={handleEdit}
         />
 
-        {meta && (
-          <div className="border-t border-gray-200 p-4">
-            <Pagination
-              currentPage={meta.current_page}
-              lastPage={meta.last_page}
-              total={meta.total}
-              perPage={meta.per_page}
-              onPageChange={setPage}
-            />
-          </div>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 p-4">
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={isLoading || !meta || meta.current_page <= 1}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span className="text-sm text-gray-500">
+            {meta ? `Page ${meta.current_page} of ${meta.last_page}` : "Page - of -"}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              setPage((current) => Math.min(meta?.last_page ?? current, current + 1))
+            }
+            disabled={isLoading || !meta || meta.current_page >= meta.last_page}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </AdminCard>
 
       {createOpen && (
