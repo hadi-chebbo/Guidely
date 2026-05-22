@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminSidebar from "@/components/layout/AdminSidebar";
 import AdminTopbar from "@/components/layout/AdminTopbar";
@@ -9,6 +10,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -20,7 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       // Check if user is admin
       if (user.role !== "admin") {
-        router.push("/");
+        router.push(user.role === "mentor" ? "/mentor" : "/student/dashboard");
         return;
       }
     }
@@ -50,9 +52,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar className="hidden lg:flex" />
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-gray-950/45 backdrop-blur-sm"
+            aria-label="Close admin navigation"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          <AdminSidebar
+            className="relative z-10 h-full w-[min(20rem,88vw)]"
+            onClose={() => setMobileNavOpen(false)}
+          />
+        </div>
+      )}
       <div className="flex min-w-0 flex-1 flex-col">
-        <AdminTopbar />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <AdminTopbar onOpenMenu={() => setMobileNavOpen(true)} />
+        <main className="flex-1 overflow-x-hidden p-3 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

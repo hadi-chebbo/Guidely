@@ -114,14 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setAuth(user);
       }
 
-      router.push(
-        user.role === "admin"
-          ? "/admin"
-          : user.role === "mentor"
-            ? "/mentor"
-            : "/student/dashboard"
-      );
-
       return user;
     } catch (err) {
       if (requestId === authRequestRef.current) {

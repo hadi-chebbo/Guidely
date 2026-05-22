@@ -184,12 +184,45 @@ export interface PublicSessionsResponse {
 export interface ReservationSummary {
   uuid: string;
   status: string;
+  created_at?: string;
+  updated_at?: string;
+  availability?: {
+    uuid: string;
+    scheduled_at: string;
+    ends_at: string | null;
+    status: string;
+    session?: {
+      slug: string;
+      title: string;
+      description: string;
+      type: string;
+      duration_minutes: number;
+      max_capacity?: number;
+      price: number | string;
+      currency: string;
+      mentor?: {
+        name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+      };
+    };
+  };
 }
 
 export interface BookSessionAvailabilityResponse {
   reservation: ReservationSummary;
   client_secret?: string | null;
   message?: string;
+}
+
+export interface StudentReservationsResponse {
+  data: ReservationSummary[];
+  meta: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
 }
 
 const toNumberOrNull = (value: unknown): number | null => {
@@ -699,6 +732,34 @@ export const bookSessionAvailability = async (
         ? String(res.data.message)
         : undefined,
   };
+};
+
+// GET /reservations
+export const getStudentReservations = async (
+  params: { page?: number; per_page?: number } = {},
+): Promise<StudentReservationsResponse> => {
+  const res = await api.get("/reservations", { params });
+  const items = Array.isArray(res.data?.data) ? res.data.data : [];
+  const meta = res.data?.meta ?? {};
+  const perPage = meta.per_page ?? params.per_page ?? 10;
+  const total = meta.total ?? items.length;
+
+  return {
+    data: items,
+    meta: {
+      current_page: meta.current_page ?? params.page ?? 1,
+      per_page: perPage,
+      total,
+      last_page: meta.last_page ?? Math.max(1, Math.ceil(total / perPage)),
+    },
+  };
+};
+
+export const getStudentReservation = async (
+  reservationUuid: string,
+): Promise<ReservationSummary | null> => {
+  const reservations = await getStudentReservations({ page: 1, per_page: 50 });
+  return reservations.data.find((reservation) => reservation.uuid === reservationUuid) ?? null;
 };
 
 // PATCH /reservations/{reservation}/cancel

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -25,6 +26,7 @@ import {
   type PublicSessionItem,
   type PublicSessionAvailability,
 } from "@/services/studentService";
+import { saveReservationClientSecret } from "@/components/sessions/reservationPaymentStorage";
 
 const RESERVATION_STORAGE_PREFIX = "guidely_session_reservation:";
 
@@ -76,6 +78,7 @@ const formatDateTime = (value: string) => {
 };
 
 function SessionActionButtons({ session }: { session: PublicSessionItem }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const availableSlot = getAvailableSlot(session);
   const [reservationUuid, setReservationUuid] = useState<string | null>(() =>
@@ -99,12 +102,17 @@ function SessionActionButtons({ session }: { session: PublicSessionItem }) {
       if (availableSlot?.uuid) {
         storeReservationUuid(availableSlot.uuid, response.reservation.uuid);
       }
-      toast.success(
-        response.client_secret
-          ? "Payment is required to confirm this reservation."
-          : "Reservation confirmed.",
-      );
       await refreshSessions();
+
+      if (response.client_secret) {
+        saveReservationClientSecret(response.reservation.uuid, response.client_secret);
+        toast.message("Payment is required to confirm this reservation.");
+        router.push(`/student/payment/${response.reservation.uuid}`);
+        return;
+      }
+
+      toast.success("Reservation confirmed.");
+      router.push(`/student/success?reservation=${response.reservation.uuid}`);
     },
     onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
       toast.error(
@@ -154,7 +162,7 @@ function SessionActionButtons({ session }: { session: PublicSessionItem }) {
         onClick={() => bookMutation.mutate()}
         className="rounded-lg"
       >
-        {reservationUuid ? "Booked" : "Book Session"}
+        {reservationUuid ? "Reserved" : "Book Session"}
       </Button>
       <Button
         type="button"
