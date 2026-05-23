@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   BookOpen,
+  CalendarCheck,
   Compass,
   Heart,
   Loader2,
@@ -104,6 +105,13 @@ export default function StudentDashboardPage() {
                     className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-brand-300 hover:text-brand-700"
                   >
                     Explore majors
+                  </Link>
+                  <Link
+                    href="/student/reservations"
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-brand-300 hover:text-brand-700"
+                  >
+                    <CalendarCheck className="h-4 w-4" />
+                    My booked sessions
                   </Link>
                 </div>
               </div>

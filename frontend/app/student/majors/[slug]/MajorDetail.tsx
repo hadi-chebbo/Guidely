@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMajorMentors, getPublicMajor } from "@/services/studentService";
 import {
+  ArrowLeft,
   Clock,
   TrendingUp,
   GraduationCap,
@@ -219,6 +221,7 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [pendingFavorite, setPendingFavorite] = useState(false);
+  const [coverImageFailed, setCoverImageFailed] = useState(false);
 
   const { data: major, isLoading, isError, refetch } = useQuery({
     queryKey: ["public-major", slug],
@@ -233,6 +236,10 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
     queryFn: getFavoriteMajors,
     enabled: isAuthenticated,
   });
+
+  useEffect(() => {
+    setCoverImageFailed(false);
+  }, [major?.cover_image]);
 
   if (isLoading) return <SkeletonDetail />;
   if (isError || initialError) return <ErrorState onRetry={() => refetch()} />;
@@ -251,6 +258,9 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
   const universities = major.universities as University[] ?? [];
   const companies = major.hiring_companies as HiringCompany[] ?? [];
   const majorId = typeof major.id === "number" ? major.id : null;
+  const coverImage = typeof major.cover_image === "string" && !coverImageFailed
+    ? major.cover_image
+    : null;
   const isFavorite = majorId
     ? favorites.some((favorite) => getPublicMajorId(favorite) === majorId)
     : false;
@@ -299,56 +309,77 @@ export default function MajorDetail({ slug, initialData, error: initialError }: 
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "18px 18px" }}
         />
-        <div className="relative mx-auto max-w-4xl">
-          {category && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white/70 ring-1 ring-white/20">
-              {category.icon && <span>{category.icon}</span>}
-              {category.name_en ?? category.name}
-            </span>
-          )}
-          <h1 className="mt-3 font-heading text-3xl font-extrabold text-white sm:text-4xl">{String(major.name_en)}</h1>
-          {major.name_ar && <p className="mt-1 text-white/50 text-sm">{String(major.name_ar)}</p>}
-          {major.description && (
-            <p className="mt-3 max-w-2xl text-white/70 text-base leading-relaxed">{String(major.description)}</p>
-          )}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            {majorId && (
-              <button
-                type="button"
-                onClick={handleToggleFavorite}
-                disabled={pendingFavorite}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 transition-all",
-                  isFavorite
-                    ? "bg-rose-50 text-rose-600 ring-rose-200"
-                    : "bg-white/10 text-white/75 ring-white/20 hover:bg-white/15",
-                  pendingFavorite && "cursor-not-allowed opacity-60",
-                )}
-              >
-                <Heart className={cn("h-3.5 w-3.5", isFavorite && "fill-current")} />
-                {isFavorite ? "Favorited" : "Save"}
-              </button>
-            )}
-            <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", demand.className)}>
-              {demand.label}
-            </span>
-            {major.is_featured && (
-              <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
-                <Star className="h-3 w-3" /> Featured
+        <Link
+          href="/student/majors"
+          className="absolute right-4 top-4 z-20 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-2 text-xs font-semibold text-white ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/20 sm:right-6 sm:top-6"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to majors</span>
+        </Link>
+        <div className="relative mx-auto grid max-w-5xl gap-7 pr-12 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center lg:pr-0">
+          <div className="min-w-0">
+            {category && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white/70 ring-1 ring-white/20">
+                {category.icon && <span>{category.icon}</span>}
+                {category.name_en ?? category.name}
               </span>
             )}
-            <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
-              <Clock className="h-3 w-3" /> {String(major.duration_years)} years
-            </span>
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
-              {difficultyLabel[String(major.difficulty_level)] ?? String(major.difficulty_level)}
-            </span>
-            {salaryRange && (
-              <span className="flex items-center gap-1.5 rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-semibold text-emerald-300">
-                <TrendingUp className="h-3 w-3" /> {salaryRange}
-              </span>
+            <h1 className="mt-3 font-heading text-3xl font-extrabold text-white sm:text-4xl">{String(major.name_en)}</h1>
+            {major.name_ar && <p className="mt-1 text-white/50 text-sm">{String(major.name_ar)}</p>}
+            {major.description && (
+              <p className="mt-3 max-w-2xl text-white/70 text-base leading-relaxed">{String(major.description)}</p>
             )}
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              {majorId && (
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  disabled={pendingFavorite}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 transition-all",
+                    isFavorite
+                      ? "bg-rose-50 text-rose-600 ring-rose-200"
+                      : "bg-white/10 text-white/75 ring-white/20 hover:bg-white/15",
+                    pendingFavorite && "cursor-not-allowed opacity-60",
+                  )}
+                >
+                  <Heart className={cn("h-3.5 w-3.5", isFavorite && "fill-current")} />
+                  {isFavorite ? "Favorited" : "Save"}
+                </button>
+              )}
+              <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", demand.className)}>
+                {demand.label}
+              </span>
+              {major.is_featured && (
+                <span className="flex items-center gap-1 rounded-full bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
+                  <Star className="h-3 w-3" /> Featured
+                </span>
+              )}
+              <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+                <Clock className="h-3 w-3" /> {String(major.duration_years)} years
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+                {difficultyLabel[String(major.difficulty_level)] ?? String(major.difficulty_level)}
+              </span>
+              {salaryRange && (
+                <span className="flex items-center gap-1.5 rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-semibold text-emerald-300">
+                  <TrendingUp className="h-3 w-3" /> {salaryRange}
+                </span>
+              )}
+            </div>
           </div>
+          {coverImage && (
+            <div className="max-w-[220px] rounded-3xl border border-white/25 bg-white/95 p-5 shadow-2xl ring-1 ring-black/5 lg:justify-self-end">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverImage}
+                alt={String(major.name_en)}
+                referrerPolicy="no-referrer"
+                onError={() => setCoverImageFailed(true)}
+                className="aspect-square w-full object-contain"
+              />
+            </div>
+          )}
         </div>
       </div>
 

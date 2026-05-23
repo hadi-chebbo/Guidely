@@ -7,6 +7,16 @@ import type {
   UniversityMajor,
 } from "@/types/university";
 
+export type AssignUniversityMajorDTO = {
+  major_id: number;
+  credit_price_usd?: number | null;
+  total_credits?: number | null;
+  admission_requirements?: string | null;
+  language_of_instruction?: string | null;
+  has_scholarship?: boolean;
+  campus?: string | null;
+};
+
 export const universityService = {
   getAll: async (page = 1): Promise<UniversitiesApiResponse> => {
     const { data } = await api.get("/admin/universities", {
@@ -48,5 +58,12 @@ export const universityService = {
     return [];
   },
 
+  assignMajor: async (
+    id: number,
+    payload: AssignUniversityMajorDTO
+  ): Promise<UniversityMajor> => {
+    const { data } = await api.post(`/admin/universities/${id}/majors`, payload);
+    return data.data;
+  },
  
 };

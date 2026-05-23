@@ -36,6 +36,14 @@ export interface UniversityMajor {
   slug: string;
   category_id: number;
   is_featured: boolean;
+  university_data?: {
+    credit_price_usd?: number | string | null;
+    total_credits?: number | null;
+    admission_requirements?: string | null;
+    language_of_instruction?: string | null;
+    has_scholarship?: boolean;
+    campus?: string | null;
+  };
 }
 
 /**

@@ -36,11 +36,12 @@ export async function loadAdminMajorOptions(
 export async function loadPublicMajorOptions(
   search: string,
 ): Promise<SearchableDropdownOption<PublicMajorItem>[]> {
+  const hasSearch = Boolean(search.trim());
   const data = await getPublicMajors({
-    per_page: search ? 10 : 3,
+    per_page: hasSearch ? 10 : 3,
     page: 1,
-    search: search || undefined,
-    name_en: search || undefined,
+    search: hasSearch ? search : undefined,
+    name_en: hasSearch ? search : undefined,
   });
 
   return [
@@ -59,6 +60,7 @@ export async function loadPublicMajorOptions(
       ),
     )
     .sort((a, b) => a.name_en.localeCompare(b.name_en))
+    .slice(0, hasSearch ? 10 : 3)
     .map((major) => ({
       value: major.slug,
       label: major.name_en,
@@ -69,14 +71,16 @@ export async function loadPublicMajorOptions(
 export async function loadPublicUniversityOptions(
   search: string,
 ): Promise<SearchableDropdownOption<PublicUniversityItem>[]> {
+  const hasSearch = Boolean(search.trim());
   const data = await getPublicUniversities({
-    per_page: search ? 10 : 3,
+    per_page: hasSearch ? 10 : 3,
     page: 1,
-    search: search || undefined,
+    search: hasSearch ? search : undefined,
   });
 
   return data.data
     .sort((a, b) => a.name_en.localeCompare(b.name_en))
+    .slice(0, hasSearch ? 10 : 3)
     .map((university) => ({
       value: university.slug,
       label: university.name_en,

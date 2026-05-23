@@ -17,7 +17,6 @@ import {
   School,
   TicketCheck,
   UserRound,
-  XCircle,
 } from "lucide-react";
 
 import Badge from "@/components/ui/Badge";
@@ -27,7 +26,6 @@ import {
   getPublicMentor,
   getPublicMentorSessions,
   bookSessionAvailability,
-  cancelReservation,
   type PublicMentorItem,
   type PublicSessionItem,
   type PublicSessionAvailability,
@@ -93,12 +91,15 @@ const storeReservationUuid = (availabilityUuid: string, reservationUuid: string 
 };
 
 function Avatar({ mentor }: { mentor: PublicMentorItem }) {
-  if (mentor.avatar_url) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  if (mentor.avatar_url && !imageFailed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={mentor.avatar_url}
         alt={mentor.name}
+        onError={() => setImageFailed(true)}
         className="h-24 w-24 rounded-lg border border-white bg-white object-cover shadow-sm"
       />
     );
@@ -181,59 +182,33 @@ function SessionActions({ session }: { session: PublicSessionItem }) {
     },
   });
 
-  const cancelMutation = useMutation({
-    mutationFn: () => {
-      if (!reservationUuid) {
-        throw new Error("Book this session before cancelling it.");
-      }
-      return cancelReservation(reservationUuid);
-    },
-    onSuccess: async () => {
-      setReservationUuid(null);
-      if (availableSlot?.uuid) {
-        storeReservationUuid(availableSlot.uuid, null);
-      }
-      toast.success("Reservation cancelled successfully.");
-      await refreshSessions();
-    },
-    onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
-      toast.error(
-        error.response?.data?.message ?? error.message ?? "Reservation could not be cancelled.",
-      );
-    },
-  });
+  const isReserved = Boolean(reservationUuid);
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div className="grid gap-2">
       <Button
         type="button"
         size="md"
         fullWidth
-        disabled={
-          !hasAvailability ||
-          Boolean(reservationUuid) ||
-          bookMutation.isPending ||
-          cancelMutation.isPending
-        }
+        disabled={!hasAvailability || bookMutation.isPending}
         isLoading={bookMutation.isPending}
-        leftIcon={<TicketCheck className="h-4 w-4" />}
-        onClick={() => bookMutation.mutate()}
+        leftIcon={
+          isReserved ? (
+            <CalendarCheck className="h-4 w-4" />
+          ) : (
+            <TicketCheck className="h-4 w-4" />
+          )
+        }
+        onClick={() => {
+          if (isReserved) {
+            router.push("/student/reservations");
+            return;
+          }
+          bookMutation.mutate();
+        }}
         className="rounded-lg"
       >
-        {reservationUuid ? "Reserved" : "Book Session"}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="md"
-        fullWidth
-        disabled={!reservationUuid || bookMutation.isPending || cancelMutation.isPending}
-        isLoading={cancelMutation.isPending}
-        leftIcon={<XCircle className="h-4 w-4" />}
-        onClick={() => cancelMutation.mutate()}
-        className="rounded-lg border-gray-300"
-      >
-        Cancel Booking
+        {isReserved ? "View Booking" : "Book Session"}
       </Button>
     </div>
   );

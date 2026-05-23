@@ -10,11 +10,7 @@ import SearchableDropdown, {
   type SearchableDropdownOption,
 } from "@/components/ui/SearchableDropdown";
 
-interface SkillsSectionProps {
-  lockedSkillIds?: number[];
-}
-
-export default function SkillsSection({ lockedSkillIds = [] }: SkillsSectionProps) {
+export default function SkillsSection() {
   const { control, formState: { errors } } = useFormContext<MajorFormData>();
   const { fields, append, remove } = useFieldArray({ control, name: "skills" });
   const [skillLabels, setSkillLabels] = useState<Map<number, string>>(new Map());
@@ -73,7 +69,6 @@ export default function SkillsSection({ lockedSkillIds = [] }: SkillsSectionProp
         )}
         {fields.map((field, index) => {
           const skillName = skillLabels.get(field.skill_id) ?? resolveAdminSkillLabel(field.skill_id);
-          const isLocked = lockedSkillIds.includes(field.skill_id);
           return (
             <span
               key={field.id}
@@ -82,10 +77,9 @@ export default function SkillsSection({ lockedSkillIds = [] }: SkillsSectionProp
               {skillName ?? `Skill #${field.skill_id}`}
               <button
                 type="button"
-                disabled={isLocked}
                 onClick={() => remove(index)}
-                title={isLocked ? "Existing skills can be kept or new skills can be added." : "Remove skill"}
-                className="transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Remove skill"
+                className="transition-opacity hover:opacity-70"
               >
                 <X className="h-3 w-3" />
               </button>
