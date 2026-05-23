@@ -24,43 +24,43 @@ class MajorController extends Controller
         $majors = Major::query()
             ->when(
                 $request->filled('name_en'),
-                fn ($query) => $query->where('name_en', 'like', '%' . $filters['name_en'] . '%')
+                fn($query) => $query->where('name_en', 'like', '%' . $filters['name_en'] . '%')
             )
             ->when(
                 $request->filled('name_ar'),
-                fn ($query) => $query->where('name_ar', 'like', '%' . $filters['name_ar'] . '%')
+                fn($query) => $query->where('name_ar', 'like', '%' . $filters['name_ar'] . '%')
             )
             ->when(
                 $request->filled('category_id'),
-                fn ($query) => $query->where('category_id', $filters['category_id'])
+                fn($query) => $query->where('category_id', $filters['category_id'])
             )
             ->when(
                 $request->filled('duration_years'),
-                fn ($query) => $query->where('duration_years', $filters['duration_years'])
+                fn($query) => $query->where('duration_years', $filters['duration_years'])
             )
             ->when(
                 $request->filled('difficulty_level'),
-                fn ($query) => $query->where('difficulty_level', $filters['difficulty_level'])
+                fn($query) => $query->where('difficulty_level', $filters['difficulty_level'])
             )
             ->when(
                 $request->filled('salary_min'),
-                fn ($query) => $query->where('salary_min', '>=', $filters['salary_min'])
+                fn($query) => $query->where('salary_min', '>=', $filters['salary_min'])
             )
             ->when(
                 $request->filled('salary_max'),
-                fn ($query) => $query->where('salary_max', '<=', $filters['salary_max'])
+                fn($query) => $query->where('salary_max', '<=', $filters['salary_max'])
             )
             ->when(
                 $request->filled('local_demand'),
-                fn ($query) => $query->where('local_demand', $filters['local_demand'])
+                fn($query) => $query->where('local_demand', $filters['local_demand'])
             )
             ->when(
                 $request->filled('international_demand'),
-                fn ($query) => $query->where('international_demand', $filters['international_demand'])
+                fn($query) => $query->where('international_demand', $filters['international_demand'])
             )
             ->when(
                 $request->filled('is_featured'),
-                fn ($query) => $query->where('is_featured', $filters['is_featured'])
+                fn($query) => $query->where('is_featured', $filters['is_featured'])
             )
             ->latest()
             ->paginate(15)
@@ -95,10 +95,10 @@ class MajorController extends Controller
 
     public function show(Major $major)
     {
-        return $this->success(new MajorResource($major),"Major Fetched Successfully",200);
+        return $this->success(new MajorResource($major), "Major Fetched Successfully", 200);
     }
 
-    public function update(UpdateMajorRequest $request,Major $major)
+    public function update(UpdateMajorRequest $request, Major $major)
     {
         $validated = $request->validated();
 

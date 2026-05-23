@@ -540,3 +540,38 @@ it('returns majors for a university', function () {
 
     $response->assertStatus(200);
 });
+
+it('assigns a major to a university successfully', function () {
+
+    $admin = User::factory()->admin()->create();
+    Sanctum::actingAs($admin);
+
+    $university = University::factory()->create();
+    $major = Major::factory()->create();
+
+    $payload = [
+        'major_id' => $major->id,
+        'credit_price_usd' => 120.50,
+        'total_credits' => 90,
+        'admission_requirements' => 'High school diploma',
+        'language_of_instruction' => 'English',
+        'has_scholarship' => true,
+        'campus' => 'Beirut Campus',
+    ];
+
+    $response = $this->postJson(
+        "/api/v1/admin/universities/{$university->id}/majors",
+        $payload
+    );
+
+    $response->assertStatus(201)
+        ->assertJson([
+            'message' => 'Major Assigned To University Successfully',
+        ]);
+
+    $this->assertDatabaseHas('university_majors', [
+        'university_id' => $university->id,
+        'major_id' => $major->id,
+        'credit_price_usd' => 120.50,
+    ]);
+});
