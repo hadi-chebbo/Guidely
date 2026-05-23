@@ -144,6 +144,87 @@ export interface PublicMentorsResponse {
   };
 }
 
+export interface PublicSessionAvailability {
+  uuid: string;
+  scheduled_at: string;
+  ends_at: string | null;
+  status: string;
+  reservation_uuid?: string | null;
+}
+
+export interface PublicSessionItem {
+  slug: string;
+  title: string;
+  description: string;
+  type: string;
+  duration_minutes: number;
+  max_capacity: number;
+  price: number | string;
+  currency: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+  availabilities: PublicSessionAvailability[];
+  availabilities_count: number;
+}
+
+export interface PublicSessionsResponse {
+  recommended: PublicSessionItem[];
+  sessions: {
+    data: PublicSessionItem[];
+    pagination: {
+      current_page: number;
+      last_page: number;
+      per_page: number;
+      total: number;
+    };
+  };
+}
+
+export interface ReservationSummary {
+  uuid: string;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+  availability?: {
+    uuid: string;
+    scheduled_at: string;
+    ends_at: string | null;
+    status: string;
+    session?: {
+      slug: string;
+      title: string;
+      description: string;
+      type: string;
+      duration_minutes: number;
+      max_capacity?: number;
+      price: number | string;
+      currency: string;
+      mentor?: {
+        name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+      };
+    };
+  };
+}
+
+export interface BookSessionAvailabilityResponse {
+  reservation: ReservationSummary;
+  client_secret?: string | null;
+  message?: string;
+}
+
+export interface StudentReservationsResponse {
+  data: ReservationSummary[];
+  meta: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
 const toNumberOrNull = (value: unknown): number | null => {
   const numberValue =
     typeof value === "number"
@@ -238,6 +319,41 @@ const normalizeMentor = (mentor: PublicMentorItem): PublicMentorItem => ({
 
 const normalizeMentorList = (items: PublicMentorItem[] = []) =>
   items.map(normalizeMentor);
+
+const normalizeSessionAvailability = (
+  availability: Partial<PublicSessionAvailability>,
+): PublicSessionAvailability => ({
+  uuid: availability.uuid ?? "",
+  scheduled_at: availability.scheduled_at ?? "",
+  ends_at: availability.ends_at ?? null,
+  status: availability.status ?? "open",
+  reservation_uuid: availability.reservation_uuid ?? null,
+});
+
+const normalizeSession = (
+  session: Partial<PublicSessionItem>,
+): PublicSessionItem => ({
+  slug: session.slug ?? "",
+  title: session.title ?? "",
+  description: session.description ?? "",
+  type: session.type ?? "online",
+  duration_minutes: Number(session.duration_minutes ?? 0),
+  max_capacity: Number(session.max_capacity ?? 1),
+  price: session.price ?? 0,
+  currency: session.currency ?? "USD",
+  is_active: Boolean(session.is_active),
+  created_at: session.created_at,
+  updated_at: session.updated_at,
+  availabilities: Array.isArray(session.availabilities)
+    ? session.availabilities.map(normalizeSessionAvailability)
+    : [],
+  availabilities_count: Number(
+    session.availabilities_count ?? session.availabilities?.length ?? 0,
+  ),
+});
+
+const normalizeSessionList = (items: PublicSessionItem[] = []) =>
+  items.map(normalizeSession);
 
 const PUBLIC_MAJORS_CACHE_KEY = "guidely_public_majors_cache";
 const USE_PUBLIC_MAJORS_CACHE_KEY = "guidely_use_public_majors_cache";
@@ -421,8 +537,16 @@ export const getPublicMajorsTotal = (
 };
 
 // GET /majors
-export const getPublicMajors = async (params: { per_page?: number; page?: number } = {}): Promise<PublicMajorsResponse> => {
-  const cachedResponse = getCachedPublicMajorsResponse(params);
+export const getPublicMajors = async (
+  params: {
+    per_page?: number;
+    page?: number;
+    search?: string;
+    name_en?: string;
+  } = {},
+): Promise<PublicMajorsResponse> => {
+  const hasSearch = Boolean(params.search?.trim() || params.name_en?.trim());
+  const cachedResponse = hasSearch ? null : getCachedPublicMajorsResponse(params);
   if (cachedResponse) return cachedResponse;
 
   const res = await api.get("/majors", { params });
@@ -460,7 +584,7 @@ export const getPublicMajors = async (params: { per_page?: number; page?: number
     ...mergedData.others.data,
   ]);
 
-  return getCachedPublicMajorsResponse(params) ?? mergedData;
+  return (hasSearch ? null : getCachedPublicMajorsResponse(params)) ?? mergedData;
 };
 
 // POST /majors/compare
@@ -542,6 +666,108 @@ export const getMajorMentors = async (
       last_page: meta.last_page ?? Math.max(1, Math.ceil(total / perPage)),
     },
   };
+};
+
+// GET /sessions
+export const getPublicSessions = async (
+  params: { page?: number; per_page?: number } = {},
+): Promise<PublicSessionsResponse> => {
+  const res = await api.get("/sessions", { params });
+  const data = unwrap<PublicSessionsResponse>(res.data);
+  const pagination = data.sessions?.pagination ?? {
+    current_page: params.page ?? 1,
+    last_page: 1,
+    per_page: params.per_page ?? data.sessions?.data?.length ?? 0,
+    total: data.sessions?.data?.length ?? 0,
+  };
+
+  return {
+    recommended: normalizeSessionList(data.recommended ?? []),
+    sessions: {
+      data: normalizeSessionList(data.sessions?.data ?? []),
+      pagination,
+    },
+  };
+};
+
+// GET /sessions/{username}
+export const getPublicMentorSessions = async (
+  username: string,
+): Promise<PublicSessionItem[]> => {
+  const res = await api.get(`/sessions/${username}`);
+  const data = unwrap<PublicSessionItem[]>(res.data);
+  return Array.isArray(data) ? normalizeSessionList(data) : [];
+};
+
+// POST /reservations/availability/{uuid}/book
+export const bookSessionAvailability = async (
+  availabilityUuid: string,
+): Promise<BookSessionAvailabilityResponse> => {
+  const res = await api.post(`/reservations/availability/${availabilityUuid}/book`);
+  const data = unwrap<
+    | ReservationSummary
+    | {
+        reservation?: ReservationSummary;
+        client_secret?: string | null;
+      }
+  >(res.data);
+
+  const reservation =
+    data && typeof data === "object" && "reservation" in data && data.reservation
+      ? data.reservation
+      : (data as ReservationSummary);
+
+  if (!reservation?.uuid) {
+    throw new Error("Reservation could not be created.");
+  }
+
+  return {
+    reservation,
+    client_secret:
+      data && typeof data === "object" && "client_secret" in data
+        ? data.client_secret ?? null
+        : null,
+    message:
+      res.data && typeof res.data === "object" && "message" in res.data
+        ? String(res.data.message)
+        : undefined,
+  };
+};
+
+// GET /reservations
+export const getStudentReservations = async (
+  params: { page?: number; per_page?: number } = {},
+): Promise<StudentReservationsResponse> => {
+  const res = await api.get("/reservations", { params });
+  const items = Array.isArray(res.data?.data) ? res.data.data : [];
+  const meta = res.data?.meta ?? {};
+  const perPage = meta.per_page ?? params.per_page ?? 10;
+  const total = meta.total ?? items.length;
+
+  return {
+    data: items,
+    meta: {
+      current_page: meta.current_page ?? params.page ?? 1,
+      per_page: perPage,
+      total,
+      last_page: meta.last_page ?? Math.max(1, Math.ceil(total / perPage)),
+    },
+  };
+};
+
+export const getStudentReservation = async (
+  reservationUuid: string,
+): Promise<ReservationSummary | null> => {
+  const reservations = await getStudentReservations({ page: 1, per_page: 50 });
+  return reservations.data.find((reservation) => reservation.uuid === reservationUuid) ?? null;
+};
+
+// PATCH /reservations/{reservation}/cancel
+export const cancelReservation = async (
+  reservationUuid: string,
+): Promise<ReservationSummary> => {
+  const res = await api.patch(`/reservations/${reservationUuid}/cancel`);
+  return unwrap<ReservationSummary>(res.data);
 };
 
 // GET /mentors/{username}

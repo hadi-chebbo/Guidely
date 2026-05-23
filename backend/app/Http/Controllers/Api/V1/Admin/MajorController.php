@@ -80,11 +80,11 @@ class MajorController extends Controller
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
-        $major = Major::create($validated);
+            $major = Major::create($validated);
 
-        if (!empty($skills)) {
-            $major->skills()->sync($skills);
-        }
+            if (! empty($skills)) {
+                $major->skills()->sync($skills);
+            }
 
         return $this->success(
             new MajorResource($major->load(['category', 'skills'])),
@@ -105,13 +105,13 @@ class MajorController extends Controller
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
-        $major->update($validated);
+            $major->update($validated);
 
-        if (! empty($skills)) {
-            $major->skills()->sync($skills);
-        }
+            if (! empty($skills)) {
+                $major->skills()->sync($skills);
+            }
 
-        return $this->success(new MajorResource($major->load(['category', 'skills'])), "Major Updated Successfully", 200);
+        return $this->success(new MajorResource($major->load(['category','skills'])),"Major Updated Successfully",200);
     }
 
     public function toggleFeatured(Major $major)

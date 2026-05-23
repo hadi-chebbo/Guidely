@@ -54,11 +54,20 @@ interface AuthResponse {
     token?: string;
     access_token?: string;
     plainTextToken?: string;
+    id?: number;
+    name?: string;
+    username?: string;
+    email?: string;
+    role?: UserRole;
   };
   user?: ApiUser;
   token?: string;
   access_token?: string;
   plainTextToken?: string;
+}
+
+interface BackendErrorPayload {
+  message?: unknown;
 }
 
 /* ─────────────────────────────
@@ -73,6 +82,33 @@ const normalizeUser = (user: ApiUser): User => ({
   role: user.role ?? "student",
 });
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const extractBackendErrorMessage = async (
+  error: unknown
+): Promise<string | null> => {
+  if (isRecord(error) && isRecord(error.response)) {
+    const data = error.response.data as BackendErrorPayload | undefined;
+    if (typeof data?.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+  }
+
+  if (typeof Response !== "undefined" && error instanceof Response) {
+    try {
+      const payload = (await error.clone().json()) as BackendErrorPayload;
+      if (typeof payload.message === "string" && payload.message.trim()) {
+        return payload.message;
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+};
+
 /* ─────────────────────────────
    COOKIE HELPERS
 ───────────────────────────── */
@@ -83,11 +119,18 @@ const setAuthCookies = (
   maxAge: number
 ): void => {
   const encodedToken = encodeURIComponent(token);
+  document.cookie = `auth_token=; path=/; max-age=0`;
+  document.cookie = `user_role=; path=/; max-age=0`;
   document.cookie = `auth_token=${encodedToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
   document.cookie = `user_role=${role}; path=/; max-age=${maxAge}`;
   if (typeof window !== "undefined") {
     window.localStorage.setItem("auth_token", token);
   }
+};
+
+const setRoleCookie = (role: UserRole, maxAge = 60 * 60 * 24 * 30): void => {
+  document.cookie = `user_role=; path=/; max-age=0`;
+  document.cookie = `user_role=${role}; path=/; max-age=${maxAge}`;
 };
 
 const getCookie = (name: string): string | null => {
@@ -104,6 +147,11 @@ const getCookie = (name: string): string | null => {
 const setCachedUser = (user: User): void => {
   if (typeof window === "undefined") return;
   window.localStorage.setItem("auth_user", JSON.stringify(user));
+};
+
+const clearCachedUser = (): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem("auth_user");
 };
 
 const setPendingVerificationEmail = (email: string): void => {
@@ -154,6 +202,58 @@ const extractToken = (payload: AuthResponse): string | undefined =>
   payload.access_token ??
   payload.plainTextToken;
 
+const extractUser = (payload: AuthResponse): ApiUser | undefined => {
+  if (payload.data?.user) return payload.data.user;
+  if (payload.user) return payload.user;
+
+  if (
+    payload.data &&
+    typeof payload.data.id === "number" &&
+    typeof payload.data.name === "string" &&
+    typeof payload.data.email === "string"
+  ) {
+    return payload.data as ApiUser;
+  }
+
+  return undefined;
+};
+
+const getAuthMaxAge = (rememberMe = false): number =>
+  rememberMe
+    ? 60 * 60 * 24 * 30 // 30 days
+    : 60 * 60 * 24;     // 1 day
+
+const getRoleRedirect = (role: UserRole): string =>
+  role === "admin"
+    ? "/admin"
+    : role === "mentor"
+      ? "/mentor"
+      : "/student/dashboard";
+
+export const getGoogleRedirectUrl = (): string => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is not configured");
+  }
+
+  return `${baseUrl.replace(/\/$/, "")}/auth/google/redirect`;
+};
+
+export const getGoogleCallbackUrl = (search = ""): string => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is not configured");
+  }
+
+  const callbackUrl = `${baseUrl.replace(/\/$/, "")}/auth/google/callback`;
+  return search ? `${callbackUrl}?${search.replace(/^\?/, "")}` : callbackUrl;
+};
+
+export const getPostLoginRedirect = (user: User): string =>
+  getRoleRedirect(user.role);
+
 /* ─────────────────────────────
    LOGIN
 ───────────────────────────── */
@@ -173,37 +273,64 @@ export const login = async ({
       password,
     });
 
-    const userData = res.data.data?.user ?? res.data.user;
+    const responseUserData = extractUser(res.data);
     const token = extractToken(res.data);
 
-    if (!userData || !token) {
+    if (!responseUserData || !token) {
       throw new Error("Invalid login response");
     }
 
-    const user = normalizeUser(userData);
+    const maxAge = getAuthMaxAge(rememberMe);
+    const responseUser = normalizeUser(responseUserData);
 
-    const maxAge = rememberMe
-      ? 60 * 60 * 24 * 30 // 30 days
-      : 60 * 60 * 24;     // 1 day
+    clearCachedUser();
+    setAuthCookies(token, responseUser.role, maxAge);
+
+    const currentUser = await fetchCurrentUser();
+    const user = currentUser ?? responseUser;
 
     setAuthCookies(token, user.role, maxAge);
     setCachedUser(user);
 
     return user;
   } catch (err: unknown) {
-    if (typeof err === "object" && err !== null && "response" in err) {
-      const error = err as {
-        response?: { data?: { message?: string } };
-      };
+    const backendMessage = await extractBackendErrorMessage(err);
 
-      const message = error.response?.data?.message;
-
-      if (message?.toLowerCase().includes("verify")) {
-        throw new AuthError(message, "EMAIL_NOT_VERIFIED");
+    if (backendMessage) {
+      if (backendMessage.toLowerCase().includes("verify")) {
+        throw new AuthError(backendMessage, "EMAIL_NOT_VERIFIED");
       }
+
+      throw new Error(backendMessage);
     }
 
     throw err;
+  }
+};
+
+export const completeGoogleLogin = async (token: string): Promise<User> => {
+  const maxAge = getAuthMaxAge(true);
+
+  setAuthCookies(token, "student", maxAge);
+
+  try {
+    const res = await api.get<AuthResponse>("/auth/user");
+    const userData = extractUser(res.data);
+
+    if (!userData) {
+      throw new Error("Invalid Google login response");
+    }
+
+    const user = normalizeUser(userData);
+
+    setAuthCookies(token, user.role, maxAge);
+    setCachedUser(user);
+    clearPendingVerificationEmail();
+
+    return user;
+  } catch (error) {
+    clearAuthCookies();
+    throw error;
   }
 };
 
@@ -252,17 +379,34 @@ export const checkAuth = async (): Promise<User | null> => {
   );
   if (!token) return null;
 
-  const cachedUser = getCachedUser();
-  if (cachedUser) return cachedUser;
+  try {
+    const user = await fetchCurrentUser();
+    if (!user) {
+      clearAuthCookies();
+      return null;
+    }
 
-  const role = (getCookie("user_role") as UserRole | null) ?? "student";
-  return {
-    id: 0,
-    name: role === "admin" ? "Admin" : role === "mentor" ? "Mentor" : "Student",
-    username: undefined,
-    email: "",
-    role,
-  };
+    setRoleCookie(user.role);
+    setCachedUser(user);
+
+    return user;
+  } catch {
+    clearAuthCookies();
+    return null;
+  }
+};
+
+const fetchCurrentUser = async (): Promise<User | null> => {
+  const res = await api.get<AuthResponse>("/auth/user", {
+    headers: {
+      "Cache-Control": "no-cache",
+    },
+  });
+  const userData = extractUser(res.data);
+
+  if (!userData) return null;
+
+  return normalizeUser(userData);
 };
 
 /* ─────────────────────────────
@@ -295,7 +439,7 @@ export const verifyEmail = async (
     params: signatureParams,
   });
 
-  const userData = res.data.data?.user ?? res.data.user;
+  const userData = extractUser(res.data);
   const token = extractToken(res.data);
 
   if (!userData || !token) return null;

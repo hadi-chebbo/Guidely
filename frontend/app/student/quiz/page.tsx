@@ -92,7 +92,7 @@ export default function QuizPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-slate-100 px-4">
-        <div className="rounded-3xl border border-white/80 bg-white/85 px-10 py-8 text-center shadow-card">
+        <div className="rounded-3xl border border-white/80 bg-white/85 px-6 py-8 text-center shadow-card sm:px-10">
           <Loader2 className="mx-auto h-10 w-10 animate-spin text-brand-600" />
           <p className="mt-3 text-sm font-medium text-gray-500">
             Loading questions...
@@ -257,13 +257,13 @@ export default function QuizPage() {
             })}
           </div>
 
-          <div className="mt-8 flex items-center justify-between gap-3">
+          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={handlePrev}
               disabled={currentIndex === 0}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all",
+                "inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all",
                 currentIndex === 0
                   ? "cursor-not-allowed border-gray-100 bg-gray-50 text-gray-300"
                   : "border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600",
@@ -279,7 +279,7 @@ export default function QuizPage() {
                 onClick={handleSubmit}
                 disabled={!allAnswered || isSubmitting}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all",
+                  "inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all",
                   allAnswered && !isSubmitting
                     ? "bg-brand-600 shadow-brand hover:bg-brand-700"
                     : "cursor-not-allowed bg-gray-300",
@@ -300,7 +300,7 @@ export default function QuizPage() {
                 onClick={handleNext}
                 disabled={!hasAnsweredCurrent}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
+                  "inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
                   hasAnsweredCurrent
                     ? "bg-brand-600 text-white shadow-brand hover:bg-brand-700"
                     : "cursor-not-allowed bg-gray-200 text-gray-400",

@@ -128,13 +128,13 @@ export default function StudentDashboardPage() {
                       key={stat.label}
                       className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-4"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
                         <div
                           className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ${stat.tone}`}
                         >
                           <stat.icon className="h-4 w-4" />
                         </div>
-                        <p className="text-sm font-medium text-gray-600">
+                        <p className="min-w-0 text-sm font-medium text-gray-600">
                           {stat.label}
                         </p>
                       </div>

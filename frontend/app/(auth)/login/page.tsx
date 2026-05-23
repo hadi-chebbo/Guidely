@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
@@ -10,10 +10,56 @@ import { Mail, Lock, ArrowRight } from "lucide-react";
 
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { useAuth } from "@/app/contexts/AuthContext";
+import {
+  getGoogleRedirectUrl,
+  getPostLoginRedirect,
+  type User,
+} from "@/services/authService";
 
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import FormMessage from "@/components/ui/FormMessage";
+
+const getLoginErrorMessage = (error: unknown): string => {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof (error as { response?: { data?: { message?: unknown } } }).response
+      ?.data?.message === "string"
+  ) {
+    return (error as { response: { data: { message: string } } }).response.data
+      .message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unable to sign in. Please try again.";
+};
+
+const getRoleSafeRedirect = (user: User, redirectParam: string | null) => {
+  const defaultRedirect = getPostLoginRedirect(user);
+
+  if (!redirectParam || !redirectParam.startsWith("/") || redirectParam.startsWith("//")) {
+    return defaultRedirect;
+  }
+
+  if (redirectParam.startsWith("/admin") && user.role !== "admin") {
+    return defaultRedirect;
+  }
+
+  if (redirectParam.startsWith("/mentor") && user.role !== "mentor") {
+    return defaultRedirect;
+  }
+
+  if (redirectParam.startsWith("/student") && user.role !== "student") {
+    return defaultRedirect;
+  }
+
+  return redirectParam;
+};
 
 export default function LoginPage() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -32,6 +78,19 @@ export default function LoginPage() {
       rememberMe: false,
     },
   });
+
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get("error");
+
+    if (!error) return;
+
+    const messages: Record<string, string> = {
+      blocked: "Your account is blocked. Please contact support.",
+      google_auth_failed: "Google sign-in failed. Please try again.",
+    };
+
+    setServerError(messages[error] ?? "Google sign-in failed. Please try again.");
+  }, []);
 
   /* ───────────────────────────── SUBMIT ───────────────────────────── */
 
@@ -52,24 +111,26 @@ export default function LoginPage() {
         window.location.search
       ).get("redirect");
 
-      const defaultRedirect =
-        user.role === "admin"
-          ? "/admin"
-          : user.role === "mentor"
-          ? "/mentor"
-          : "/student/dashboard";
+      const safeRedirect = getRoleSafeRedirect(user, redirectParam);
 
-      const safeRedirect =
-        redirectParam && redirectParam.startsWith("/")
-          ? redirectParam
-          : defaultRedirect;
+      router.replace(safeRedirect);
+      router.refresh();
+    } catch (error) {
+      setServerError(getLoginErrorMessage(error));
+    }
+  };
 
-      router.push(safeRedirect);
+  const handleGoogleLogin = () => {
+    setServerError(null);
+    setServerSuccess(null);
+
+    try {
+      window.location.href = getGoogleRedirectUrl();
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "Invalid email or password. Please try again.";
+          : "Google login is not available right now.";
 
       setServerError(message);
     }
@@ -179,8 +240,21 @@ export default function LoginPage() {
       </div>
 
       {/* Google */}
-      <Button type="button" variant="ghost">
-        Continue with Google
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={handleGoogleLogin}
+        className="h-12 border-gray-300 bg-white text-gray-700 shadow-sm hover:border-gray-400 hover:bg-gray-50 active:bg-gray-100"
+      >
+        <span className="font-semibold text-gray-700">Continue with</span>
+        <span className="font-bold">
+          <span className="text-[#4285F4]">G</span>
+          <span className="text-[#DB4437]">o</span>
+          <span className="text-[#F4B400]">o</span>
+          <span className="text-[#4285F4]">g</span>
+          <span className="text-[#0F9D58]">l</span>
+          <span className="text-[#DB4437]">e</span>
+        </span>
       </Button>
 
       {/* Register */}

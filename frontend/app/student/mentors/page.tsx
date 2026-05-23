@@ -1,14 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import type { AxiosError } from "axios";
+import { toast } from "sonner";
 import {
+  AlertCircle,
+  Award,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
   GraduationCap,
   Loader2,
   Search,
   SearchX,
+  Send,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -17,22 +25,58 @@ import {
   getPublicMajors,
   type PublicMajorItem,
 } from "@/services/studentService";
-import MentorProfileModal, {
-  MentorCard,
-} from "@/components/mentors/MentorProfileModal";
+import { MentorCard } from "@/components/mentors/MentorProfileModal";
+import Modal from "@/components/ui/Modal";
+import Input from "@/components/ui/Input";
+import SearchableDropdown, {
+  type SearchableDropdownOption,
+} from "@/components/ui/SearchableDropdown";
+import Switch from "@/components/ui/Switch";
+import Textarea from "@/components/ui/Textarea";
+import { loadPublicMajorOptions } from "@/services/dropdownOptions";
+import { mentorService, type MentorProfilePayload } from "@/services/mentorService";
 
 const PAGE_SIZE = 9;
+const currentYear = new Date().getFullYear();
+
+const defaultApplicationForm: MentorProfilePayload = {
+  major_slug: "",
+  bio: "",
+  years_experience: 0,
+  degree: "",
+  university_name: "",
+  graduation_year: currentYear,
+  languages: ["English"],
+  linkedin_url: "",
+  website_url: "",
+  is_accepting_students: true,
+};
 
 export default function StudentMentorsPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedMajorSlug, setSelectedMajorSlug] = useState("");
   const [page, setPage] = useState(1);
-  const [selectedMentor, setSelectedMentor] = useState<string | null>(null);
+  const [selectedMajorOption, setSelectedMajorOption] =
+    useState<SearchableDropdownOption<PublicMajorItem> | null>(null);
+  const [applicationMajorOption, setApplicationMajorOption] =
+    useState<SearchableDropdownOption<PublicMajorItem> | null>(null);
+  const [isApplicationOpen, setIsApplicationOpen] = useState(false);
+  const [applicationForm, setApplicationForm] =
+    useState<MentorProfilePayload>(defaultApplicationForm);
+  const [languageText, setLanguageText] = useState("English");
+  const [applicationMessage, setApplicationMessage] = useState("");
   const debouncedSearch = useDebounce(search, 250);
 
   const { data: majorsData, isLoading: majorsLoading } = useQuery({
-    queryKey: ["mentor-page-majors"],
-    queryFn: () => getPublicMajors({ per_page: 100, page: 1 }),
+    queryKey: ["mentor-page-majors", debouncedSearch],
+    queryFn: () =>
+      getPublicMajors({
+        per_page: debouncedSearch ? 10 : 10,
+        page: 1,
+        search: debouncedSearch || undefined,
+        name_en: debouncedSearch || undefined,
+      }),
   });
 
   const majors = useMemo(() => {
@@ -56,7 +100,10 @@ export default function StudentMentorsPage() {
     );
   }, [debouncedSearch, majors]);
 
-  const selectedMajor = majors.find((major) => major.slug === selectedMajorSlug) ?? null;
+  const selectedMajor =
+    selectedMajorOption?.item ??
+    majors.find((major) => major.slug === selectedMajorSlug) ??
+    null;
 
   const {
     data: mentorsData,
@@ -75,29 +122,138 @@ export default function StudentMentorsPage() {
 
   const handleSelectMajor = (major: PublicMajorItem) => {
     setSelectedMajorSlug(major.slug);
+    const nextOption = {
+      value: major.slug,
+      label: major.name_en,
+      item: major,
+    };
+    setSelectedMajorOption(nextOption);
+    setApplicationMajorOption((current) => current ?? nextOption);
+    setApplicationForm((previous) => ({
+      ...previous,
+      major_slug: previous.major_slug || major.slug,
+    }));
     setPage(1);
+  };
+
+  const openApplicationForm = () => {
+    setApplicationMessage("");
+    setApplicationForm((previous) => ({
+      ...previous,
+      major_slug: previous.major_slug || selectedMajorSlug,
+    }));
+    setIsApplicationOpen(true);
+  };
+
+  const closeApplicationForm = useCallback(() => {
+    setIsApplicationOpen(false);
+  }, []);
+
+  const applyMutation = useMutation({
+    mutationFn: (payload: MentorProfilePayload) => mentorService.createProfile(payload),
+    onSuccess: (application) => {
+      setApplicationMessage(
+        application.status === "pending"
+          ? "Your mentor application was submitted and is pending review."
+          : "Your mentor application was submitted.",
+      );
+      toast.success("Mentor application submitted.");
+    },
+    onError: (error: AxiosError<{ message?: string; errors?: Record<string, string[]> }>) => {
+      const errors = error.response?.data?.errors;
+      const firstValidationError = errors
+        ? Object.values(errors).flat().find(Boolean)
+        : undefined;
+      const message =
+        firstValidationError ??
+        error.response?.data?.message ??
+        "Mentor application could not be submitted.";
+
+      setApplicationMessage(message);
+      toast.error(message);
+    },
+  });
+
+  const setApplicationField = <K extends keyof MentorProfilePayload>(
+    key: K,
+    value: MentorProfilePayload[K],
+  ) => {
+    setApplicationForm((previous) => ({ ...previous, [key]: value }));
+  };
+
+  const handleApplicationSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setApplicationMessage("");
+
+    const languages = languageText
+      .split(",")
+      .map((language) => language.trim())
+      .filter(Boolean);
+
+    applyMutation.mutate({
+      ...applicationForm,
+      years_experience: Number(applicationForm.years_experience),
+      graduation_year: Number(applicationForm.graduation_year),
+      languages,
+      linkedin_url: applicationForm.linkedin_url || null,
+      website_url: applicationForm.website_url || null,
+      is_accepting_students: Boolean(applicationForm.is_accepting_students),
+    });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-slate-100">
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-6 py-12">
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-4 py-10 sm:px-6 sm:py-12">
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.05]" />
         <div className="relative mx-auto max-w-7xl">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white/70 ring-1 ring-white/20">
             <Users className="h-3.5 w-3.5" />
             Student mentors
           </span>
-          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+          <h1 className="mt-4 max-w-3xl text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
             Meet mentors by major
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-7 text-white/70">
             Choose a major to find approved mentors who can explain the path,
             university experience, and career direction.
           </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={openApplicationForm}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-5 py-3 text-sm font-bold text-brand-800 shadow-sm transition hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-white/25"
+            >
+              <UserPlus className="h-4 w-4" />
+              Apply as mentor
+            </button>
+            <span className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white/75">
+              <Award className="h-4 w-4" />
+              Reviewed before becoming public
+            </span>
+          </div>
         </div>
       </section>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[320px_1fr]">
+      <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 sm:pt-8">
+        <div className="rounded-lg border border-gray-100 bg-white px-5 py-4 shadow-sm sm:px-6">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+              <UserPlus className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-base font-bold text-gray-950">
+                Want to help students choose better?
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-gray-500">
+                Submit your mentor profile once. The team reviews it before it
+                appears publicly.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[320px_1fr]">
         <aside className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm lg:sticky lg:top-20 lg:self-start">
           <h2 className="text-lg font-bold text-gray-900">Choose a major</h2>
           <p className="mt-1 text-sm text-gray-500">
@@ -202,7 +358,7 @@ export default function StudentMentorsPage() {
                       <MentorCard
                         key={mentor.username}
                         mentor={mentor}
-                        onView={setSelectedMentor}
+                        onView={(username) => router.push(`/student/mentors/${username}`)}
                       />
                     ))}
                   </div>
@@ -253,10 +409,170 @@ export default function StudentMentorsPage() {
         </section>
       </main>
 
-      <MentorProfileModal
-        username={selectedMentor}
-        onClose={() => setSelectedMentor(null)}
-      />
+      <Modal
+        open={isApplicationOpen}
+        onClose={closeApplicationForm}
+        title="Apply as mentor"
+        description="Complete the details the review team needs to evaluate your mentor profile."
+        size="xl"
+      >
+        <form onSubmit={handleApplicationSubmit} className="space-y-6">
+          {applicationMessage && (
+            <div
+              className={`flex gap-2 rounded-lg px-3 py-2 text-sm ${
+                applyMutation.isSuccess
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-amber-50 text-amber-800"
+              }`}
+            >
+              {applyMutation.isSuccess ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              )}
+              <span>{applicationMessage}</span>
+            </div>
+          )}
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <SearchableDropdown<PublicMajorItem>
+                label="Major"
+                placeholder="Select a major"
+                searchPlaceholder="Search majors..."
+                emptyMessage="No majors found."
+                value={applicationForm.major_slug}
+                selectedOption={
+                  applicationMajorOption ??
+                  (applicationForm.major_slug
+                    ? {
+                        value: applicationForm.major_slug,
+                        label: selectedMajor?.name_en ?? applicationForm.major_slug,
+                        item: selectedMajor ?? undefined,
+                      }
+                    : null)
+                }
+                loadOptions={loadPublicMajorOptions}
+                onChange={(value, option) => {
+                  setApplicationMajorOption(option ?? null);
+                  setApplicationField("major_slug", value);
+                }}
+              />
+            </div>
+
+            <Input
+              label="Degree"
+              value={applicationForm.degree}
+              onChange={(event) => setApplicationField("degree", event.target.value)}
+              required
+              maxLength={100}
+              placeholder="BS Computer Science"
+            />
+
+            <Input
+              label="University"
+              value={applicationForm.university_name}
+              onChange={(event) => setApplicationField("university_name", event.target.value)}
+              required
+              maxLength={150}
+              placeholder="American University of Beirut"
+            />
+
+            <Input
+              label="Graduation year"
+              type="number"
+              min={1970}
+              max={currentYear}
+              value={applicationForm.graduation_year}
+              onChange={(event) => setApplicationField("graduation_year", Number(event.target.value))}
+              required
+            />
+
+            <Input
+              label="Years of experience"
+              type="number"
+              min={0}
+              max={50}
+              value={applicationForm.years_experience}
+              onChange={(event) => setApplicationField("years_experience", Number(event.target.value))}
+              required
+            />
+
+            <div className="md:col-span-2">
+              <Input
+                label="Languages"
+                value={languageText}
+                onChange={(event) => setLanguageText(event.target.value)}
+                required
+                hint="Separate languages with commas."
+                placeholder="English, Arabic, French"
+              />
+            </div>
+
+            <Input
+              label="LinkedIn URL"
+              type="url"
+              value={applicationForm.linkedin_url ?? ""}
+              onChange={(event) => setApplicationField("linkedin_url", event.target.value)}
+              placeholder="https://linkedin.com/in/..."
+            />
+
+            <Input
+              label="Website URL"
+              type="url"
+              value={applicationForm.website_url ?? ""}
+              onChange={(event) => setApplicationField("website_url", event.target.value)}
+              placeholder="https://your-site.com"
+            />
+
+            <div className="md:col-span-2">
+              <Textarea
+                label="Bio"
+                value={applicationForm.bio}
+                onChange={(event) => setApplicationField("bio", event.target.value)}
+                required
+                minLength={100}
+                maxLength={1000}
+                rows={6}
+                hint={`${applicationForm.bio.length}/1000 characters. Minimum 100.`}
+                placeholder="Share what you studied, what experience you bring, and how you can help students make clearer decisions."
+                className="min-h-40"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <Switch
+              checked={applicationForm.is_accepting_students}
+              onChange={(checked) => setApplicationField("is_accepting_students", checked)}
+              label="Accepting students"
+              description="Show that you are available after approval."
+            />
+
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={closeApplicationForm}
+                className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={applyMutation.isPending}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {applyMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {applyMutation.isPending ? "Submitting..." : "Submit application"}
+              </button>
+            </div>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

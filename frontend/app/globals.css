@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --font-poppins: "Segoe UI", Arial, sans-serif;
+    --font-inter: "Segoe UI", Arial, sans-serif;
+  }
+
   *, *::before, *::after {
     box-sizing: border-box;
   }
@@ -11,14 +16,20 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
 
   body {
     @apply font-body bg-white text-gray-900;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+  }
+
+  img, video, canvas, svg {
+    max-width: 100%;
   }
 }
 

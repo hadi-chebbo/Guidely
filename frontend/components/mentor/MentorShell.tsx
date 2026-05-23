@@ -128,14 +128,14 @@ export function MentorTopbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/90 px-4 backdrop-blur-xl sm:px-6">
-      <div className="flex h-16 items-center justify-between gap-4">
-        <div>
+      <div className="flex h-16 items-center justify-between gap-3">
+        <div className="min-w-0">
           <div className="mb-0.5 inline-flex items-center gap-2 text-xs font-semibold text-brand-700">
             <GraduationCap className="h-3.5 w-3.5" />
             Mentor Workspace
           </div>
-          <div className="flex items-baseline gap-2">
-            <h1 className="font-heading text-base font-bold text-gray-900 sm:text-lg">{page.title}</h1>
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h1 className="truncate font-heading text-base font-bold text-gray-900 sm:text-lg">{page.title}</h1>
             <p className="hidden text-xs text-gray-500 sm:block">{page.subtitle}</p>
           </div>
         </div>

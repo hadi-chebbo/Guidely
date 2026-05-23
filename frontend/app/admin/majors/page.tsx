@@ -10,7 +10,6 @@ import { AdminCard, AdminModalFrame, AdminPageHeader, AdminPageShell } from "@/c
 import MajorForm from "@/components/admin/majors/MajorForm";
 import MajorsTable from "@/components/admin/majors/MajorsTable";
 import MajorsFilters, { defaultMajorFilters, type MajorFilters } from "@/components/admin/majors/MajorsFilters";
-import Pagination from "@/components/ui/Pagination";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { Major, MajorListItem, Paginated } from "@/types/major";
 import type { MajorFormData } from "@/lib/validations/major";
@@ -87,17 +86,29 @@ export default function AdminMajorsPage() {
           onEdit={handleEdit}
         />
 
-        {meta && (
-          <div className="border-t border-gray-200 p-4">
-            <Pagination
-              currentPage={meta.current_page}
-              lastPage={meta.last_page}
-              total={meta.total}
-              perPage={meta.per_page}
-              onPageChange={setPage}
-            />
-          </div>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 p-4">
+          <button
+            type="button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={isLoading || !meta || meta.current_page <= 1}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span className="text-sm text-gray-500">
+            {meta ? `Page ${meta.current_page} of ${meta.last_page}` : "Page - of -"}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              setPage((current) => Math.min(meta?.last_page ?? current, current + 1))
+            }
+            disabled={isLoading || !meta || meta.current_page >= meta.last_page}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </AdminCard>
 
       {createOpen && (
@@ -144,9 +155,9 @@ function MajorFormModal({
 }) {
   return (
     <AdminModalFrame className="max-h-[92vh] max-w-4xl overflow-hidden p-0">
-      <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-5">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+      <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-4 py-5 sm:gap-4 sm:px-6">
+        <div className="min-w-0">
+          <h2 className="break-words text-xl font-semibold text-gray-900">{title}</h2>
           <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
         </div>
         <button
@@ -158,7 +169,7 @@ function MajorFormModal({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="max-h-[calc(92vh-88px)] overflow-y-auto p-6">{children}</div>
+      <div className="max-h-[calc(92vh-88px)] overflow-y-auto p-4 sm:p-6">{children}</div>
     </AdminModalFrame>
   );
 }

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import Modal from "@/components/ui/Modal";
+import Select from "@/components/ui/Select";
 import {
   getPublicUniversity,
   getPublicUniversities,
@@ -356,7 +357,7 @@ export default function StudentUniversitiesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-slate-100">
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-6 py-12">
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-700 to-indigo-700 px-4 py-10 sm:px-6 sm:py-12">
         <div className="pointer-events-none absolute inset-0 bg-grid-white opacity-[0.05]" />
         <div className="relative mx-auto max-w-7xl">
           <div>
@@ -364,7 +365,7 @@ export default function StudentUniversitiesPage() {
               <Building2 className="h-3.5 w-3.5" />
               University explorer
             </span>
-            <h1 className="mt-4 max-w-3xl text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+            <h1 className="mt-4 max-w-3xl text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
               Find universities that fit your plans
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-white/70">
@@ -375,7 +376,7 @@ export default function StudentUniversitiesPage() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
+      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         <section className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
           <div className="grid gap-4 lg:grid-cols-[1fr_180px_auto]">
             <div className="relative">
@@ -390,18 +391,18 @@ export default function StudentUniversitiesPage() {
                 className="h-12 w-full rounded-lg border border-gray-200 bg-white pl-11 pr-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"
               />
             </div>
-            <select
+            <Select
               value={type}
               onChange={(event) => {
                 setType(event.target.value as "all" | "public" | "private");
                 setPage(1);
               }}
-              className="h-12 rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"
-            >
-              <option value="all">All types</option>
-              <option value="public">Public</option>
-              <option value="private">Private</option>
-            </select>
+              options={[
+                { value: "all", label: "All types" },
+                { value: "public", label: "Public" },
+                { value: "private", label: "Private" },
+              ]}
+            />
             <div className="flex h-12 items-center gap-2 rounded-lg bg-gray-50 px-4 text-sm font-semibold text-gray-600">
               <SlidersHorizontal className="h-4 w-4" />
               {data?.meta.total ?? 0} results

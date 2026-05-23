@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 
 import * as authService from "@/services/authService";
@@ -29,6 +30,7 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   register: (data: authService.RegisterFormData) => Promise<void>;
   refreshAuth: () => Promise<void>;
+  completeGoogleLogin: (token: string) => Promise<authService.User>;
   forgotPassword: (email: string) => Promise<void>;
   verifyEmail: (
     id: string,
@@ -54,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const router = useRouter();
+  const authRequestRef = useRef(0);
 
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -75,10 +78,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const init = async () => {
+      const requestId = ++authRequestRef.current;
+
       try {
         const user = await authService.checkAuth();
+        if (requestId !== authRequestRef.current) return;
         setAuth(user);
       } catch {
+        if (requestId !== authRequestRef.current) return;
         setAuth(null);
       }
     };
@@ -93,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     password: string,
     rememberMe: boolean = false
   ) => {
+    const requestId = ++authRequestRef.current;
     setState((p) => ({ ...p, loading: true }));
 
     try {
@@ -102,34 +110,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         rememberMe,
       });
 
-      setAuth(user);
-
-      router.push(
-        user.role === "admin"
-          ? "/admin"
-          : user.role === "mentor"
-            ? "/mentor"
-            : "/student/dashboard"
-      );
+      if (requestId === authRequestRef.current) {
+        setAuth(user);
+      }
 
       return user;
     } catch (err) {
-      setAuth(null);
+      if (requestId === authRequestRef.current) {
+        setAuth(null);
+      }
       throw err;
     } finally {
-      setState((p) => ({ ...p, loading: false }));
+      if (requestId === authRequestRef.current) {
+        setState((p) => ({ ...p, loading: false }));
+      }
     }
   };
+
+  /* ───────────────────────────── GOOGLE LOGIN ───────────────────────────── */
+
+  const completeGoogleLogin = useCallback(async (token: string) => {
+    const requestId = ++authRequestRef.current;
+    setState((p) => ({ ...p, loading: true }));
+
+    try {
+      const user = await authService.completeGoogleLogin(token);
+
+      if (requestId === authRequestRef.current) {
+        setAuth(user);
+      }
+
+      return user;
+    } catch (err) {
+      if (requestId === authRequestRef.current) {
+        setAuth(null);
+      }
+      throw err;
+    } finally {
+      if (requestId === authRequestRef.current) {
+        setState((p) => ({ ...p, loading: false }));
+      }
+    }
+  }, [setAuth]);
 
   /* ───────────────────────────── LOGOUT ───────────────────────────── */
 
   const logout = async () => {
+    const requestId = ++authRequestRef.current;
     setState((p) => ({ ...p, loading: true }));
 
     try {
       await authService.logout();
     } finally {
-      setAuth(null);
+      if (requestId === authRequestRef.current) {
+        setAuth(null);
+      }
       router.push("/login");
     }
   };
@@ -151,12 +186,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   /* ───────────────────────────── REFRESH ───────────────────────────── */
 
   const refreshAuth = async () => {
+    const requestId = ++authRequestRef.current;
     setState((p) => ({ ...p, loading: true }));
 
     try {
       const user = await authService.checkAuth();
+      if (requestId !== authRequestRef.current) return;
       setAuth(user);
     } catch {
+      if (requestId !== authRequestRef.current) return;
       setAuth(null);
     }
   };
@@ -193,6 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         logout,
         register,
         refreshAuth,
+        completeGoogleLogin,
         forgotPassword,
         verifyEmail,
         resendVerificationEmail,

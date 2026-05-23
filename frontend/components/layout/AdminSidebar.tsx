@@ -12,6 +12,7 @@ import {
   MessageCircleQuestion,
   UserCheck,
   Users,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ const navSections: Array<{ title: string; links: AdminNavLink[] }> = [
     links: [
       { href: "/admin/users", label: "Users", icon: Users },
       { href: "/admin/mentors", label: "Mentors", icon: UserCheck },
+      { href: "/admin/mentor-applications", label: "Applications", icon: ClipboardList },
     ],
   },
   {
@@ -50,7 +52,13 @@ const navSections: Array<{ title: string; links: AdminNavLink[] }> = [
   },
 ];
 
-export default function AdminSidebar({ className }: { className?: string }) {
+export default function AdminSidebar({
+  className,
+  onClose,
+}: {
+  className?: string;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -60,24 +68,36 @@ export default function AdminSidebar({ className }: { className?: string }) {
         className
       )}
     >
-      <Link href="/admin" className="flex h-16 items-center gap-3 border-b border-gray-200 px-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm">
-          <Image
-            src="/logo-transparent.png"
-            alt="Guidely"
-            width={34}
-            height={34}
-            priority
-            className="object-contain"
-          />
-        </div>
-        <div className="leading-tight">
-          <p className="font-heading text-lg font-bold text-gray-900">Guidely</p>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
-            Admin Console
-          </p>
-        </div>
-      </Link>
+      <div className="flex h-16 items-center justify-between gap-3 border-b border-gray-200 px-5">
+        <Link href="/admin" onClick={onClose} className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm">
+            <Image
+              src="/logo-transparent.png"
+              alt="Guidely"
+              width={34}
+              height={34}
+              priority
+              className="object-contain"
+            />
+          </div>
+          <div className="leading-tight">
+            <p className="font-heading text-lg font-bold text-gray-900">Guidely</p>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+              Admin Console
+            </p>
+          </div>
+        </Link>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 lg:hidden"
+            aria-label="Close admin navigation"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
         {navSections.map((section) => (
@@ -93,6 +113,7 @@ export default function AdminSidebar({ className }: { className?: string }) {
                   <Link
                     key={href}
                     href={href}
+                    onClick={onClose}
                     className={cn(
                     "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
                     active
