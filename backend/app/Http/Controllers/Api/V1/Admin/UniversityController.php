@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\University\IndexUniversityRequest;
 use App\Http\Requests\Admin\University\StoreUniversityRequest;
+use App\Http\Requests\Admin\University\UniversityMajorRequest;
 use App\Http\Requests\Admin\University\UpdateUniversityRequest;
 use App\Http\Resources\Admin\MajorResource;
 use App\Http\Resources\Admin\UniversityResource;
 use App\Models\University;
+use App\Models\UniversityMajor;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
 
@@ -89,6 +91,32 @@ class UniversityController extends Controller
             MajorResource::collection($majors),
             'University majors retrieved successfully',
             200
+        );
+    }
+
+    public function storeMajor(
+        UniversityMajorRequest $request,
+        University $university
+    ) {
+        $validated = $request->validated();
+
+        $pivotData = collect($validated)
+            ->except('major_id')
+            ->toArray();
+
+        $university->majors()->attach(
+            $validated['major_id'],
+            $pivotData
+        );
+
+        $major = $university->majors()
+            ->where('majors.id', $validated['major_id'])
+            ->first();
+
+        return $this->success(
+            new MajorResource($major),
+            'Major Assigned To University Successfully',
+            201
         );
     }
 }

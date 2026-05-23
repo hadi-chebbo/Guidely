@@ -95,7 +95,7 @@ class ReservationController extends Controller
 
             // Capacity check (safe inside lock)
             $currentCount = UserReservation::where('session_availability_id', $availability->id)
-                ->whereIn('status', 'confirmed')
+                ->where('status', 'confirmed')
                 ->count();
 
             if ($currentCount >= $session->max_capacity) {

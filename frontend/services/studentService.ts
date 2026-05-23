@@ -30,6 +30,8 @@ export interface PublicMajorItem {
   international_demand: DemandLevel;
   is_featured: boolean;
   cover_image: string | null;
+  avatar_url?: string | null;
+  image_url?: string | null;
   category: {
     id?: number;
     name: string;
@@ -250,12 +252,46 @@ const unwrap = <T>(payload: { data?: T } | T): T => {
   return payload as T;
 };
 
+const getApiOrigin = (): string | null => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) return null;
+
+  try {
+    return new URL(apiUrl).origin;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeMajorImageUrl = (url?: string | null): string | null => {
+  if (!url) return null;
+
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) return null;
+
+  try {
+    return new URL(trimmedUrl).toString();
+  } catch {
+    const apiOrigin = getApiOrigin();
+    if (!apiOrigin) return trimmedUrl;
+
+    if (trimmedUrl.startsWith("/")) {
+      return `${apiOrigin}${trimmedUrl}`;
+    }
+
+    return `${apiOrigin}/storage/${trimmedUrl.replace(/^storage\//, "")}`;
+  }
+};
+
 const normalizeMajor = (major: PublicMajorItem): PublicMajorItem => {
   const nestedMajor = major.major ?? {};
   const mergedMajor = {
     ...nestedMajor,
     ...major,
   };
+  const coverImage = normalizeMajorImageUrl(
+    mergedMajor.cover_image ?? mergedMajor.avatar_url ?? mergedMajor.image_url,
+  );
 
   return {
     ...mergedMajor,
@@ -271,6 +307,8 @@ const normalizeMajor = (major: PublicMajorItem): PublicMajorItem => {
         }
       : null,
     skills: mergedMajor.skills ?? [],
+    cover_image: coverImage,
+    avatar_url: mergedMajor.avatar_url ?? coverImage,
   } as PublicMajorItem;
 };
 
@@ -297,9 +335,22 @@ const normalizeUniversity = (
 const normalizeUniversityList = (items: PublicUniversityItem[] = []) =>
   items.map(normalizeUniversity);
 
+const normalizeAvatarUrl = (url?: string | null) => {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "via.placeholder.com") return null;
+  } catch {
+    return null;
+  }
+
+  return url;
+};
+
 const normalizeMentor = (mentor: PublicMentorItem): PublicMentorItem => ({
   ...mentor,
-  avatar_url: mentor.avatar_url ?? null,
+  avatar_url: normalizeAvatarUrl(mentor.avatar_url),
   school: mentor.school ?? null,
   preferred_language: mentor.preferred_language ?? null,
   profile: mentor.profile
@@ -546,10 +597,16 @@ export const getPublicMajors = async (
   } = {},
 ): Promise<PublicMajorsResponse> => {
   const hasSearch = Boolean(params.search?.trim() || params.name_en?.trim());
-  const cachedResponse = hasSearch ? null : getCachedPublicMajorsResponse(params);
-  if (cachedResponse) return cachedResponse;
+  let res;
 
-  const res = await api.get("/majors", { params });
+  try {
+    res = await api.get("/majors", { params });
+  } catch (error) {
+    const cachedResponse = hasSearch ? null : getCachedPublicMajorsResponse(params);
+    if (cachedResponse) return cachedResponse;
+    throw error;
+  }
+
   const data = unwrap<PublicMajorsResponse>(res.data);
   const others = data.others as PublicMajorsResponse["others"] & {
     current_page?: number;
@@ -584,7 +641,7 @@ export const getPublicMajors = async (
     ...mergedData.others.data,
   ]);
 
-  return (hasSearch ? null : getCachedPublicMajorsResponse(params)) ?? mergedData;
+  return mergedData;
 };
 
 // POST /majors/compare

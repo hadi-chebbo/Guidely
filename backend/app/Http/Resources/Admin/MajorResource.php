@@ -29,7 +29,23 @@ class MajorResource extends JsonResource
             'international_demand' => $this->international_demand,
             'is_featured' => $this->is_featured,
             'cover_image' => $this->cover_image,
-            
+
+            'category' => $this->whenLoaded('category', function () {
+                return [
+                    'id' => $this->category->id,
+                    'name' => $this->category->name ?? null,
+                ];
+            }),
+
+            'skills' => $this->whenLoaded('skills', function () {
+                return $this->skills->map(function ($skill) {
+                    return [
+                        'id' => $skill->id,
+                        'name' => $skill->name ?? null,
+                    ];
+                });
+            }),
+
             'university_data' => $this->whenPivotLoaded('university_majors', function () {
                 return array_filter([
                     'credit_price_usd' => $this->pivot->credit_price_usd,

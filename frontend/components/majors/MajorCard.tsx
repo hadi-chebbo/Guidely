@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowRightLeft,
@@ -67,6 +68,8 @@ export default function MajorCard({
   favoriteDisabled = false,
   onToggleFavorite,
 }: Props) {
+  const [coverFailed, setCoverFailed] = useState(false);
+  const coverImage = typeof major.cover_image === "string" ? major.cover_image : null;
   const demand = demandConfig[major.local_demand] ?? demandConfig.medium;
   const slug = major.category?.slug ?? "";
   const theme = cardTheme;
@@ -76,6 +79,11 @@ export default function MajorCard({
     major.duration_years ?? (major as unknown as { duration_year?: number }).duration_year ?? 0;
   const detailsHref = `/student/majors/${major.slug}`;
   const compareHref = "/student/compare";
+  const showCover = Boolean(coverImage && !coverFailed);
+
+  useEffect(() => {
+    setCoverFailed(false);
+  }, [coverImage]);
   const favoriteButton = onToggleFavorite ? (
     <button
       type="button"
@@ -106,10 +114,20 @@ export default function MajorCard({
       <article
         className="group flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 pr-14 shadow-sm transition-all hover:border-brand-200 hover:shadow-card"
       >
-        {/* Icon pill */}
-        <div className={cn("flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl", theme.bg)}>
-          <Icon className={cn("h-6 w-6", theme.iconColor)} strokeWidth={1.75} />
-        </div>
+        {showCover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coverImage as string}
+            alt={major.name_en}
+            referrerPolicy="no-referrer"
+            onError={() => setCoverFailed(true)}
+            className="h-16 w-20 flex-shrink-0 rounded-xl border border-gray-100 bg-white object-contain p-2"
+          />
+        ) : (
+          <div className={cn("flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl", theme.bg)}>
+            <Icon className={cn("h-6 w-6", theme.iconColor)} strokeWidth={1.75} />
+          </div>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
@@ -180,17 +198,30 @@ export default function MajorCard({
       className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-card"
     >
       {/* Colored header — icon + title */}
-      <div className={cn("relative px-5 pt-5 pb-4", theme.bg)}>
-        {/* Subtle dot pattern overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
-            backgroundSize: "18px 18px",
-          }}
-        />
+      <div className={cn("relative min-h-[160px] px-5 pt-5 pb-4", theme.bg)}>
+        {showCover ? (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-950 via-brand-950/95 to-brand-800/70" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={coverImage as string}
+              alt={major.name_en}
+              referrerPolicy="no-referrer"
+              onError={() => setCoverFailed(true)}
+              className="absolute right-4 top-4 h-24 w-24 rounded-2xl border border-white/30 bg-white/95 object-contain p-3 shadow-lg"
+            />
+          </>
+        ) : (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+              backgroundSize: "18px 18px",
+            }}
+          />
+        )}
 
-        <div className="relative flex items-start justify-between gap-3">
+        <div className={cn("relative flex items-start justify-between gap-3", showCover && "pr-24")}>
           {/* Icon container */}
           <div className={cn("flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl", theme.iconBg)}>
             <Icon className={cn("h-5 w-5", theme.iconColor)} strokeWidth={1.75} />
@@ -206,13 +237,13 @@ export default function MajorCard({
         </div>
 
         {/* Major name in header */}
-        <h3 className={cn("mt-3 font-bold text-base leading-snug", theme.text)}>
+        <h3 className={cn("relative mt-3 font-bold text-base leading-snug", theme.text, showCover && "pr-24")}>
           {major.name_en}
         </h3>
 
         {/* Category label */}
         {major.category && (
-          <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-white/55">
+          <p className={cn("relative mt-0.5 text-[11px] font-medium uppercase tracking-wider text-white/70", showCover && "pr-24")}>
             {major.category.name_en}
           </p>
         )}

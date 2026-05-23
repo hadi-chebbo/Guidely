@@ -7,6 +7,7 @@ import {
   GitCompare,
   Building2,
   BrainCircuit,
+  CalendarCheck,
   Users,
   TrendingUp,
   LayoutDashboard,
@@ -21,6 +22,7 @@ const sidebarLinks = [
   { href: "/student/universities",  label: "Universities",     icon: Building2 },
   { href: "/student/quiz",  label: "Personality Test", icon: BrainCircuit },
   { href: "/student/mentors",       label: "Mentors",          icon: Users },
+  { href: "/student/reservations", label: "My Bookings", icon: CalendarCheck },
   { href: "/market",        label: "Market Research",  icon: TrendingUp },
   { href: "/student/favorites", label: "Saved Majors",     icon: Heart },
 ];
