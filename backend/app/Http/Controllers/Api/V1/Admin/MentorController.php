@@ -51,9 +51,7 @@ class MentorController extends Controller
             'status' => 'approved',
         ]);
 
-        $user->update([
-            'role' => 'mentor'
-        ]);
+        $user->forceFill(['role' => 'mentor'])->save();
 
         return $this->success(new MentorApplicationResource($user->fresh(['mentorProfile'])), "Mentor application approved successfully" , 200);
     }
