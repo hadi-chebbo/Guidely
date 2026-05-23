@@ -14,7 +14,6 @@ import {
   RefreshCw,
   Sparkles,
   TicketCheck,
-  XCircle,
 } from "lucide-react";
 
 import Badge from "@/components/ui/Badge";
@@ -22,7 +21,6 @@ import Button from "@/components/ui/Button";
 import {
   getPublicSessions,
   bookSessionAvailability,
-  cancelReservation,
   type PublicSessionItem,
   type PublicSessionAvailability,
 } from "@/services/studentService";
@@ -121,61 +119,34 @@ function SessionActionButtons({ session }: { session: PublicSessionItem }) {
     },
   });
 
-  const cancelMutation = useMutation({
-    mutationFn: () => {
-      if (!reservationUuid) {
-        throw new Error("Book this session before cancelling it.");
-      }
-      return cancelReservation(reservationUuid);
-    },
-    onSuccess: async () => {
-      setReservationUuid(null);
-      if (availableSlot?.uuid) {
-        storeReservationUuid(availableSlot.uuid, null);
-      }
-      toast.success("Reservation cancelled successfully.");
-      await refreshSessions();
-    },
-    onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
-      toast.error(
-        error.response?.data?.message ?? error.message ?? "Reservation could not be cancelled.",
-      );
-    },
-  });
-
   const hasAvailability = Boolean(availableSlot?.uuid);
+  const isReserved = Boolean(reservationUuid);
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div className="grid gap-2">
       <Button
         type="button"
         size="md"
         fullWidth
-        disabled={
-          !hasAvailability ||
-          Boolean(reservationUuid) ||
-          bookMutation.isPending ||
-          cancelMutation.isPending
-        }
+        disabled={!hasAvailability || bookMutation.isPending}
         isLoading={bookMutation.isPending}
-        leftIcon={<TicketCheck className="h-4 w-4" />}
-        onClick={() => bookMutation.mutate()}
+        leftIcon={
+          isReserved ? (
+            <CalendarCheck className="h-4 w-4" />
+          ) : (
+            <TicketCheck className="h-4 w-4" />
+          )
+        }
+        onClick={() => {
+          if (isReserved) {
+            router.push("/student/reservations");
+            return;
+          }
+          bookMutation.mutate();
+        }}
         className="rounded-lg"
       >
-        {reservationUuid ? "Reserved" : "Book Session"}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="md"
-        fullWidth
-        disabled={!reservationUuid || bookMutation.isPending || cancelMutation.isPending}
-        isLoading={cancelMutation.isPending}
-        leftIcon={<XCircle className="h-4 w-4" />}
-        onClick={() => cancelMutation.mutate()}
-        className="rounded-lg border-gray-300"
-      >
-        Cancel Booking
+        {isReserved ? "View Booking" : "Book Session"}
       </Button>
     </div>
   );
@@ -330,6 +301,7 @@ function LoadingGrid() {
 }
 
 export default function StudentSessionsPage() {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const {
     data,
@@ -364,12 +336,22 @@ export default function StudentSessionsPage() {
                 one place.
               </p>
             </div>
-            {pagination && (
-              <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white/80">
-                <span className="font-bold text-white">{pagination.total}</span>{" "}
-                total session{pagination.total === 1 ? "" : "s"}
-              </div>
-            )}
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-stretch">
+              <button
+                type="button"
+                onClick={() => router.push("/student/reservations")}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-3 text-sm font-bold text-brand-950 transition hover:bg-brand-50"
+              >
+                <CalendarCheck className="h-4 w-4" />
+                View my booked sessions
+              </button>
+              {pagination && (
+                <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white/80">
+                  <span className="font-bold text-white">{pagination.total}</span>{" "}
+                  total session{pagination.total === 1 ? "" : "s"}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>

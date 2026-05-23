@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, Plus, Search, Star, X } from "lucide-react";
+import { BookOpen, Loader2, Plus, Search, Star, X } from "lucide-react";
 import { universityService } from "@/services/universityService";
 import type { University, UniversityMajor } from "@/types/university";
+import { getMajors } from "@/services/majorsService";
+import type { MajorListItem } from "@/types/major";
 import {
   AdminCard,
   AdminModalFrame,
@@ -14,6 +16,7 @@ import {
 } from "@/components/admin/AdminPage";
 import UniversitiesTable from "@/components/admin/universities/UniversitiesTable";
 import UniversityForm from "@/components/admin/universities/UniversityForm";
+import Select from "@/components/ui/Select";
 
 type FilterType = "all" | "public" | "private";
 
@@ -31,6 +34,26 @@ type FormState = {
   accreditation: string;
 };
 
+type AssignFormState = {
+  major_id: string;
+  credit_price_usd: string;
+  total_credits: string;
+  admission_requirements: string;
+  language_of_instruction: string;
+  has_scholarship: boolean;
+  campus: string;
+};
+
+const emptyAssignForm: AssignFormState = {
+  major_id: "",
+  credit_price_usd: "",
+  total_credits: "",
+  admission_requirements: "",
+  language_of_instruction: "English",
+  has_scholarship: false,
+  campus: "",
+};
+
 export default function UniversitiesPage() {
   const [data, setData] = useState<University[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
@@ -44,6 +67,9 @@ export default function UniversitiesPage() {
   const [viewOpen, setViewOpen] = useState(false);
   const [majorsLoading, setMajorsLoading] = useState(false);
   const [universityMajors, setUniversityMajors] = useState<UniversityMajor[]>([]);
+  const [availableMajors, setAvailableMajors] = useState<MajorListItem[]>([]);
+  const [assignForm, setAssignForm] = useState<AssignFormState>(emptyAssignForm);
+  const [assigningMajor, setAssigningMajor] = useState(false);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<FilterType>("all");
 
@@ -70,15 +96,71 @@ export default function UniversitiesPage() {
     setViewOpen(true);
     setMajorsLoading(true);
     setUniversityMajors([]);
+    setAssignForm(emptyAssignForm);
 
     try {
-      const majors = await universityService.getMajors(university.id);
+      const [majors, adminMajors] = await Promise.all([
+        universityService.getMajors(university.id),
+        getMajors({ page: 1, per_page: 100 }),
+      ]);
       setUniversityMajors(majors);
+      setAvailableMajors(adminMajors.data);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load university majors");
     } finally {
       setMajorsLoading(false);
+    }
+  };
+
+  const handleAssignMajor = async () => {
+    if (!viewUniversity || !assignForm.major_id) {
+      toast.error("Choose a major first");
+      return;
+    }
+
+    setAssigningMajor(true);
+    try {
+      const assigned = await universityService.assignMajor(viewUniversity.id, {
+        major_id: Number(assignForm.major_id),
+        credit_price_usd: assignForm.credit_price_usd
+          ? Number(assignForm.credit_price_usd)
+          : null,
+        total_credits: assignForm.total_credits
+          ? Number(assignForm.total_credits)
+          : null,
+        admission_requirements: assignForm.admission_requirements || null,
+        language_of_instruction: assignForm.language_of_instruction || null,
+        has_scholarship: assignForm.has_scholarship,
+        campus: assignForm.campus || null,
+      });
+
+      setUniversityMajors((prev) => [
+        assigned,
+        ...prev.filter((major) => major.id !== assigned.id),
+      ]);
+      setAssignForm(emptyAssignForm);
+      toast.success("Major assigned to university successfully");
+    } catch (error: unknown) {
+      console.error(error);
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof error.response === "object" &&
+        error.response !== null &&
+        "data" in error.response &&
+        typeof error.response.data === "object" &&
+        error.response.data !== null &&
+        "message" in error.response.data
+          ? String(error.response.data.message)
+          : "Failed to assign major to university";
+
+      toast.error(
+        message
+      );
+    } finally {
+      setAssigningMajor(false);
     }
   };
 
@@ -283,6 +365,130 @@ export default function UniversitiesPage() {
             </button>
           </div>
 
+          <div className="mb-5 rounded-lg border border-gray-200 bg-white p-4">
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Assign major
+              </h3>
+              <p className="mt-1 text-xs text-gray-500">
+                Add a major to this university with its university-specific details.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Select
+                value={assignForm.major_id}
+                onChange={(event) =>
+                  setAssignForm((prev) => ({
+                    ...prev,
+                    major_id: event.target.value,
+                  }))
+                }
+                placeholder="Choose major"
+                searchPlaceholder="Search majors..."
+                options={availableMajors.map((major) => ({
+                  value: String(major.id),
+                  label: major.name_en,
+                }))}
+              />
+
+              <input
+                value={assignForm.campus}
+                onChange={(event) =>
+                  setAssignForm((prev) => ({
+                    ...prev,
+                    campus: event.target.value,
+                  }))
+                }
+                placeholder="Campus"
+                className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              />
+
+              <input
+                value={assignForm.credit_price_usd}
+                onChange={(event) =>
+                  setAssignForm((prev) => ({
+                    ...prev,
+                    credit_price_usd: event.target.value,
+                  }))
+                }
+                type="number"
+                min="0"
+                placeholder="Credit price USD"
+                className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              />
+
+              <input
+                value={assignForm.total_credits}
+                onChange={(event) =>
+                  setAssignForm((prev) => ({
+                    ...prev,
+                    total_credits: event.target.value,
+                  }))
+                }
+                type="number"
+                min="0"
+                placeholder="Total credits"
+                className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              />
+
+              <input
+                value={assignForm.language_of_instruction}
+                onChange={(event) =>
+                  setAssignForm((prev) => ({
+                    ...prev,
+                    language_of_instruction: event.target.value,
+                  }))
+                }
+                placeholder="Language of instruction"
+                className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+              />
+
+              <label className="flex min-h-[42px] items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={assignForm.has_scholarship}
+                  onChange={(event) =>
+                    setAssignForm((prev) => ({
+                      ...prev,
+                      has_scholarship: event.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                />
+                Has scholarship
+              </label>
+
+              <textarea
+                value={assignForm.admission_requirements}
+                onChange={(event) =>
+                  setAssignForm((prev) => ({
+                    ...prev,
+                    admission_requirements: event.target.value,
+                  }))
+                }
+                placeholder="Admission requirements"
+                className="min-h-20 rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100 sm:col-span-2"
+              />
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={handleAssignMajor}
+                disabled={!assignForm.major_id || assigningMajor}
+                className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {assigningMajor ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                Assign major
+              </button>
+            </div>
+          </div>
+
           <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50">
             {majorsLoading ? (
               <div className="space-y-3 p-4">
@@ -304,8 +510,16 @@ export default function UniversitiesPage() {
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
-                        Category #{major.category_id}
+                        {major.university_data?.total_credits
+                          ? `${major.university_data.total_credits} credits`
+                          : `Category #${major.category_id ?? "-"}`
+                        }
                       </span>
+                      {major.university_data?.campus && (
+                        <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs text-brand-700">
+                          {major.university_data.campus}
+                        </span>
+                      )}
                       {major.is_featured && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
                           <Star className="h-3 w-3" />

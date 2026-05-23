@@ -64,11 +64,25 @@ const toInputDateTime = (value?: string | null) => {
   return value.replace(" ", "T").slice(0, 16);
 };
 
+const parseWallClockDateTime = (value: string) => {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if (!match) return null;
+
+  const [, year, month, day, hour, minute] = match;
+  return new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+  );
+};
+
 const formatDateTime = (value: string) => {
   if (!value) return "-";
 
-  const parsed = new Date(value.includes("T") ? value : value.replace(" ", "T"));
-  if (Number.isNaN(parsed.getTime())) return value;
+  const parsed = parseWallClockDateTime(value);
+  if (!parsed || Number.isNaN(parsed.getTime())) return value;
 
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",

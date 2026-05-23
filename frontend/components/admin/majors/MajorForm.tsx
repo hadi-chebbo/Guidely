@@ -316,15 +316,14 @@ export default function MajorForm({ initialData, mode, majorId, majorDetails, on
           return;
         }
 
-        const nextSkillIds = Array.from(new Set([...initialSkillIds, ...skillIds])).sort((a, b) => a - b);
         let savedMajor = majorDetails;
 
         if (hasBasicChanges(data, initialData)) {
           savedMajor = await updateMajor(majorId, payload);
         }
 
-        if (!areSkillIdsEqual(nextSkillIds, initialSkillIds)) {
-          savedMajor = await updateMajor(majorId, { skills: nextSkillIds });
+        if (!areSkillIdsEqual(skillIds, initialSkillIds)) {
+          savedMajor = await updateMajor(majorId, { skills: skillIds });
         }
 
         methods.reset({ ...methods.getValues(), ...data });
@@ -582,7 +581,7 @@ export default function MajorForm({ initialData, mode, majorId, majorDetails, on
         </label>
 
         <div id="skills" className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
-          <SkillsSection lockedSkillIds={mode === "edit" ? initialSkillIds : []} />
+          <SkillsSection />
         </div>
 
         <div className="sticky bottom-0 flex justify-end gap-2 bg-white/80 py-2 backdrop-blur">

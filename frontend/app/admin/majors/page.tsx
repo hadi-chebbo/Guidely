@@ -11,6 +11,7 @@ import MajorForm from "@/components/admin/majors/MajorForm";
 import MajorsTable from "@/components/admin/majors/MajorsTable";
 import MajorsFilters, { defaultMajorFilters, type MajorFilters } from "@/components/admin/majors/MajorsFilters";
 import { useDebounce } from "@/hooks/useDebounce";
+import { mergeMajorUpdateDates, readMajorUpdateDates, saveMajorUpdateDate } from "@/lib/adminMajorUpdateDates";
 import type { Major, MajorListItem, Paginated } from "@/types/major";
 import type { MajorFormData } from "@/lib/validations/major";
 
@@ -23,6 +24,7 @@ export default function AdminMajorsPage() {
   const [filters, setFilters] = useState<MajorFilters>(defaultMajorFilters);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingMajorId, setEditingMajorId] = useState<number | null>(null);
+  const [majorUpdateDates, setMajorUpdateDates] = useState(readMajorUpdateDates);
   const debouncedSearch = useDebounce(filters.search, 300);
 
   const { data, isLoading } = useQuery({
@@ -52,6 +54,7 @@ export default function AdminMajorsPage() {
   };
 
   const items = data?.data ?? [];
+  const itemsWithUpdateDates = mergeMajorUpdateDates(items, majorUpdateDates);
   const meta = data?.meta;
 
   return (
@@ -81,7 +84,7 @@ export default function AdminMajorsPage() {
         </div>
 
         <MajorsTable
-          items={items}
+          items={itemsWithUpdateDates}
           loading={isLoading}
           onEdit={handleEdit}
         />
@@ -132,7 +135,14 @@ export default function AdminMajorsPage() {
         <EditMajorModal
           majorId={editingMajorId}
           onClose={() => setEditingMajorId(null)}
-          onSaved={async () => {
+          onSaved={async (updatedAt?: string) => {
+            if (updatedAt && editingMajorId) {
+              setMajorUpdateDates((current) => ({
+                ...current,
+                [editingMajorId]: updatedAt,
+              }));
+            }
+
             await refreshMajors();
             setEditingMajorId(null);
           }}
@@ -181,7 +191,7 @@ function EditMajorModal({
 }: {
   majorId: number;
   onClose: () => void;
-  onSaved: () => Promise<void>;
+  onSaved: (updatedAt?: string) => Promise<void>;
 }) {
   const queryClient = useQueryClient();
 
@@ -264,6 +274,7 @@ function EditMajorModal({
         majorDetails={major}
         onCancel={onClose}
         onSuccess={async (updatedMajor?: Major, submittedData?: Partial<MajorFormData>) => {
+          const updatedAt = new Date().toISOString();
           const selectedCategory = categories?.find(
             (category) => category.id === submittedData?.category_id
           );
@@ -295,11 +306,12 @@ function EditMajorModal({
                 international_demand: submittedData?.international_demand ?? updatedMajor.international_demand,
                 is_featured: submittedData?.is_featured ?? updatedMajor.is_featured,
                 cover_image: submittedData?.cover_image ?? updatedMajor.cover_image,
-                updated_at: new Date().toISOString(),
+                updated_at: updatedAt,
               }
             : undefined;
 
           if (mergedMajor) {
+            saveMajorUpdateDate(mergedMajor.id, mergedMajor.updated_at);
             queryClient.setQueryData(["major", majorId], mergedMajor);
             queryClient.setQueriesData<Paginated<MajorListItem>>(
               { queryKey: ["admin-majors"] },
@@ -337,7 +349,7 @@ function EditMajorModal({
           }
           await Promise.all([
             queryClient.invalidateQueries({ queryKey: ["major", majorId] }),
-            onSaved(),
+            onSaved(mergedMajor?.updated_at),
           ]);
         }}
       />

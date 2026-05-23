@@ -182,7 +182,9 @@ function FavoriteMajorCard({
   isRemoving: boolean;
   onRemove: (majorId: number) => void;
 }) {
+  const [coverFailed, setCoverFailed] = useState(false);
   const majorId = getPublicMajorId(major);
+  const showCover = Boolean(major.cover_image && !coverFailed);
   const durationYears = major.duration_years ?? major.duration_year ?? 0;
   const salaryK = major.salary_max
     ? `$${Math.round(major.salary_max / 1000)}k`
@@ -197,8 +199,20 @@ function FavoriteMajorCard({
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card">
-      <div className="border-b border-gray-100 bg-brand-950 px-5 py-5">
-        <div className="flex items-start justify-between gap-3">
+      <div className={cn("relative overflow-hidden border-b border-gray-100 bg-brand-950 px-5 py-5", showCover && "min-h-[150px]")}>
+        {showCover && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={major.cover_image as string}
+              alt={major.name_en}
+              onError={() => setCoverFailed(true)}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/65 to-black/20" />
+          </>
+        )}
+        <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-white/55">
               {major.category?.name_en ?? "Major"}

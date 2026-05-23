@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ExternalLink,
@@ -34,17 +35,19 @@ const formatLanguages = (languages: PublicMentorItem["profile"] extends infer P
 };
 
 function Avatar({ mentor, size = "lg" }: { mentor: PublicMentorItem; size?: "md" | "lg" }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const className =
     size === "lg"
       ? "h-20 w-20 text-xl"
       : "h-11 w-11 text-sm";
 
-  if (mentor.avatar_url) {
+  if (mentor.avatar_url && !imageFailed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={mentor.avatar_url}
         alt={mentor.name}
+        onError={() => setImageFailed(true)}
         className={`${className} rounded-lg border border-white bg-white object-cover shadow-sm`}
       />
     );

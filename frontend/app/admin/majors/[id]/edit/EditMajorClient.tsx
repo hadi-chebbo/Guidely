@@ -8,6 +8,7 @@ import { AdminCard, AdminPageHeader, AdminPageShell } from "@/components/admin/A
 import MajorForm from "@/components/admin/majors/MajorForm";
 import { getAvailableSkills, getMajor } from "@/services/majorsService";
 import { getCategories } from "@/services/studentService";
+import { saveMajorUpdateDate } from "@/lib/adminMajorUpdateDates";
 import type { MajorFormData } from "@/lib/validations/major";
 import type { Major, MajorListItem, Paginated } from "@/types/major";
 
@@ -116,6 +117,7 @@ export default function EditMajorClient({ majorId }: EditMajorClientProps) {
           majorId={majorId}
           majorDetails={major}
           onSuccess={async (updatedMajor?: Major, submittedData?: Partial<MajorFormData>) => {
+            const updatedAt = new Date().toISOString();
             const selectedCategory = categories?.find(
               (category) => category.id === submittedData?.category_id
             );
@@ -147,11 +149,12 @@ export default function EditMajorClient({ majorId }: EditMajorClientProps) {
                   international_demand: submittedData?.international_demand ?? updatedMajor.international_demand,
                   is_featured: submittedData?.is_featured ?? updatedMajor.is_featured,
                   cover_image: submittedData?.cover_image ?? updatedMajor.cover_image,
-                  updated_at: new Date().toISOString(),
+                  updated_at: updatedAt,
                 }
               : undefined;
 
             if (mergedMajor) {
+              saveMajorUpdateDate(mergedMajor.id, mergedMajor.updated_at);
               queryClient.setQueryData(["major", majorId], mergedMajor);
               queryClient.setQueriesData<Paginated<MajorListItem>>(
                 { queryKey: ["admin-majors"] },
