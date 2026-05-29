@@ -26,22 +26,33 @@ export default function QuizPage() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedQuestions, setHasLoadedQuestions] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isActive = true;
+
     const fetchQuestions = async () => {
       try {
         const data = await getQuizQuestions();
+        if (!isActive) return;
         setQuestions(Array.isArray(data) ? data : []);
       } catch {
+        if (!isActive) return;
         setError("Failed to load questions. Please try again.");
       } finally {
-        setIsLoading(false);
+        if (isActive) {
+          setHasLoadedQuestions(true);
+        }
       }
     };
+
     fetchQuestions();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const currentQuestion = questions[currentIndex];
@@ -89,17 +100,8 @@ export default function QuizPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-slate-100 px-4">
-        <div className="rounded-3xl border border-white/80 bg-white/85 px-6 py-8 text-center shadow-card sm:px-10">
-          <Loader2 className="mx-auto h-10 w-10 animate-spin text-brand-600" />
-          <p className="mt-3 text-sm font-medium text-gray-500">
-            Loading questions...
-          </p>
-        </div>
-      </div>
-    );
+  if (!hasLoadedQuestions && !error) {
+    return null;
   }
 
   if (error) {

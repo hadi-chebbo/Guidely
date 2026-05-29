@@ -31,21 +31,22 @@ import {
   mentorApplicationService,
   type MentorApplication,
 } from "@/services/mentorApplicationService";
+import { cn } from "@/lib/utils";
 
 function ApplicationSummary({ application }: { application: MentorApplication }) {
   const profile = application.mentor_profile;
 
   return (
     <div className="min-w-0">
-      <p className="font-semibold text-gray-950">{application.user.name}</p>
+      <p className="break-words font-semibold text-gray-950">{application.user.name}</p>
       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex min-w-0 items-center gap-1">
           <UserRound className="h-3.5 w-3.5" />
-          @{application.user.username}
+          <span className="break-all">@{application.user.username}</span>
         </span>
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex min-w-0 items-center gap-1">
           <Mail className="h-3.5 w-3.5" />
-          {application.user.email}
+          <span className="break-all">{application.user.email}</span>
         </span>
       </div>
       <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-600">
@@ -59,17 +60,22 @@ function ApproveButton({
   username,
   isApproving,
   onApprove,
+  className,
 }: {
   username: string;
   isApproving: boolean;
   onApprove: (username: string) => void;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={() => onApprove(username)}
       disabled={isApproving}
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      className={cn(
+        "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+        className
+      )}
       aria-label={`Approve ${username}`}
       title={`Approve ${username}`}
     >
@@ -86,17 +92,22 @@ function RejectButton({
   username,
   isRejecting,
   onReject,
+  className,
 }: {
   username: string;
   isRejecting: boolean;
   onReject: (username: string) => void;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={() => onReject(username)}
       disabled={isRejecting}
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      className={cn(
+        "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+        className
+      )}
       aria-label={`Reject ${username}`}
       title={`Reject ${username}`}
     >
@@ -115,12 +126,14 @@ function ActionIconButton({
   onClick,
   disabled,
   variant = "neutral",
+  className,
 }: {
   label: string;
   children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
   variant?: "neutral" | "brand";
+  className?: string;
 }) {
   return (
     <button
@@ -129,11 +142,12 @@ function ActionIconButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      className={
+      className={cn(
         variant === "brand"
           ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-700 text-white shadow-sm transition hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-          : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-      }
+          : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
     >
       {children}
     </button>
@@ -639,13 +653,15 @@ export default function AdminMentorApplicationsPage() {
               filteredApplications.map((application) => (
                 <article
                   key={application.user.username}
-                  className="rounded-lg border border-white/80 bg-white p-4 shadow-sm shadow-slate-200/60"
+                  className="min-w-0 overflow-hidden rounded-lg border border-white/80 bg-white p-4 shadow-sm shadow-slate-200/60"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <ApplicationSummary application={application} />
-                    <Badge variant="warning">
-                      {application.mentor_profile.status}
-                    </Badge>
+                    <div className="shrink-0">
+                      <Badge variant="warning">
+                        {application.mentor_profile.status}
+                      </Badge>
+                    </div>
                   </div>
                   <div className="mt-4 grid gap-3 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-3">
                     <div>
@@ -673,10 +689,11 @@ export default function AdminMentorApplicationsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 flex justify-end gap-2">
+                  <div className="mt-4 grid grid-cols-3 gap-2 sm:flex sm:justify-end">
                     <ActionIconButton
                       label={`View ${application.user.username}`}
                       onClick={() => setSelectedUsername(application.user.username)}
+                      className="w-full sm:w-10"
                     >
                       <Eye className="h-4 w-4" />
                     </ActionIconButton>
@@ -687,6 +704,7 @@ export default function AdminMentorApplicationsPage() {
                         approvingUsername === application.user.username
                       }
                       onApprove={(username) => approveMutation.mutate(username)}
+                      className="w-full sm:w-10"
                     />
                     <RejectButton
                       username={application.user.username}
@@ -695,6 +713,7 @@ export default function AdminMentorApplicationsPage() {
                         rejectingUsername === application.user.username
                       }
                       onReject={handleReject}
+                      className="w-full sm:w-10"
                     />
                   </div>
                 </article>
