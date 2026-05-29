@@ -3,35 +3,29 @@ import Image from "next/image";
 
 const footerLinks = {
   Platform: [
+    { href: "/student/dashboard", label: "Dashboard" },
     { href: "/student/majors", label: "Majors" },
-    { href: "/compare", label: "Compare" },
-    { href: "/universities", label: "Universities" },
-    { href: "/student/quiz", label: "Quiz" },
-    { href: "/mentors", label: "Mentors" },
+    { href: "/student/compare", label: "Compare" },
+    { href: "/student/universities", label: "Universities" },
+    { href: "/student/mentors", label: "Mentors" },
   ],
   Resources: [
-    { href: "/market", label: "Market" },
-    { href: "/blog", label: "Blog" },
-    { href: "/faq", label: "FAQ" },
+    { href: "/student/quiz", label: "Quiz" },
+    { href: "/student/sessions", label: "Sessions" },
+    { href: "/student/favorites", label: "Favorites" },
   ],
-  Company: [
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-    { href: "/privacy", label: "Privacy" },
-    { href: "/terms", label: "Terms" },
+  Account: [
+    { href: "/student/reservations", label: "Reservations" },
+    { href: "/mentor", label: "Mentor Area" },
   ],
 };
 
 export default function Footer() {
   return (
-    <footer className="border-t border-gray-100 bg-white w-full">
-      <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6">
-        
-        {/* TOP */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
-          
-          {/* BRAND */}
-          <div className="max-w-xs">
+    <footer className="w-full border-t border-gray-200 bg-white">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1.75fr)] lg:items-start">
+          <div className="max-w-md">
             <div className="flex items-center gap-3">
               <Image
                 src="/logo-transparent.png"
@@ -41,32 +35,35 @@ export default function Footer() {
                 className="object-contain"
               />
 
-            <span className="text-xl font-heading font-bold text-brand-700">
-    Guidely
-  </span>
+              <span className="font-heading text-2xl font-bold text-brand-700">
+                Guidely
+              </span>
             </div>
 
-            {/* NECESSITY TEXT */}
-            <p className="mt-2 text-[11px] text-gray-500 leading-relaxed">
-              Guidely helps students make informed academic decisions by analyzing real
-              university data, career demand, and market trends — all in one place.
+            <p className="mt-4 text-sm leading-6 text-gray-600">
+              Guidely helps students make informed academic decisions through
+              university insights, major comparisons, mentor guidance, and market-aware
+              career context.
+            </p>
+
+            <p className="mt-4 text-xs font-medium text-gray-500">
+              Built for students planning their next academic step.
             </p>
           </div>
 
-          {/* LINKS */}
-          <div className="grid w-full grid-cols-2 gap-x-8 gap-y-6 text-sm sm:w-auto sm:grid-cols-3 lg:gap-x-12">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-8 text-sm sm:grid-cols-3 lg:justify-items-end lg:gap-x-14">
             {Object.entries(footerLinks).map(([group, links]) => (
-              <div key={group}>
-                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">
+              <div key={group} className="w-full max-w-[10rem]">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
                   {group}
                 </h3>
 
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {links.map(({ href, label }) => (
                     <li key={href}>
                       <Link
                         href={href}
-                        className="text-gray-600 hover:text-brand-700 transition-colors"
+                        className="font-medium text-gray-600 transition-colors hover:text-brand-700"
                       >
                         {label}
                       </Link>
@@ -78,20 +75,17 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* DIVIDER */}
-        <div className="mt-4 border-t border-gray-100" />
+        <div className="mt-8 border-t border-gray-200" />
 
-        {/* BOTTOM */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-3">
-          <p className="text-[11px] text-gray-400">
-            © {new Date().getFullYear()} Guidely. All rights reserved.
+        <div className="flex flex-col gap-3 pt-5 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+          <p className="text-xs text-gray-500">
+            &copy; {new Date().getFullYear()} Guidely. All rights reserved.
           </p>
 
-          <p className="text-[11px] text-gray-400">
-            Built for Lebanese students with care
+          <p className="text-xs font-medium text-gray-500 sm:text-right">
+            Academic guidance, mentor support, and career clarity.
           </p>
         </div>
-
       </div>
     </footer>
   );

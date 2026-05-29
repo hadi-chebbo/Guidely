@@ -349,9 +349,6 @@ export const register = async (data: RegisterFormData): Promise<void> => {
     email: data.email,
     password: data.password,
     password_confirmation: data.confirmPassword,
-    school: data.school,
-    grade: data.grade,
-    preferred_language: data.preferredLanguage,
   });
 
   setPendingVerificationEmail(data.email);
