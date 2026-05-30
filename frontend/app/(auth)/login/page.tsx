@@ -16,9 +16,88 @@ import {
   type User,
 } from "@/services/authService";
 
+import { cn } from "@/lib/utils";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import FormMessage from "@/components/ui/FormMessage";
+
+function GoogleMark() {
+  return (
+    <svg
+      className="h-5 w-5 shrink-0"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.54 5.54 0 0 1-2.4 3.64v2.98h3.89c2.27-2.09 3.53-5.17 3.53-8.86Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.07 7.96-2.87l-3.89-2.98c-1.08.72-2.45 1.14-4.07 1.14-3.13 0-5.78-2.11-6.72-4.95H1.27v3.07A12 12 0 0 0 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.28 14.34A7.17 7.17 0 0 1 4.9 12c0-.81.14-1.6.38-2.34V6.59H1.27a12 12 0 0 0 0 10.82l4.01-3.07Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.71c1.76 0 3.34.6 4.58 1.79l3.45-3.45A11.56 11.56 0 0 0 12 0 12 12 0 0 0 1.27 6.59l4.01 3.07C6.22 6.82 8.87 4.71 12 4.71Z"
+      />
+    </svg>
+  );
+}
+
+function PasswordStrength({ password }: { password: string }) {
+  const checks = [
+    { label: "8+ characters", pass: password.length >= 8 },
+    { label: "Uppercase", pass: /[A-Z]/.test(password) },
+    { label: "Number", pass: /[0-9]/.test(password) },
+  ];
+  const score = checks.filter((check) => check.pass).length;
+  const colors = ["bg-red-400", "bg-yellow-400", "bg-brand-400", "bg-brand-600"];
+  const labels = ["", "Weak", "Fair", "Strong"];
+
+  if (!password) return null;
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex gap-1">
+        {[0, 1, 2].map((index) => (
+          <div
+            key={index}
+            className={cn(
+              "h-1 flex-1 rounded-full transition-all duration-300",
+              index < score ? colors[score] : "bg-gray-200",
+            )}
+          />
+        ))}
+        <span className="ml-2 min-w-10 text-xs text-gray-500">
+          {labels[score]}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
+        {checks.map(({ label, pass }) => (
+          <span
+            key={label}
+            className={cn(
+              "flex items-center gap-1 text-xs transition-colors",
+              pass ? "text-brand-600" : "text-gray-400",
+            )}
+          >
+            <span
+              className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                pass ? "bg-brand-500" : "bg-gray-300",
+              )}
+            />
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const getLoginErrorMessage = (error: unknown): string => {
   if (
@@ -71,6 +150,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -78,6 +158,7 @@ export default function LoginPage() {
       rememberMe: false,
     },
   });
+  const password = watch("password", "");
 
   useEffect(() => {
     const error = new URLSearchParams(window.location.search).get("error");
@@ -207,6 +288,7 @@ export default function LoginPage() {
             error={errors.password?.message}
             {...register("password")}
           />
+          <PasswordStrength password={password} />
         </div>
 
         {/* Remember me */}
@@ -245,16 +327,9 @@ export default function LoginPage() {
         variant="ghost"
         onClick={handleGoogleLogin}
         className="h-12 border-gray-300 bg-white text-gray-700 shadow-sm hover:border-gray-400 hover:bg-gray-50 active:bg-gray-100"
+        leftIcon={<GoogleMark />}
       >
-        <span className="font-semibold text-gray-700">Continue with</span>
-        <span className="font-bold">
-          <span className="text-[#4285F4]">G</span>
-          <span className="text-[#DB4437]">o</span>
-          <span className="text-[#F4B400]">o</span>
-          <span className="text-[#4285F4]">g</span>
-          <span className="text-[#0F9D58]">l</span>
-          <span className="text-[#DB4437]">e</span>
-        </span>
+        Continue with Google
       </Button>
 
       {/* Register */}

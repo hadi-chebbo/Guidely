@@ -26,7 +26,11 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1.75fr)] lg:items-start">
           <div className="max-w-md">
-            <div className="flex items-center gap-3">
+            <Link
+              href="/student/dashboard"
+              aria-label="Go to student dashboard"
+              className="inline-flex items-center gap-3"
+            >
               <Image
                 src="/logo-transparent.png"
                 alt="Guidely"
@@ -38,7 +42,7 @@ export default function Footer() {
               <span className="font-heading text-2xl font-bold text-brand-700">
                 Guidely
               </span>
-            </div>
+            </Link>
 
             <p className="mt-4 text-sm leading-6 text-gray-600">
               Guidely helps students make informed academic decisions through
