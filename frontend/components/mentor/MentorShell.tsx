@@ -46,7 +46,11 @@ export function MentorSidebar({ className }: { className?: string }) {
 
   return (
     <aside className={cn("flex w-72 flex-col border-r border-gray-200 bg-white shadow-sm", className)}>
-      <Link href="/mentor" className="flex h-16 items-center gap-3 border-b border-gray-200 px-5">
+      <Link
+        href="/mentor"
+        aria-label="Go to mentor overview"
+        className="flex h-16 items-center gap-3 border-b border-gray-200 px-5"
+      >
         <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm">
           <Image
             src="/logo-transparent.png"

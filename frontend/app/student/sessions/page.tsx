@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -41,10 +41,11 @@ const formatPrice = (price: number | string, currency: string) => {
 const formatSessionType = (type: string) =>
   type.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-const getAvailableSlot = (session: PublicSessionItem) =>
-  session.availabilities.find((availability) =>
-    ["available", "open"].includes(availability.status.toLowerCase()),
-  ) ?? session.availabilities[0];
+const isOpenAvailability = (availability: PublicSessionAvailability) =>
+  ["available", "open"].includes(availability.status.toLowerCase());
+
+const getOpenAvailabilities = (session: PublicSessionItem) =>
+  session.availabilities.filter(isOpenAvailability);
 
 const getStoredReservationUuid = (availability: PublicSessionAvailability | undefined) => {
   if (!availability) return null;
@@ -75,13 +76,20 @@ const formatDateTime = (value: string) => {
   }).format(date);
 };
 
-function SessionActionButtons({ session }: { session: PublicSessionItem }) {
+function SessionActionButtons({
+  selectedAvailability,
+}: {
+  selectedAvailability: PublicSessionAvailability | undefined;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const availableSlot = getAvailableSlot(session);
   const [reservationUuid, setReservationUuid] = useState<string | null>(() =>
-    getStoredReservationUuid(availableSlot),
+    getStoredReservationUuid(selectedAvailability),
   );
+
+  useEffect(() => {
+    setReservationUuid(getStoredReservationUuid(selectedAvailability));
+  }, [selectedAvailability]);
 
   const refreshSessions = async () => {
     await queryClient.invalidateQueries({ queryKey: ["student-sessions"] });
@@ -90,15 +98,15 @@ function SessionActionButtons({ session }: { session: PublicSessionItem }) {
 
   const bookMutation = useMutation({
     mutationFn: () => {
-      if (!availableSlot?.uuid) {
-        throw new Error("No available slot to book.");
+      if (!selectedAvailability?.uuid) {
+        throw new Error("Choose an open time before booking.");
       }
-      return bookSessionAvailability(availableSlot.uuid);
+      return bookSessionAvailability(selectedAvailability.uuid);
     },
     onSuccess: async (response) => {
       setReservationUuid(response.reservation.uuid);
-      if (availableSlot?.uuid) {
-        storeReservationUuid(availableSlot.uuid, response.reservation.uuid);
+      if (selectedAvailability?.uuid) {
+        storeReservationUuid(selectedAvailability.uuid, response.reservation.uuid);
       }
       await refreshSessions();
 
@@ -119,7 +127,7 @@ function SessionActionButtons({ session }: { session: PublicSessionItem }) {
     },
   });
 
-  const hasAvailability = Boolean(availableSlot?.uuid);
+  const hasAvailability = Boolean(selectedAvailability?.uuid);
   const isReserved = Boolean(reservationUuid);
 
   return (
@@ -146,7 +154,7 @@ function SessionActionButtons({ session }: { session: PublicSessionItem }) {
         }}
         className="rounded-lg"
       >
-        {isReserved ? "View Booking" : "Book Session"}
+        {isReserved ? "View Booking" : hasAvailability ? "Book Selected Time" : "Choose a Time"}
       </Button>
     </div>
   );
@@ -159,6 +167,24 @@ function SessionCard({
   session: PublicSessionItem;
   recommended?: boolean;
 }) {
+  const openAvailabilities = getOpenAvailabilities(session);
+  const [selectedAvailabilityUuid, setSelectedAvailabilityUuid] = useState(
+    openAvailabilities[0]?.uuid ?? "",
+  );
+  const selectedAvailability =
+    openAvailabilities.find((availability) => availability.uuid === selectedAvailabilityUuid) ??
+    openAvailabilities[0];
+
+  useEffect(() => {
+    setSelectedAvailabilityUuid((current) => {
+      if (openAvailabilities.some((availability) => availability.uuid === current)) {
+        return current;
+      }
+
+      return openAvailabilities[0]?.uuid ?? "";
+    });
+  }, [openAvailabilities]);
+
   return (
     <article className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-100 hover:shadow-card">
       <div className="flex items-start justify-between gap-4">
@@ -214,39 +240,56 @@ function SessionCard({
             <CalendarCheck className="h-3.5 w-3.5" />
             Slots
           </p>
-          <p className="mt-1 font-bold text-gray-900">
-            {session.availabilities_count}
-          </p>
+          <p className="mt-1 font-bold text-gray-900">{openAvailabilities.length}</p>
         </div>
       </div>
 
       <div className="mt-4 rounded-lg border border-gray-100 bg-white p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-          Next available slots
+          Choose an open time
         </p>
-        {session.availabilities.length ? (
-          <div className="mt-2 space-y-2">
-            {session.availabilities.slice(0, 2).map((availability) => (
-              <div
+        {openAvailabilities.length ? (
+          <div className="mt-3 space-y-2">
+            {openAvailabilities.map((availability) => {
+              const isSelected = availability.uuid === selectedAvailability?.uuid;
+
+              return (
+              <button
+                type="button"
                 key={availability.uuid}
-                className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                onClick={() => setSelectedAvailabilityUuid(availability.uuid)}
+                className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition ${
+                  isSelected
+                    ? "border-brand-300 bg-brand-50 text-brand-950 ring-2 ring-brand-100"
+                    : "border-gray-100 bg-gray-50 text-gray-800 hover:border-brand-100 hover:bg-white"
+                }`}
+                aria-pressed={isSelected}
               >
                 <span className="font-semibold text-gray-800">
                   {formatDateTime(availability.scheduled_at)}
                 </span>
-                <Badge variant="success" size="sm">
-                  {availability.status}
+                <Badge variant={isSelected ? "brand" : "success"} size="sm">
+                  {isSelected ? "Selected" : "Open"}
                 </Badge>
-              </div>
-            ))}
+              </button>
+              );
+            })}
           </div>
         ) : (
           <p className="mt-2 text-sm text-gray-500">No open slots right now.</p>
         )}
+        {selectedAvailability && (
+          <div className="mt-3 rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-sm">
+            <span className="font-semibold text-brand-900">Selected time: </span>
+            <span className="font-bold text-brand-950">
+              {formatDateTime(selectedAvailability.scheduled_at)}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="mt-auto pt-5">
-        <SessionActionButtons session={session} />
+        <SessionActionButtons selectedAvailability={selectedAvailability} />
       </div>
     </article>
   );

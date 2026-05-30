@@ -69,7 +69,12 @@ export default function AdminSidebar({
       )}
     >
       <div className="flex h-16 items-center justify-between gap-3 border-b border-gray-200 px-5">
-        <Link href="/admin" onClick={onClose} className="flex min-w-0 items-center gap-3">
+        <Link
+          href="/admin"
+          aria-label="Go to admin overview"
+          onClick={onClose}
+          className="flex min-w-0 items-center gap-3"
+        >
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm">
             <Image
               src="/logo-transparent.png"
