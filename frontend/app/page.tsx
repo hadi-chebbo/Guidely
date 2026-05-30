@@ -7,10 +7,10 @@ import {
   CalendarCheck,
   CheckCircle2,
   GraduationCap,
-  MapPin,
   ShieldCheck,
   Users,
 } from "lucide-react";
+import LandingStatsChart from "@/components/landing/LandingStatsChart";
 
 const outcomes = [
   "Compare universities with structured, student-friendly data.",
@@ -60,14 +60,14 @@ export default function HomePage() {
           aria-label="Guidely home"
           className="inline-flex items-center gap-3.5 rounded-xl px-1 py-1"
         >
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 sm:h-14 sm:w-14">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center sm:h-14 sm:w-14">
             <Image
               src="/logo-transparent.png"
               alt="Guidely logo"
               width={64}
               height={64}
               priority
-              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+              className="h-12 w-12 object-contain sm:h-14 sm:w-14"
             />
           </span>
           <span className="flex min-w-0 flex-col">
@@ -171,32 +171,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="grid gap-0 divide-y divide-gray-100">
-              {[
-                ["Computer Science", "Strong analytical and technology fit", "92%"],
-                ["Business Analytics", "Balanced business and data pathway", "86%"],
-                ["Graphic Design", "Creative direction with portfolio focus", "78%"],
-              ].map(([major, detail, score]) => (
-                <div
-                  key={major}
-                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-5 py-5 sm:gap-4 sm:px-6"
-                >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eef2ff] text-brand-700">
-                    <GraduationCap className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-gray-950">{major}</p>
-                    <p className="mt-1 flex min-w-0 items-center gap-1 text-xs leading-5 text-gray-500">
-                      <MapPin className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{detail}</span>
-                    </p>
-                  </div>
-                  <span className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 sm:px-3">
-                    {score}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <LandingStatsChart />
 
             <div className="grid grid-cols-1 divide-y divide-gray-100 border-t border-gray-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               {metrics.map((metric) => (
